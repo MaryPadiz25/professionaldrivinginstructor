@@ -47,8 +47,8 @@ const INSTRUCTORS = [
     initials: 'RL',
     name: 'Rob Lester',
     title: 'Professional Driving Instructor',
-    baseSuburb: 'Doncaster',
-    baseLat: -37.7870, baseLng: 145.1226,
+    baseSuburb: 'Vermont',
+    baseLat: -37.8483, baseLng: 145.1813,
     serviceRadius: 15,
     travelBonus: true,
     travelFee: false,
@@ -65,6 +65,7 @@ const INSTRUCTORS = [
     ],
     availability: 'Weekdays',
     areasOfExpertise: [
+      'Inner City & CBD Driving Specialist',
       'Nervous & Anxious Drivers',
       'VicRoads Drive Test Preparation',
       'Defensive Driving Techniques',
@@ -625,10 +626,10 @@ function renderAbout() {
       <div class="container-narrow">
         <p>The Professional Driving Instructors Network was created to support experienced instructors who take pride in their work and want to operate independently, without being forced to compete on price.</p>
         <p>Too often, talented instructors are listed alongside underqualified newcomers on discount-driven platforms that erode trust, lower standards, and devalue the profession. We believe there's a better way.</p>
-        <p>Our network is built on a simple principle: <strong>quality instruction deserves quality presentation</strong>. We carefully list our instructors and position our members as the professionals they are.</p>
-        <p>For learners, this means confidence. You're choosing from a network of experienced professionals selected for their commitment to quality and safety.</p>
+        <p>Our network is built on a simple principle: <strong>quality instruction deserves quality presentation</strong>. We provide a professional platform where instructors who meet our standards can present their services in a way that reflects the true value of their work.</p>
+        <p>For learners, this means confidence. You're choosing from a network of instructors who have confirmed they meet our stated professional, safety, and compliance requirements at the time of joining.</p>
         <p>For instructors, this means respect. No commission fees. No race to the bottom on pricing. No algorithm deciding your visibility. Just a professional platform that presents your business the way it deserves to be presented.</p>
-        <p>We're starting in Melbourne, with plans to expand to Sydney and Brisbane. If you're a professional instructor who shares our values, we'd love to hear from you.</p>
+        <p>We're starting in Melbourne, with plans to expand to Sydney and Brisbane. If you're a professional instructor who meets our standards and shares our values, we'd love to hear from you.</p>
       </div>
     </section>`;
 }
