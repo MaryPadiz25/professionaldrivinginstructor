@@ -52,7 +52,7 @@ const INSTRUCTORS = [
     serviceRadius: 15,
     travelBonus: true,
     travelFee: false,
-    location: "Melbourne's Eastern Suburbs",
+    location: 'Vermont (servicing surrounding suburbs)',
     experience: '20+ years',
     customQS: true,
     lessonFees: [
@@ -65,15 +65,18 @@ const INSTRUCTORS = [
     ],
     availability: 'Weekdays',
     areasOfExpertise: [
-      'Inner City & CBD Driving Specialist',
-      'Nervous & Anxious Drivers',
-      'VicRoads Drive Test Preparation',
+      'First-Time & Learner Drivers',
+      'Nervous & Confidence Building Drivers',
+      'VicRoads Test Preparation',
       'Defensive Driving Techniques',
       'Adult Learners & Late Starters',
       'Overseas Licence Conversion',
-      'Confidence & Decision-Making Coaching',
       'Manual Driving Instruction',
-      'Aviation-Inspired Driver Training',
+      'Advanced Road Confidence & Decision Making',
+      'Highway & Long Distance Driving',
+      'Refresher Lessons (returning drivers)',
+      'Logbook Hours & Structured Driving Plans',
+      'NDIS & Supported Driving Instruction',
     ],
     seniorBadge: true,
     photo: 'rob-lester.jpg',
@@ -172,7 +175,7 @@ const ICONS = {
   user:       `<svg width="14" height="14" viewBox="2 2 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
   userLg:     `<svg width="24" height="24" viewBox="2 2 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
   pin:        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
-  car:        `<svg width="22" height="14" viewBox="0 0 120 56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path stroke-width="2.6" d="M5 38 C5 36 5 34 7 31 L11 26 C13 23 16 20 20 18 L28 15 C32 13 38 11 46 10 L72 10 C82 10 90 11 96 14 L108 20 C112 23 115 27 115 31 L115 38 C115 39.5 113 40 111 40 L19 40 C10 40 5 39.5 5 38 Z"/><path stroke-width="1.2" fill="none" opacity="0.5" d="M22 28 L98 28"/><line stroke-width="1.6" x1="28" y1="15" x2="22" y2="28" opacity="0.65"/><line stroke-width="1.6" x1="96" y1="14" x2="98" y2="28" opacity="0.65"/><path stroke-width="1.3" fill="none" opacity="0.55" d="M28 15 C46 10.5 72 10.5 96 14"/><line stroke-width="1.1" x1="60" y1="11" x2="60" y2="28" opacity="0.4"/><circle cx="22" cy="43" r="7.2" stroke-width="2.5"/><circle cx="22" cy="43" r="3.0" stroke-width="1.5"/><line stroke-width="0.9" x1="22" y1="39.8" x2="22" y2="36.8" opacity="0.55"/><line stroke-width="0.9" x1="24.8" y1="40.8" x2="27.3" y2="38.7" opacity="0.55"/><line stroke-width="0.9" x1="23.7" y1="44.6" x2="25.9" y2="47" opacity="0.55"/><line stroke-width="0.9" x1="20.3" y1="44.6" x2="18.1" y2="47" opacity="0.55"/><line stroke-width="0.9" x1="19.2" y1="40.8" x2="16.7" y2="38.7" opacity="0.55"/><circle cx="98" cy="43" r="7.2" stroke-width="2.5"/><circle cx="98" cy="43" r="3.0" stroke-width="1.5"/><line stroke-width="0.9" x1="98" y1="39.8" x2="98" y2="36.8" opacity="0.55"/><line stroke-width="0.9" x1="100.8" y1="40.8" x2="103.3" y2="38.7" opacity="0.55"/><line stroke-width="0.9" x1="99.7" y1="44.6" x2="101.9" y2="47" opacity="0.55"/><line stroke-width="0.9" x1="96.3" y1="44.6" x2="94.1" y2="47" opacity="0.55"/><line stroke-width="0.9" x1="95.2" y1="40.8" x2="92.7" y2="38.7" opacity="0.55"/></svg>`,
+  car:        `<svg viewBox="0 0 120 55" width="20" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(120,0) scale(-1,1)"><path stroke-width="3.5" d="M10 39 C4 39 1 36 1 32 C1 28 4 24 10 20 C16 16 24 12 34 8 C44 4 54 -4 72 -6 C88 -8 100 2 108 11 C113 18 117 25 119 32 C120 36 119 40 116 42 C113 44 107 44 101 44 M28 44 C18 44 9 43 5 41 C1 39 1 36 5 34 C7 32 10 32 10 34"/><path stroke-width="3.5" d="M101 44 C108 44 116 42 119 38 C122 33 121 27 118 24 C115 21 113 22 114 25"/><line x1="36" y1="44" x2="86" y2="44" stroke-width="3.5"/><path stroke-width="2.2" d="M40 18 C43 9 52 2 63 1 C72 0 80 4 83 11 L83 18 Z"/><circle cx="26" cy="47" r="9.5" stroke-width="3.5"/><circle cx="26" cy="47" r="3.8" stroke-width="2.5"/><circle cx="94" cy="47" r="9.5" stroke-width="3.5"/><circle cx="94" cy="47" r="3.8" stroke-width="2.5"/></g></svg>`,
   clock:      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
   dollar:     `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>`,
   users:      `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`,
@@ -250,7 +253,7 @@ function instructorCardHTML(inst, distKm) {
     : `<div class="card-meta-row">${ICONS.pin} ${inst.location}</div>`;
 
   let metaRows = inst.customQS
-    ? `${distLabel}<div class="card-meta-row">${ICONS.car} Manual &amp; Automatic</div><div class="card-meta-row card-tagline">${ICONS.user} Patient and calm Instructor</div><div class="card-meta-row">${ICONS.clock} ${inst.experience}</div>`
+    ? `${distLabel}<div class="card-meta-row">${ICONS.car} Manual &amp; Automatic</div><div class="card-meta-row card-tagline">${ICONS.user} Patient and calm</div><div class="card-meta-row">${ICONS.clock} ${inst.experience}</div>`
     : `${distLabel}<div class="card-meta-row">${ICONS.car} ${inst.transmission}</div><div class="card-meta-row">${ICONS.clock} ${inst.experience}</div>`;
 
   return `
@@ -365,7 +368,7 @@ function renderProfile(id) {
       <div class="qs-item-label">Service Area</div>
       <div class="qs-item-value">Based in ${inst.baseSuburb}</div>
       <div class="qs-item-value">Travel Range: ${inst.serviceRadius} km</div>
-      ${inst.travelBonus ? `<div class="qs-item-value qs-travel-note">Travels up to ${effectiveRadius} km for longer lessons</div>` : ''}
+      ${inst.travelBonus ? `<div class="qs-item-value qs-travel-note">Travel outside service area may be available by arrangement (additional fee may apply).</div>` : ''}
       ${inst.travelFee   ? `<div class="qs-item-value qs-travel-note">May charge travel fee for outer areas</div>` : ''}
     </div>`;
 
@@ -441,7 +444,7 @@ function renderJoin() {
           <div class="benefit-card"><div class="icon-circle">${ICONS.dollar}</div><h3>Keep 100% of Your Fees</h3><p>No commissions, no percentage cuts, no hidden charges.</p></div>
           <div class="benefit-card"><div class="icon-circle">${ICONS.users}</div><h3>Free Exposure to New Students</h3><p>Get discovered by learners actively searching for quality instructors.</p></div>
           <div class="benefit-card"><div class="icon-circle">${ICONS.award}</div><h3>Professional Branding</h3><p>Be presented as a professional, not a commodity listing.</p></div>
-          <div class="benefit-card"><div class="icon-circle">${ICONS.star}</div><h3>Founding Member Offer</h3><p>Join now as a founding member and lock in benefits as the network grows.</p></div>
+          <div class="benefit-card"><div class="icon-circle">${ICONS.star}</div><h3>Free to Join</h3><p>Become a Founding Member today and lock in early benefits before any fees are introduced.</p></div>
         </div>
       </div>
     </section>
@@ -546,6 +549,7 @@ function renderJoin() {
         <div class="form-section-head">Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(choose 3–5)</span></div>
         <div class="form-group">
           <div class="join-expertise-grid" id="join-expertise-grid">
+            <label class="join-toggle-label"><input type="checkbox" value="First-Time &amp; Learner Drivers" /><span>First-Time &amp; Learner Drivers</span></label>
             <label class="join-toggle-label"><input type="checkbox" value="Nervous &amp; Confidence Building Drivers" /><span>Nervous &amp; Confidence Building Drivers</span></label>
             <label class="join-toggle-label"><input type="checkbox" value="VicRoads Test Preparation" /><span>VicRoads Test Preparation</span></label>
             <label class="join-toggle-label"><input type="checkbox" value="Defensive Driving Techniques" /><span>Defensive Driving Techniques</span></label>
@@ -555,6 +559,7 @@ function renderJoin() {
             <label class="join-toggle-label"><input type="checkbox" value="Advanced Road Confidence &amp; Decision Making" /><span>Advanced Road Confidence &amp; Decision Making</span></label>
             <label class="join-toggle-label"><input type="checkbox" value="Highway &amp; Long Distance Driving" /><span>Highway &amp; Long Distance Driving</span></label>
             <label class="join-toggle-label"><input type="checkbox" value="Refresher Lessons (returning drivers)" /><span>Refresher Lessons (returning drivers)</span></label>
+            <label class="join-toggle-label"><input type="checkbox" value="Logbook Hours &amp; Structured Driving Plans" /><span>Logbook Hours &amp; Structured Driving Plans</span></label>
             <label class="join-toggle-label"><input type="checkbox" value="NDIS &amp; Supported Driving Instruction" /><span>NDIS &amp; Supported Driving Instruction</span></label>
           </div>
           <small class="form-hint expertise-count-hint" id="expertise-count-hint"></small>
@@ -573,6 +578,7 @@ function renderJoin() {
             <option value="15">15 km</option>
             <option value="20">20 km</option>
             <option value="30">30 km</option>
+            <option value="50">50 km</option>
           </select>
         </div>
 
@@ -654,8 +660,10 @@ function renderPricing() {
         <p>Unlike many booking platforms, we do not take a percentage of lesson fees. This means instructors keep 100% of their earnings, pricing is not inflated to cover platform fees, and no hidden charges are passed onto learners.</p>
         <hr class="pricing-divider" />
         <h2>Network Membership (For Instructors)</h2>
-        <p>Instructors pay a flat annual listing fee to be featured on the network. There are no commissions, no per-booking fees, and no lock-in contracts.</p>
-        <p>As a founding member, early joiners lock in introductory pricing as the network grows. <a href="#" data-action="nav" data-page="join" style="color:var(--navy);font-weight:600;text-decoration:underline;">Apply to join</a> to find out more.</p>
+        <p>Join the Professional Driving Instructors Network — currently free for founding members.</p>
+        <p>No commissions, no per-booking fees, and no lock-in contracts.</p>
+        <p>Introductory pricing may be introduced as the network grows, with founding members securing the lowest rate.</p>
+        <p><a href="#" data-action="nav" data-page="join" style="color:var(--navy);font-weight:600;text-decoration:underline;">Apply to join</a></p>
       </div>
     </section>`;
 }
