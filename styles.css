@@ -1707,7 +1707,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   line-height: 1.6;
 }
 .join-approval-notice p { margin-bottom: 8px; }
-.join-approval-notice p:last-child { margin-bottom: 0; font-size:7px;}
+.join-approval-notice p:last-child { margin-bottom: 0; font-size:5px;}
 .join-approval-notice a { color: var(--navy); font-weight: 600; }
 
 /* =============================================
@@ -1731,3 +1731,67 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
    CAR ICON — consistent sizing on cards & profile
    ============================================= */
 .card-meta-row svg[viewBox="0 0 110 52"] { vertical-align: middle; }
+/* =============================================
+   MOBILE FONT SIZE BOOST (≤ 600px)
+   Increases legibility without breaking layout
+   ============================================= */
+@media (max-width: 600px) {
+  /* Base body text */
+  body { font-size: 15.5px; }
+
+  /* Form labels & inputs */
+  .form-label     { font-size: 15px; }
+  .form-input     { font-size: 15px; }
+  .form-hint      { font-size: 13px; }
+  .form-section-head { font-size: 16px; }
+
+  /* Join form toggle checkboxes */
+  .join-toggle-label { font-size: 15px; }
+  .join-req-title    { font-size: 16px; }
+  .join-req-subtitle { font-size: 14px; }
+  .join-req-list li  { font-size: 14.5px; }
+  .join-req-confirm  { font-size: 15px; }
+  .join-reserve-note { font-size: 13px; }
+  .join-req-section-head { font-size: 12.5px; }
+  .expertise-count-hint  { font-size: 13.5px; }
+  .join-approval-notice  { font-size: 14px; }
+
+  /* Profile quick-summary */
+  .qs-block .qs-item-label { font-size: 12.5px; }
+  .qs-block .qs-item-value { font-size: 15px; }
+  .qs-expertise-list li    { font-size: 14.5px; }
+  .qs-travel-note          { font-size: 14px !important; }
+  .qs-title                { font-size: 16px; }
+
+  /* Cards */
+  .card-name       { font-size: 16px; }
+  .card-meta-row   { font-size: 14px; }
+  .card-dist-row   { font-size: 13.5px; }
+
+  /* Pricing & general content paragraphs */
+  .pricing-content p,
+  .about-content p,
+  .profile-about-inner p { font-size: 15.5px; }
+  .price-highlight { font-size: 22px; }
+
+  /* Find page search info */
+  .find-search-info { font-size: 14.5px; }
+
+  /* Contact info */
+  .contact-detail { font-size: 15px; }
+
+  /* Buttons */
+  .btn { font-size: 15px; }
+  .btn-lg { font-size: 16px; }
+
+  /* Footer */
+  .footer-links a  { font-size: 14px; }
+  .footer-logo     { font-size: 14px; }
+  .footer-copy     { font-size: 12.5px; }
+
+  /* Section titles */
+  .section-title { font-size: 22px; }
+
+  /* Approval notice last child (contact email line) */
+  .join-approval-notice p:last-child { word-break: break-all; font-size: 12px; }
+}
