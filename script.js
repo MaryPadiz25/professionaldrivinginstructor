@@ -157,6 +157,52 @@ function trackEnquiry(instructorId, instructorName) {
 }
 
 /* =============================================
+   CALL TRACKER (localStorage)
+   ============================================= */
+const SHEETS_CALL_LOG_URL = 'https://script.google.com/macros/s/AKfycbx33RYYAbRys6ms_0CLiY2IMD9tZQp8a9ILHXCpRG2opi8MCrQjalmEJY0chUitBJJ4/exec';
+const CALL_TRACKER_KEY    = 'pdin_calls';
+
+function trackCall(instructorId, instructorName) {
+  // Always write to localStorage for instant local stats
+  try {
+    const raw  = localStorage.getItem(CALL_TRACKER_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    if (!data[instructorId]) data[instructorId] = { name: instructorName, count: 0, lastDate: null, history: [] };
+    data[instructorId].count++;
+    data[instructorId].lastDate = new Date().toISOString();
+    data[instructorId].history.push(new Date().toISOString());
+    localStorage.setItem(CALL_TRACKER_KEY, JSON.stringify(data));
+  } catch(e) { /* storage unavailable */ }
+
+  // Fire-and-forget POST to Google Sheets
+  if (SHEETS_CALL_LOG_URL && SHEETS_CALL_LOG_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+    const inst    = INSTRUCTORS.find(i => i.id === instructorId);
+    const suburb  = inst ? inst.baseSuburb : '';
+    const now     = new Date();
+    fetch(SHEETS_CALL_LOG_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event:          'call',
+        instructorId,
+        instructorName,
+        suburb,
+        date:      now.toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' }),
+        time:      now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true }),
+        timestamp: now.toISOString()
+      })
+    }).catch(() => { /* silent fail — local record already saved */ });
+  }
+}
+
+function getCallStats() {
+  try {
+    const raw = localStorage.getItem(CALL_TRACKER_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+
+/* =============================================
    DISTANCE UTILITY (Haversine)
    ============================================= */
 function haversineKm(lat1, lng1, lat2, lng2) {
@@ -523,6 +569,26 @@ function renderJoin() {
         <div class="form-group"><label class="form-label">DIA Number <span>*</span></label><input type="text" class="form-input" placeholder="Your Driving Instructor Authority number" id="join-dia" /><small class="form-hint">For verification purposes. This will not be displayed publicly.</small></div>
         <div class="form-group"><label class="form-label">Tell us about yourself</label><textarea class="form-input" placeholder="Brief overview of your experience and teaching style" id="join-bio"></textarea></div>
 
+        <!-- Profile Photo Upload -->
+        <div class="form-group">
+          <label class="form-label">Profile Photo</label>
+          <div class="photo-upload-zone" id="photo-upload-zone">
+            <input type="file" id="join-photo" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" />
+            <div class="photo-upload-preview" id="photo-upload-preview" style="display:none">
+              <img id="photo-preview-img" src="" alt="Preview" />
+              <button type="button" class="photo-remove-btn" id="photo-remove-btn" aria-label="Remove photo">&#x2715;</button>
+            </div>
+            <div class="photo-upload-prompt" id="photo-upload-prompt">
+              <div class="photo-upload-icon">${ICONS.upload}</div>
+              <div class="photo-upload-text">
+                <span class="photo-upload-cta">Click to upload</span> or drag &amp; drop
+              </div>
+              <div class="photo-upload-hint">JPG, PNG, WEBP — max 5 MB</div>
+            </div>
+          </div>
+          <small class="form-hint">Your photo will be reviewed before being displayed on your public profile.</small>
+        </div>
+
         <!-- Vehicle Details -->
         <div class="form-section-head">Vehicles</div>
         <div class="form-group">
@@ -884,8 +950,102 @@ function getPageContent(page, extra) {
     case 'about':   return renderAbout();
     case 'pricing': return renderPricing();
     case 'contact': return renderContact();
+    case 'stats':   return renderStatsPage();
     default:        return renderHome();
   }
+}
+
+
+/* =============================================
+   CALL STATS PAGE (admin — via #stats)
+   ============================================= */
+function renderStatsPage() {
+  const callData    = getCallStats();
+  const enquiryData = (function(){ try { const r=localStorage.getItem('pdin_enquiries'); return r?JSON.parse(r):{};} catch(e){return {};} })();
+  const allIds      = [...new Set([...Object.keys(callData), ...Object.keys(enquiryData), ...INSTRUCTORS.map(i=>i.id)])];
+
+  let totalCalls = 0, totalEnquiries = 0;
+  allIds.forEach(id => {
+    totalCalls     += (callData[id]?.count    || 0);
+    totalEnquiries += (enquiryData[id]?.count || 0);
+  });
+
+  const rows = allIds.map(id => {
+    const inst    = INSTRUCTORS.find(i => i.id === id);
+    const calls   = callData[id]?.count    || 0;
+    const enqs    = enquiryData[id]?.count || 0;
+    const lastCall= callData[id]?.lastDate ? new Date(callData[id].lastDate).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+    // Sparkline: last 7 days
+    const history = callData[id]?.history || [];
+    const now     = Date.now();
+    const days    = Array.from({length:7}, (_,i) => {
+      const dayStart = now - (6-i)*86400000;
+      const dayEnd   = dayStart + 86400000;
+      return history.filter(d => { const t=new Date(d).getTime(); return t>=dayStart && t<dayEnd; }).length;
+    });
+    const maxDay  = Math.max(...days, 1);
+    const bars    = days.map(v => {
+      const h = Math.round((v/maxDay)*28);
+      return `<div class="spark-bar" style="height:${Math.max(h,2)}px" title="${v} call${v!==1?'s':''}"></div>`;
+    }).join('');
+
+    return `
+      <tr>
+        <td class="stats-name-cell">
+          <div class="stats-avatar">${inst?.initials||id.slice(0,2).toUpperCase()}</div>
+          <div>
+            <div class="stats-inst-name">${inst?.name||id}</div>
+            <div class="stats-inst-sub">${inst?.baseSuburb||''}</div>
+          </div>
+        </td>
+        <td class="stats-num calls-num">${calls}</td>
+        <td class="stats-num enq-num">${enqs}</td>
+        <td class="stats-spark"><div class="sparkline">${bars}</div><div class="spark-label">7 days</div></td>
+        <td class="stats-last">${lastCall}</td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <section class="stats-page">
+      <div class="stats-header">
+        <h1 class="stats-title">Call &amp; Enquiry Stats</h1>
+        <p class="stats-sub">Recorded from this browser's local storage. Data is per-device.</p>
+      </div>
+      <div class="stats-summary-row">
+        <div class="stats-summary-card">
+          <div class="stats-summary-num">${totalCalls}</div>
+          <div class="stats-summary-label">Total Calls</div>
+        </div>
+        <div class="stats-summary-card">
+          <div class="stats-summary-num">${totalEnquiries}</div>
+          <div class="stats-summary-label">Total Enquiries</div>
+        </div>
+        <div class="stats-summary-card">
+          <div class="stats-summary-num">${allIds.length}</div>
+          <div class="stats-summary-label">Instructors</div>
+        </div>
+      </div>
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Instructor</th>
+              <th>Calls</th>
+              <th>Enquiries</th>
+              <th>Calls (last 7 days)</th>
+              <th>Last Call</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="stats-actions">
+        <button class="btn btn-outline" onclick="if(confirm('Clear all call records?')){localStorage.removeItem('pdin_calls');navigate('stats');}">Clear Call Records</button>
+        <button class="btn btn-outline" onclick="if(confirm('Clear all enquiry records?')){localStorage.removeItem('pdin_enquiries');navigate('stats');}">Clear Enquiry Records</button>
+      </div>
+      <p class="stats-note">Navigate here anytime via <code>#stats</code> in the URL.</p>
+    </section>`;
 }
 
 function navigate(page, extra, pushState = true) {
@@ -946,8 +1106,12 @@ function bindPageEvents() {
   const callBtn = document.getElementById('call-instructor-btn');
   if (callBtn) {
     callBtn.addEventListener('click', () => {
-      const ct = CONTACT[callBtn.dataset.id];
-      if (ct && ct.p) window.location.href = 'tel:' + dec(ct.p).replace(/\s/g, '');
+      const ct   = CONTACT[callBtn.dataset.id];
+      const inst = INSTRUCTORS.find(i => i.id === callBtn.dataset.id);
+      if (ct && ct.p) {
+        trackCall(callBtn.dataset.id, inst ? inst.name : callBtn.dataset.id);
+        window.location.href = 'tel:' + dec(ct.p).replace(/\s/g, '');
+      }
     });
   }
 
@@ -973,10 +1137,51 @@ function bindPageEvents() {
     });
   }
 
+  /* Photo upload zone */
+  const photoZone    = document.getElementById('photo-upload-zone');
+  const photoInput2  = document.getElementById('join-photo');
+  const photoPrompt  = document.getElementById('photo-upload-prompt');
+  const photoPreview = document.getElementById('photo-upload-preview');
+  const photoImg     = document.getElementById('photo-preview-img');
+  const photoRemove  = document.getElementById('photo-remove-btn');
+
+  function showPhotoPreview(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showFormError('join-form-box', 'Photo exceeds the 5 MB limit. Please choose a smaller image.');
+      photoInput2.value = ''; // clear the input so the file cannot be submitted
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    photoImg.src = url;
+    photoPreview.style.display = 'block';
+    photoPrompt.style.display  = 'none';
+    photoZone.classList.add('has-photo');
+  }
+  if (photoZone) {
+    photoZone.addEventListener('click', e => { if (!e.target.closest('#photo-remove-btn')) photoInput2.click(); });
+    photoInput2.addEventListener('change', () => { if (photoInput2.files[0]) showPhotoPreview(photoInput2.files[0]); });
+    photoRemove.addEventListener('click', e => {
+      e.stopPropagation();
+      photoInput2.value = '';
+      photoImg.src = '';
+      photoPreview.style.display = 'none';
+      photoPrompt.style.display  = 'flex';
+      photoZone.classList.remove('has-photo');
+    });
+    photoZone.addEventListener('dragover', e => { e.preventDefault(); photoZone.classList.add('drag-over'); });
+    photoZone.addEventListener('dragleave', () => photoZone.classList.remove('drag-over'));
+    photoZone.addEventListener('drop', e => {
+      e.preventDefault(); photoZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) { photoInput2.files = e.dataTransfer.files; showPhotoPreview(file); }
+    });
+  }
+
   /* Join form */
   const joinSubmit = document.getElementById('join-submit');
   if (joinSubmit) {
-    joinSubmit.addEventListener('click', () => {
+    joinSubmit.addEventListener('click', async () => {
       const name   = document.getElementById('join-name').value.trim();
       const email  = document.getElementById('join-email').value.trim();
       const dia    = (document.getElementById('join-dia') || {}).value?.trim() || '';
@@ -994,6 +1199,15 @@ function bindPageEvents() {
       const radius = document.getElementById('join-radius')?.value || '10';
       const vAuto  = document.getElementById('join-vehicle-auto')?.value || '';
       const vManual= document.getElementById('join-vehicle-manual')?.value || '';
+
+      // Photo (optional — validated, sent as real file via FormData)
+      const photoInput = document.getElementById('join-photo');
+      const photoFile  = photoInput?.files?.[0] || null;
+      if (photoFile && photoFile.size > 5 * 1024 * 1024) {
+        showFormError('join-form-box', 'Photo exceeds the 5 MB limit. Please choose a smaller image.');
+        photoInput.value = '';
+        return;
+      }
 
       // Collect availability
       const avail = ['avail-weekdays','avail-weekends','avail-evenings','avail-early']
@@ -1019,23 +1233,32 @@ function bindPageEvents() {
       }
 
       setButtonLoading('join-submit', true, 'Apply to Join');
+
+      // Build FormData — web3forms requires multipart/form-data to receive file attachments
+      const fd = new FormData();
+      fd.append('access_key',              w3fKey);
+      fd.append('subject',                 'New Instructor Application — ' + name);
+      fd.append('from_name',               'Professional Driving Instructors Network');
+      fd.append('form_type',               'Join the Network');
+      fd.append('Name',                    name);
+      fd.append('Email',                   email);
+      fd.append('Phone',                   phone);
+      fd.append('DIA_Number',              dia);
+      fd.append('Year_Started',            exp);
+      fd.append('Primary_Suburb',          suburb);
+      fd.append('Travel_Radius_km',        radius + ' km');
+      fd.append('Auto_Vehicle',            vAuto  || '(none)');
+      fd.append('Manual_Vehicle',          vManual|| '(none)');
+      fd.append('Availability',            avail.join(', ') || '(none selected)');
+      fd.append('Areas_of_Expertise',      expertise.join(' | '));
+      fd.append('Requirements_Confirmed',  'Yes — all requirements confirmed');
+      fd.append('About',                   bio);
+      if (photoFile) fd.append('attachment', photoFile, photoFile.name);
+
       fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_key: w3fKey,
-          subject: 'New Instructor Application — ' + name,
-          from_name: 'Professional Driving Instructors Network',
-          form_type: 'Join the Network',
-          Name: name, Email: email, Phone: phone,
-          DIA_Number: dia, Year_Started: exp,
-          Primary_Suburb: suburb, Travel_Radius_km: radius + ' km',
-          Auto_Vehicle: vAuto || '(none)', Manual_Vehicle: vManual || '(none)',
-          Availability: avail.join(', ') || '(none selected)',
-          Areas_of_Expertise: expertise.join(' | '),
-          Requirements_Confirmed: 'Yes — all requirements confirmed',
-          About: bio
-        })
+        headers: { 'Accept': 'application/json' }, // NO Content-Type — browser sets multipart boundary
+        body: fd
       })
       .then(res => res.json())
       .then(data => {
