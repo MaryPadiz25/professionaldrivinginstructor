@@ -602,13 +602,28 @@ function renderJoin() {
 
         <!-- Availability -->
         <div class="form-section-head">Availability</div>
+
         <div class="form-group">
+          <label class="form-label">Preferred Days</label>
           <div class="join-avail-grid">
-            <label class="join-toggle-label"><input type="checkbox" id="avail-weekdays" value="Weekdays" /><span>Weekdays</span></label>
-            <label class="join-toggle-label"><input type="checkbox" id="avail-weekends" value="Weekends" /><span>Weekends</span></label>
-            <label class="join-toggle-label"><input type="checkbox" id="avail-evenings" value="Evenings" /><span>Evenings</span></label>
-            <label class="join-toggle-label"><input type="checkbox" id="avail-early" value="Early Mornings" /><span>Early Mornings</span></label>
+            <label class="join-toggle-label"><input type="checkbox" id="avail-weekdays" value="Weekdays (Mon–Fri)" /><span>Weekdays (Mon–Fri)</span></label>
+            <label class="join-toggle-label"><input type="checkbox" id="avail-saturday" value="Saturday" /><span>Saturday</span></label>
+            <label class="join-toggle-label"><input type="checkbox" id="avail-sunday" value="Sunday" /><span>Sunday</span></label>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Preferred Time of Day <span class="form-label-optional">(select one or more)</span></label>
+          <div class="join-avail-grid">
+            <label class="join-toggle-label"><input type="checkbox" id="avail-morning" value="Morning (8am–12pm)" /><span>Morning (8am–12pm)</span></label>
+            <label class="join-toggle-label"><input type="checkbox" id="avail-afternoon" value="Afternoon (12pm–5pm)" /><span>Afternoon (12pm–5pm)</span></label>
+            <label class="join-toggle-label"><input type="checkbox" id="avail-evening" value="Evening (5pm–8pm)" /><span>Evening (5pm–8pm)</span></label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Specific Time <span class="form-label-optional">(optional)</span></label>
+          <input type="text" class="form-input" id="avail-specific" placeholder="e.g. after school (3:30pm+), before work, weekends only, flexible" />
         </div>
 
         <!-- Areas of Expertise -->
@@ -1054,7 +1069,11 @@ function navigate(page, extra, pushState = true) {
   window.scrollTo({ top: 0, behavior: 'instant' });
   updateActiveLinks(page);
   closeMenu();
-  if (pushState) history.pushState({ page, extra: extra||null }, '', extra ? `#${page}/${extra}` : `#${page}`);
+  if (pushState) history.pushState(
+    { page, extra: extra||null, searchLat: _searchLat||null, searchLng: _searchLng||null, searchLabel: _searchLabel||'' },
+    '',
+    extra ? `#${page}/${extra}` : `#${page}`
+  );
   bindPageEvents();
   setTimeout(initReveal, 50);
 }
@@ -1210,9 +1229,14 @@ function bindPageEvents() {
       }
 
       // Collect availability
-      const avail = ['avail-weekdays','avail-weekends','avail-evenings','avail-early']
+      const availDays  = ['avail-weekdays','avail-saturday','avail-sunday']
         .filter(id => document.getElementById(id)?.checked)
         .map(id => document.getElementById(id).value);
+      const availTimes = ['avail-morning','avail-afternoon','avail-evening']
+        .filter(id => document.getElementById(id)?.checked)
+        .map(id => document.getElementById(id).value);
+      const availSpecific = document.getElementById('avail-specific')?.value.trim() || '';
+      const avail = [...availDays, ...availTimes, ...(availSpecific ? ['Note: ' + availSpecific] : [])];
 
       // Collect expertise (3-5 required)
       const expertise = [...document.querySelectorAll('#join-expertise-grid input:checked')].map(c => c.value);
@@ -1249,7 +1273,9 @@ function bindPageEvents() {
       fd.append('Travel_Radius_km',        radius + ' km');
       fd.append('Auto_Vehicle',            vAuto  || '(none)');
       fd.append('Manual_Vehicle',          vManual|| '(none)');
-      fd.append('Availability',            avail.join(', ') || '(none selected)');
+      fd.append('Preferred_Days',          availDays.join(', ')   || '(none selected)');
+      fd.append('Preferred_Times',         availTimes.join(', ')  || '(none selected)');
+      fd.append('Specific_Time',           availSpecific          || '(not specified)');
       fd.append('Areas_of_Expertise',      expertise.join(' | '));
       fd.append('Requirements_Confirmed',  'Yes — all requirements confirmed');
       fd.append('About',                   bio);
@@ -1353,7 +1379,17 @@ function initReveal() {
   const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }); }, { threshold: 0.12 });
   els.forEach(el => obs.observe(el));
 }
-window.addEventListener('popstate', e => { if (e.state) navigate(e.state.page, e.state.extra||null, false); else navigate('home', null, false); });
+window.addEventListener('popstate', e => {
+  if (e.state) {
+    // Restore search coordinates so Find page re-renders correctly
+    _searchLat   = e.state.searchLat   || undefined;
+    _searchLng   = e.state.searchLng   || undefined;
+    _searchLabel = e.state.searchLabel || '';
+    navigate(e.state.page, e.state.extra||null, false);
+  } else {
+    navigate('home', null, false);
+  }
+});
 document.addEventListener('DOMContentLoaded', () => {
   bindNavEvents();
   const hash = window.location.hash.replace('#', '');
