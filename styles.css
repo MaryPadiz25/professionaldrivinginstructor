@@ -1779,6 +1779,30 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   justify-content: space-between;
   margin-top: 28px;
   gap: 12px;
+  flex-wrap: wrap;
+}
+.join-step-nav .join-next-btn {
+  flex-shrink: 1;
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+  word-break: break-word;
+}
+@media (max-width: 600px) {
+  .join-step-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .join-step-nav .join-next-btn,
+  .join-step-nav .join-back-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  /* When there's only a Next button (no Back), keep it right-aligned */
+  .join-step-nav > span:first-child + .join-next-btn {
+    align-self: flex-end;
+    width: auto;
+  }
 }
 .join-declaration-list {
   display: flex;
