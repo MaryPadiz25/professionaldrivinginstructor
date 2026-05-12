@@ -221,7 +221,7 @@ const ICONS = {
   user:       `<svg width="14" height="14" viewBox="2 2 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
   userLg:     `<svg width="24" height="24" viewBox="2 2 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
   pin:        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
-  car:        `<svg viewBox="-5 1 160 70" width="26" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(120,0) scale(-1,1)"><path stroke-width="8" d="M35 10 C-5 30 -10 30 2 45 C-5 30 -15 30 5 25 C-15 15 4 25 35 8 C40 -5 50 -8 70 -6 C98 -12 90 -5 105 1 C144 25 90 30 115 20 C110 55 175 10 85 50 C185 -10 119 54 125 10 M-8 34 C25 4 4 10 -2 45 C-6 9 -6 70 -2 40 C1 32 4 4 4 34"/><path stroke-width="8" d="M125 44 C90 44 109 45 150 38 C128 90 127 0 185 2 C129 50 158 20 100 0"/><line x1="8" y1="44" x2="86" y2="44" stroke-width="8"/><circle cx="26" cy="50" r="15" stroke-width="8"/><circle cx="26" cy="50" r="5" stroke-width="5"/><circle cx="94" cy="50" r="15" stroke-width="8"/><circle cx="94" cy="50" r="5" stroke-width="5"/></g></svg>`,
+  car:        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 4v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
   clock:      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
   dollar:     `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>`,
   users:      `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`,
@@ -479,6 +479,9 @@ function renderProfile(id) {
 }
 
 function renderJoin() {
+  const yearOptions = Array.from({length: 2026 - 1970 + 1}, (_, i) => 2026 - i)
+    .map(y => `<option value="${y}">${y}</option>`).join('');
+
   return `
     <div class="join-hero">
       <h1>Join the Network</h1>
@@ -498,210 +501,228 @@ function renderJoin() {
       <div class="apply-form-box" id="join-form-box">
         <div class="apply-form-title">Apply to Join</div>
 
-
-
-        <div class="form-group"><label class="form-label">Full Name <span>*</span></label><input type="text" class="form-input" placeholder="Your full name" id="join-name" /></div>
-        <div class="form-group"><label class="form-label">Email <span>*</span></label><input type="email" class="form-input" placeholder="your@email.com" id="join-email" /></div>
-        <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" placeholder="0412 345 678" id="join-phone" /></div>
-        <div class="form-group">
-          <label class="form-label">Year you started working as a driving instructor <span>*</span></label>
-          <select class="form-input" id="join-exp">
-            <option value="" disabled selected>Select year…</option>
-            <option value="2026">2026</option>
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2021">2021</option>
-            <option value="2020">2020</option>
-            <option value="2019">2019</option>
-            <option value="2018">2018</option>
-            <option value="2017">2017</option>
-            <option value="2016">2016</option>
-            <option value="2015">2015</option>
-            <option value="2014">2014</option>
-            <option value="2013">2013</option>
-            <option value="2012">2012</option>
-            <option value="2011">2011</option>
-            <option value="2010">2010</option>
-            <option value="2009">2009</option>
-            <option value="2008">2008</option>
-            <option value="2007">2007</option>
-            <option value="2006">2006</option>
-            <option value="2005">2005</option>
-            <option value="2004">2004</option>
-            <option value="2003">2003</option>
-            <option value="2002">2002</option>
-            <option value="2001">2001</option>
-            <option value="2000">2000</option>
-            <option value="1999">1999</option>
-            <option value="1998">1998</option>
-            <option value="1997">1997</option>
-            <option value="1996">1996</option>
-            <option value="1995">1995</option>
-            <option value="1994">1994</option>
-            <option value="1993">1993</option>
-            <option value="1992">1992</option>
-            <option value="1991">1991</option>
-            <option value="1990">1990</option>
-            <option value="1989">1989</option>
-            <option value="1988">1988</option>
-            <option value="1987">1987</option>
-            <option value="1986">1986</option>
-            <option value="1985">1985</option>
-            <option value="1984">1984</option>
-            <option value="1983">1983</option>
-            <option value="1982">1982</option>
-            <option value="1981">1981</option>
-            <option value="1980">1980</option>
-            <option value="1979">1979</option>
-            <option value="1978">1978</option>
-            <option value="1977">1977</option>
-            <option value="1976">1976</option>
-            <option value="1975">1975</option>
-            <option value="1974">1974</option>
-            <option value="1973">1973</option>
-            <option value="1972">1972</option>
-            <option value="1971">1971</option>
-            <option value="1970">1970</option>
-          </select>
+        <!-- Progress bar -->
+        <div class="join-progress-wrap" id="join-progress-wrap">
+          <div class="join-progress-bar"><div class="join-progress-fill" id="join-progress-fill"></div></div>
+          <div class="join-progress-label" id="join-progress-label">Step 1 of 7</div>
         </div>
-        <div class="form-group"><label class="form-label">DIA Number <span>*</span></label><input type="text" class="form-input" placeholder="Your Driving Instructor Authority number" id="join-dia" /><small class="form-hint">For verification purposes. This will not be displayed publicly.</small></div>
-        <div class="form-group"><label class="form-label">Tell us about yourself</label><textarea class="form-input" placeholder="Brief overview of your experience and teaching style" id="join-bio"></textarea></div>
 
-        <!-- Profile Photo Upload -->
-        <div class="form-group">
-          <label class="form-label">Profile Photo</label>
-          <div class="photo-upload-zone" id="photo-upload-zone">
-            <input type="file" id="join-photo" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" />
-            <div class="photo-upload-preview" id="photo-upload-preview" style="display:none">
-              <img id="photo-preview-img" src="" alt="Preview" />
-              <button type="button" class="photo-remove-btn" id="photo-remove-btn" aria-label="Remove photo">&#x2715;</button>
-            </div>
-            <div class="photo-upload-prompt" id="photo-upload-prompt">
-              <div class="photo-upload-icon">${ICONS.upload}</div>
-              <div class="photo-upload-text">
-                <span class="photo-upload-cta">Click to upload</span> or drag &amp; drop
+        <!-- ── STEP 1: Personal Details ── -->
+        <div class="join-step" id="join-step-1">
+          <div class="form-section-head join-step-head"><span class="join-step-num">1</span> Personal Details</div>
+          <div class="form-group"><label class="form-label">Full Name <span>*</span></label><input type="text" class="form-input" placeholder="Your full name" id="join-name" /></div>
+          <div class="form-group"><label class="form-label">Email <span>*</span></label><input type="email" class="form-input" placeholder="your@email.com" id="join-email" /></div>
+          <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" placeholder="0412 345 678" id="join-phone" /></div>
+          <div class="form-group">
+            <label class="form-label">Profile Photo</label>
+            <div class="photo-upload-zone" id="photo-upload-zone">
+              <input type="file" id="join-photo" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" />
+              <div class="photo-upload-preview" id="photo-upload-preview" style="display:none">
+                <img id="photo-preview-img" src="" alt="Preview" />
+                <button type="button" class="photo-remove-btn" id="photo-remove-btn" aria-label="Remove photo">&#x2715;</button>
               </div>
-              <div class="photo-upload-hint">JPG, PNG, WEBP — max 5 MB</div>
+              <div class="photo-upload-prompt" id="photo-upload-prompt">
+                <div class="photo-upload-icon">${ICONS.upload}</div>
+                <div class="photo-upload-text"><span class="photo-upload-cta">Click to upload</span> or drag &amp; drop</div>
+                <div class="photo-upload-hint">JPG, PNG, WEBP — max 5 MB</div>
+              </div>
+            </div>
+            <small class="form-hint">Your photo will be reviewed before being displayed on your public profile.</small>
+          </div>
+          <div class="join-step-nav">
+            <span></span>
+            <button class="btn btn-navy join-next-btn" data-next="2">Next: Professional Information →</button>
+          </div>
+        </div>
+
+        <!-- ── STEP 2: Professional Information ── -->
+        <div class="join-step" id="join-step-2" style="display:none">
+          <div class="form-section-head join-step-head"><span class="join-step-num">2</span> Professional Information</div>
+          <div class="form-group">
+            <label class="form-label">Year you started working as a professional driving instructor <span>*</span></label>
+            <select class="form-input" id="join-exp">
+              <option value="" disabled selected>Select year…</option>
+              ${yearOptions}
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">DIA Number <span>*</span></label><input type="text" class="form-input" placeholder="Your Driving Instructor Authority number" id="join-dia" /><small class="form-hint">For verification purposes. This will not be displayed publicly.</small></div>
+          <div class="form-group">
+            <label class="form-label">Automatic Vehicle</label>
+            <input type="text" class="form-input" placeholder="Vehicle make &amp; model (if applicable)" id="join-vehicle-auto" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Manual Vehicle</label>
+            <input type="text" class="form-input" placeholder="Vehicle make &amp; model (if applicable)" id="join-vehicle-manual" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Languages Spoken</label>
+            <div class="join-expertise-grid" id="join-languages-grid">
+              <label class="join-toggle-label"><input type="checkbox" value="English" /><span>English</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Mandarin" /><span>Mandarin</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Cantonese" /><span>Cantonese</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Hindi" /><span>Hindi</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Punjabi" /><span>Punjabi</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Vietnamese" /><span>Vietnamese</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Arabic" /><span>Arabic</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Greek" /><span>Greek</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Tagalog / Filipino" /><span>Tagalog / Filipino</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Korean" /><span>Korean</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Japanese" /><span>Japanese</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Thai" /><span>Thai</span></label>
+            </div>
+            <div class="form-group" style="margin-top:10px;margin-bottom:0">
+              <input type="text" class="form-input" id="join-lang-other" placeholder="Other language (if not listed above)" />
             </div>
           </div>
-          <small class="form-hint">Your photo will be reviewed before being displayed on your public profile.</small>
-        </div>
-
-        <!-- Vehicle Details -->
-        <div class="form-section-head">Vehicles</div>
-        <div class="form-group">
-          <label class="form-label">Automatic Vehicle</label>
-          <input type="text" class="form-input" placeholder="Vehicle make &amp; model (if applicable)" id="join-vehicle-auto" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Manual Vehicle</label>
-          <input type="text" class="form-input" placeholder="Vehicle make &amp; model (if applicable)" id="join-vehicle-manual" />
-        </div>
-
-        <!-- Availability -->
-        <div class="form-section-head">Availability</div>
-
-        <div class="form-group">
-          <label class="form-label">Preferred Days</label>
-          <div class="join-avail-grid">
-            <label class="join-toggle-label"><input type="checkbox" id="avail-weekdays" value="Weekdays (Mon–Fri)" /><span>Weekdays (Mon–Fri)</span></label>
-            <label class="join-toggle-label"><input type="checkbox" id="avail-saturday" value="Saturday" /><span>Saturday</span></label>
-            <label class="join-toggle-label"><input type="checkbox" id="avail-sunday" value="Sunday" /><span>Sunday</span></label>
+          <div class="join-step-nav">
+            <button class="btn btn-outline join-back-btn" data-back="1">← Back</button>
+            <button class="btn btn-navy join-next-btn" data-next="3">Next: Areas of Expertise →</button>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Preferred Time of Day <span class="form-label-optional">(select one or more)</span></label>
-          <div class="join-avail-grid">
-            <label class="join-toggle-label"><input type="checkbox" id="avail-morning" value="Morning (8am–12pm)" /><span>Morning (8am–12pm)</span></label>
-            <label class="join-toggle-label"><input type="checkbox" id="avail-afternoon" value="Afternoon (12pm–5pm)" /><span>Afternoon (12pm–5pm)</span></label>
-            <label class="join-toggle-label"><input type="checkbox" id="avail-evening" value="Evening (5pm–8pm)" /><span>Evening (5pm–8pm)</span></label>
+        <!-- ── STEP 3: Areas of Expertise ── -->
+        <div class="join-step" id="join-step-3" style="display:none">
+          <div class="form-section-head join-step-head"><span class="join-step-num">3</span> Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(select 3–5)</span></div>
+          <div class="form-group">
+            <div class="join-expertise-grid" id="join-expertise-grid">
+              <label class="join-toggle-label"><input type="checkbox" value="First-Time &amp; Learner Drivers" /><span>First-Time &amp; Learner Drivers</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Nervous &amp; Confidence Building Drivers" /><span>Nervous &amp; Confidence Building Drivers</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="VicRoads Test Preparation" /><span>VicRoads Test Preparation</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Defensive Driving Techniques" /><span>Defensive Driving Techniques</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Adult Learners &amp; Late Starters" /><span>Adult Learners &amp; Late Starters</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Overseas Licence Conversion" /><span>Overseas Licence Conversion</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Manual Driving Instruction" /><span>Manual Driving Instruction</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Advanced Driving Confidence &amp; Decision Making" /><span>Advanced Driving Confidence &amp; Decision Making</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Highway &amp; Long Distance Driving" /><span>Highway &amp; Long Distance Driving</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Refresher Lessons (returning drivers)" /><span>Refresher Lessons (returning drivers)</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Logbook Hours &amp; Structured Driving Plans" /><span>Logbook Hours &amp; Structured Driving Plans</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="NDIS &amp; Supported Driving Instruction" /><span>NDIS &amp; Supported Driving Instruction</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Senior Driver Assessments &amp; Refresher Training" /><span>Senior Driver Assessments &amp; Refresher Training</span></label>
+              <label class="join-toggle-label"><input type="checkbox" value="Neurodiverse Learners" /><span>Neurodiverse Learners</span></label>
+            </div>
+            <small class="form-hint expertise-count-hint" id="expertise-count-hint"></small>
+          </div>
+          <div class="join-step-nav">
+            <button class="btn btn-outline join-back-btn" data-back="2">← Back</button>
+            <button class="btn btn-navy join-next-btn" data-next="4">Next: Lesson Locations →</button>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Specific Time <span class="form-label-optional">(optional)</span></label>
-          <input type="text" class="form-input" id="avail-specific" placeholder="e.g. after school (3:30pm+), before work, weekends only, flexible" />
-        </div>
-
-        <!-- Areas of Expertise -->
-        <div class="form-section-head">Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(choose 3–5)</span></div>
-        <div class="form-group">
-          <div class="join-expertise-grid" id="join-expertise-grid">
-            <label class="join-toggle-label"><input type="checkbox" value="First-Time &amp; Learner Drivers" /><span>First-Time &amp; Learner Drivers</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="Nervous &amp; Confidence Building Drivers" /><span>Nervous &amp; Confidence Building Drivers</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="VicRoads Test Preparation" /><span>VicRoads Test Preparation</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="Defensive Driving Techniques" /><span>Defensive Driving Techniques</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="Adult Learners &amp; Late Starters" /><span>Adult Learners &amp; Late Starters</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="Overseas Licence Conversion" /><span>Overseas Licence Conversion</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="Manual Driving Instruction" /><span>Manual Driving Instruction</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="Advanced Road Confidence &amp; Decision Making" /><span>Advanced Road Confidence &amp; Decision Making</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="Highway &amp; Long Distance Driving" /><span>Highway &amp; Long Distance Driving</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="Refresher Lessons (returning drivers)" /><span>Refresher Lessons (returning drivers)</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="Logbook Hours &amp; Structured Driving Plans" /><span>Logbook Hours &amp; Structured Driving Plans</span></label>
-            <label class="join-toggle-label"><input type="checkbox" value="NDIS &amp; Supported Driving Instruction" /><span>NDIS &amp; Supported Driving Instruction</span></label>
+        <!-- ── STEP 4: Lesson Locations ── -->
+        <div class="join-step" id="join-step-4" style="display:none">
+          <div class="form-section-head join-step-head"><span class="join-step-num">4</span> Lesson Locations</div>
+          <div class="form-group">
+            <label class="form-label">Primary Suburb <span>*</span></label>
+            <input type="text" class="form-input" placeholder="e.g. Doncaster VIC" id="join-suburb" />
           </div>
-          <small class="form-hint expertise-count-hint" id="expertise-count-hint"></small>
-        </div>
-
-        <!-- Service Area -->
-        <div class="form-section-head">Where do you provide lessons?</div>
-        <div class="form-group">
-          <label class="form-label">Primary Suburb <span>*</span></label>
-          <input type="text" class="form-input" placeholder="e.g. Doncaster VIC" id="join-suburb" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">How far are you willing to travel?</label>
-          <select class="form-input" id="join-radius">
-            <option value="10" selected>10 km</option>
-            <option value="15">15 km</option>
-            <option value="20">20 km</option>
-            <option value="30">30 km</option>
-            <option value="50">50 km</option>
-          </select>
-        </div>
-
-
-        <!-- Instructor Requirements -->
-        <div class="form-group join-requirements-group">
-          <div class="join-req-title">Instructor Requirements <span class="req-required">*</span></div>
-          <div class="join-req-subtitle">Please tick to confirm you meet all of the following requirements:</div>
-          <div class="join-req-box">
-            <div class="join-req-section-head">Licensing &amp; Compliance</div>
-            <ul class="join-req-list">
-              <li>Current Driving Instructor Authority (DIA)</li>
-              <li>Valid Working With Children Check (WWCC)</li>
-            </ul>
-            <div class="join-req-section-head">Vehicle Standards</div>
-            <ul class="join-req-list">
-              <li>Fully registered and roadworthy vehicle suitable for professional driving instruction</li>
-              <li>Dual-controlled vehicle fitted and operational</li>
-              <li>Clean, safe, and presentable condition suitable for learner drivers</li>
-            </ul>
-            <div class="join-req-section-head">Insurance</div>
-            <ul class="join-req-list">
-              <li>Comprehensive motor vehicle insurance covering use of the vehicle for paid driving instruction</li>
-            </ul>
-            <div class="join-req-section-head">Professional Standards</div>
-            <ul class="join-req-list">
-              <li>Maintain safe, professional, and student-focused instruction standards consistent with industry expectations</li>
-              <li>Have appropriate professional driving instruction experience and competency to deliver safe, structured, and effective driving lessons</li>
-            </ul>
+          <div class="form-group">
+            <label class="form-label">How far are you willing to travel?</label>
+            <select class="form-input" id="join-radius">
+              <option value="10" selected>10 km</option>
+              <option value="15">15 km</option>
+              <option value="20">20 km</option>
+              <option value="30">30 km</option>
+              <option value="50">50 km</option>
+            </select>
           </div>
-          <label class="join-req-confirm">
-            <input type="checkbox" id="join-req-check" />
-            <span>I confirm I meet all of the above Instructor Requirements</span>
-          </label>
+          <div class="join-step-nav">
+            <button class="btn btn-outline join-back-btn" data-back="3">← Back</button>
+            <button class="btn btn-navy join-next-btn" data-next="5">Next: Availability →</button>
+          </div>
         </div>
 
-        <button class="btn btn-navy btn-full btn-lg" id="join-submit">Apply to Join</button>
-        <div class="join-approval-notice">
-          <p>Once your instructor profile has been approved, you will receive a confirmation email. Your profile, including your photo and submitted details, will then be visible to users, allowing them to view your information and contact you directly.</p>
-          <p>If you have any questions or require assistance, please contact our team at <a href="mailto:support@professionaldrivinginstructorsnetwork.com">support@professionaldrivinginstructorsnetwork.com</a></p>
+        <!-- ── STEP 5: Availability ── -->
+        <div class="join-step" id="join-step-5" style="display:none">
+          <div class="form-section-head join-step-head"><span class="join-step-num">5</span> Availability</div>
+          <div class="form-group">
+            <label class="form-label">Preferred Days</label>
+            <div class="join-avail-grid">
+              <label class="join-toggle-label"><input type="checkbox" id="avail-weekdays" value="Weekdays (Mon–Fri)" /><span>Weekdays (Mon–Fri)</span></label>
+              <label class="join-toggle-label"><input type="checkbox" id="avail-saturday" value="Saturday" /><span>Saturday</span></label>
+              <label class="join-toggle-label"><input type="checkbox" id="avail-sunday" value="Sunday" /><span>Sunday</span></label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Preferred Times</label>
+            <div class="join-avail-grid">
+              <label class="join-toggle-label"><input type="checkbox" id="avail-morning" value="Morning (8am–12pm)" /><span>Morning (8am–12pm)</span></label>
+              <label class="join-toggle-label"><input type="checkbox" id="avail-afternoon" value="Afternoon (12pm–5pm)" /><span>Afternoon (12pm–5pm)</span></label>
+              <label class="join-toggle-label"><input type="checkbox" id="avail-evening" value="Evening (5pm–8pm)" /><span>Evening (5pm–8pm)</span></label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Typical Availability Notes <span class="form-label-optional">(optional)</span></label>
+            <input type="text" class="form-input" id="avail-specific" placeholder='e.g. "Usually available weekdays after 3pm."' />
+          </div>
+          <div class="join-step-nav">
+            <button class="btn btn-outline join-back-btn" data-back="4">← Back</button>
+            <button class="btn btn-navy join-next-btn" data-next="6">Next: About You →</button>
+          </div>
         </div>
-        <p class="join-reserve-note">Professional Driving Instructors Network reserves the right to verify credentials before approval.</p>
+
+        <!-- ── STEP 6: About You ── -->
+        <div class="join-step" id="join-step-6" style="display:none">
+          <div class="form-section-head join-step-head"><span class="join-step-num">6</span> About You</div>
+          <div class="form-group">
+            <label class="form-label">Tell us about yourself</label>
+            <small class="form-hint" style="display:block;margin-bottom:8px">Tell learners a little about your teaching style, experience, personality, and what type of students you work best with.</small>
+            <textarea class="form-input" placeholder="e.g. I have 15 years of experience working with nervous drivers and first-timers. My approach is calm and structured…" id="join-bio" style="min-height:140px"></textarea>
+          </div>
+          <div class="join-step-nav">
+            <button class="btn btn-outline join-back-btn" data-back="5">← Back</button>
+            <button class="btn btn-navy join-next-btn" data-next="7">Next: Compliance →</button>
+          </div>
+        </div>
+
+        <!-- ── STEP 7: Compliance & Declaration ── -->
+        <div class="join-step" id="join-step-7" style="display:none">
+          <div class="form-section-head join-step-head"><span class="join-step-num">7</span> Instructor Requirements &amp; Compliance</div>
+          <div class="form-group join-requirements-group">
+            <div class="join-req-subtitle">Please review and confirm you meet all of the following requirements:</div>
+            <div class="join-req-box">
+              <div class="join-req-section-head">Licensing &amp; Compliance</div>
+              <ul class="join-req-list">
+                <li>Current Driving Instructor Authority (DIA)</li>
+                <li>Valid Working With Children Check (WWCC)</li>
+              </ul>
+              <div class="join-req-section-head">Vehicle Standards</div>
+              <ul class="join-req-list">
+                <li>Fully registered and roadworthy vehicle suitable for professional driving instruction</li>
+                <li>Dual-controlled vehicle fitted and operational</li>
+                <li>Clean, safe, and presentable condition suitable for learner drivers</li>
+              </ul>
+              <div class="join-req-section-head">Insurance</div>
+              <ul class="join-req-list">
+                <li>Comprehensive motor vehicle insurance covering use of the vehicle for paid driving instruction</li>
+              </ul>
+              <div class="join-req-section-head">Professional Standards</div>
+              <ul class="join-req-list">
+                <li>Maintain safe, professional, and student-focused instruction standards consistent with industry expectations</li>
+                <li>Have appropriate professional driving instruction experience and competency to deliver safe, structured, and effective driving lessons</li>
+              </ul>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="join-req-title" style="margin-bottom:14px">Instructor Declaration <span class="req-required">*</span></div>
+            <div class="join-declaration-list">
+              <label class="join-req-confirm"><input type="checkbox" id="join-decl-1" /><span>I confirm I meet all Instructor Requirements outlined above.</span></label>
+              <label class="join-req-confirm"><input type="checkbox" id="join-decl-2" /><span>I confirm that the information provided is true and accurate to the best of my knowledge.</span></label>
+              <label class="join-req-confirm"><input type="checkbox" id="join-decl-3" /><span>I understand that submission does not guarantee approval and that my application may be reviewed before my profile is published.</span></label>
+              <label class="join-req-confirm"><input type="checkbox" id="join-decl-4" /><span>I agree to maintain accurate and up-to-date information on my profile.</span></label>
+            </div>
+          </div>
+          <div class="join-step-nav">
+            <button class="btn btn-outline join-back-btn" data-back="6">← Back</button>
+            <span></span>
+          </div>
+          <button class="btn btn-navy btn-full btn-lg" id="join-submit" style="margin-top:24px">Apply to Join</button>
+          <div class="join-approval-notice">
+            <p>Once your instructor profile has been approved, you will receive a confirmation email. Your profile, including your photo and submitted details, will then be visible to users, allowing them to view your information and contact you directly.</p>
+            <p>If you have any questions or require assistance, please contact our team at <a href="mailto:support@professionaldrivinginstructorsnetwork.com">support@professionaldrivinginstructorsnetwork.com</a></p>
+          </div>
+          <p class="join-reserve-note">Professional Driving Instructors Network reserves the right to verify credentials before approval.</p>
+        </div>
+
       </div>
     </div>`;
 }
@@ -1066,7 +1087,7 @@ function renderStatsPage() {
 function navigate(page, extra, pushState = true) {
   const app = document.getElementById('app');
   app.innerHTML = getPageContent(page, extra);
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   updateActiveLinks(page);
   closeMenu();
   if (pushState) history.pushState(
@@ -1133,6 +1154,55 @@ function bindPageEvents() {
       }
     });
   }
+
+  /* Join step navigation */
+  document.querySelectorAll('.join-next-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nextStep = parseInt(btn.dataset.next);
+      const curStep  = nextStep - 1;
+
+      // Validate current step before advancing
+      if (curStep === 1) {
+        const name  = document.getElementById('join-name')?.value.trim();
+        const email = document.getElementById('join-email')?.value.trim();
+        if (!name || !email) { showFormError('join-form-box', 'Please fill in your full name and email address.'); return; }
+      }
+      if (curStep === 2) {
+        const dia = document.getElementById('join-dia')?.value.trim();
+        if (!dia) { showFormError('join-form-box', 'Please enter your DIA number.'); return; }
+      }
+      if (curStep === 3) {
+        const expertise = [...document.querySelectorAll('#join-expertise-grid input:checked')];
+        if (expertise.length < 3 || expertise.length > 5) { showFormError('join-form-box', 'Please select between 3 and 5 areas of expertise.'); return; }
+      }
+      if (curStep === 4) {
+        const suburb = document.getElementById('join-suburb')?.value.trim();
+        if (!suburb) { showFormError('join-form-box', 'Please enter your primary suburb.'); return; }
+      }
+
+      document.getElementById(`join-step-${curStep}`).style.display = 'none';
+      document.getElementById(`join-step-${nextStep}`).style.display = 'block';
+      updateJoinProgress(nextStep);
+      window.scrollTo({ top: document.getElementById('join-form-box').getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+    });
+  });
+  document.querySelectorAll('.join-back-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const backStep = parseInt(btn.dataset.back);
+      const curStep  = backStep + 1;
+      document.getElementById(`join-step-${curStep}`).style.display = 'none';
+      document.getElementById(`join-step-${backStep}`).style.display = 'block';
+      updateJoinProgress(backStep);
+      window.scrollTo({ top: document.getElementById('join-form-box').getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+    });
+  });
+  function updateJoinProgress(step) {
+    const fill  = document.getElementById('join-progress-fill');
+    const label = document.getElementById('join-progress-label');
+    if (fill)  fill.style.width  = Math.round((step / 7) * 100) + '%';
+    if (label) label.textContent = `Step ${step} of 7`;
+  }
+  updateJoinProgress(1);
 
   /* Expertise counter */
   const expertiseGrid = document.getElementById('join-expertise-grid');
@@ -1205,19 +1275,27 @@ function bindPageEvents() {
       const email  = document.getElementById('join-email').value.trim();
       const dia    = (document.getElementById('join-dia') || {}).value?.trim() || '';
       const suburb = (document.getElementById('join-suburb') || {}).value?.trim() || '';
-      const reqOK  = document.getElementById('join-req-check')?.checked || false;
+      const decl1  = document.getElementById('join-decl-1')?.checked || false;
+      const decl2  = document.getElementById('join-decl-2')?.checked || false;
+      const decl3  = document.getElementById('join-decl-3')?.checked || false;
+      const decl4  = document.getElementById('join-decl-4')?.checked || false;
 
-      if (!name || !email)  { showFormError('join-form-box', 'Please fill in your full name and email address.'); return; }
-      if (!dia)             { showFormError('join-form-box', 'Please enter your DIA number.'); return; }
-      if (!suburb)          { showFormError('join-form-box', 'Please enter your primary suburb.'); return; }
-      if (!reqOK)           { showFormError('join-form-box', 'Please confirm you meet all Instructor Requirements.'); return; }
+      if (!name || !email)             { showFormError('join-form-box', 'Please fill in your full name and email address.'); return; }
+      if (!dia)                        { showFormError('join-form-box', 'Please enter your DIA number.'); return; }
+      if (!suburb)                     { showFormError('join-form-box', 'Please enter your primary suburb.'); return; }
+      if (!decl1 || !decl2 || !decl3 || !decl4) { showFormError('join-form-box', 'Please tick all four declaration checkboxes to proceed.'); return; }
 
-      const phone  = document.getElementById('join-phone')?.value || '';
-      const exp    = document.getElementById('join-exp')?.value || '';
-      const bio    = document.getElementById('join-bio')?.value || '';
-      const radius = document.getElementById('join-radius')?.value || '10';
-      const vAuto  = document.getElementById('join-vehicle-auto')?.value || '';
-      const vManual= document.getElementById('join-vehicle-manual')?.value || '';
+      const phone   = document.getElementById('join-phone')?.value || '';
+      const exp     = document.getElementById('join-exp')?.value || '';
+      const bio     = document.getElementById('join-bio')?.value || '';
+      const radius  = document.getElementById('join-radius')?.value || '10';
+      const vAuto   = document.getElementById('join-vehicle-auto')?.value || '';
+      const vManual = document.getElementById('join-vehicle-manual')?.value || '';
+
+      // Languages
+      const languages = [...document.querySelectorAll('#join-languages-grid input:checked')].map(c => c.value);
+      const langOther = document.getElementById('join-lang-other')?.value.trim() || '';
+      if (langOther) languages.push(langOther);
 
       // Photo (optional — validated, sent as real file via FormData)
       const photoInput = document.getElementById('join-photo');
@@ -1273,11 +1351,12 @@ function bindPageEvents() {
       fd.append('Travel_Radius_km',        radius + ' km');
       fd.append('Auto_Vehicle',            vAuto  || '(none)');
       fd.append('Manual_Vehicle',          vManual|| '(none)');
+      fd.append('Languages_Spoken',        languages.length ? languages.join(', ') : '(not specified)');
       fd.append('Preferred_Days',          availDays.join(', ')   || '(none selected)');
       fd.append('Preferred_Times',         availTimes.join(', ')  || '(none selected)');
-      fd.append('Specific_Time',           availSpecific          || '(not specified)');
+      fd.append('Availability_Notes',      availSpecific          || '(not specified)');
       fd.append('Areas_of_Expertise',      expertise.join(' | '));
-      fd.append('Requirements_Confirmed',  'Yes — all requirements confirmed');
+      fd.append('Declaration_Confirmed',   'Yes — all 4 declaration points confirmed');
       fd.append('About',                   bio);
       if (photoFile) fd.append('attachment', photoFile, photoFile.name);
 
@@ -1391,6 +1470,7 @@ window.addEventListener('popstate', e => {
   }
 });
 document.addEventListener('DOMContentLoaded', () => {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   bindNavEvents();
   const hash = window.location.hash.replace('#', '');
   if (hash) {
