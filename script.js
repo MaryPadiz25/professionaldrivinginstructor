@@ -1104,7 +1104,7 @@ function bindPageEvents() {
     el.addEventListener('click', e => { e.preventDefault(); navigate(el.dataset.page); });
   });
   document.querySelectorAll('[data-action="profile"]').forEach(el => {
-    el.addEventListener('click', e => { e.preventDefault(); navigate('profile', el.dataset.id); });
+    el.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); navigate('profile', el.dataset.id); });
   });
 
   /* Hero suburb search */
