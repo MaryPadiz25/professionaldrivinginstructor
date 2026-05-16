@@ -2112,3 +2112,79 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 @media (max-width: 600px) {
   .expertise-group-head { font-size: 11px; margin: 20px 0 9px; }
 }
+/* =============================================
+   TOAST NOTIFICATION
+   ============================================= */
+.pdin-toast {
+  position: fixed;
+  top: calc(var(--nav-h) + 16px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-18px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1.5px solid #f5c6c6;
+  border-left: 4px solid #e53e3e;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(229,62,62,0.10);
+  padding: 13px 16px 13px 14px;
+  min-width: 280px;
+  max-width: min(480px, calc(100vw - 32px));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s cubic-bezier(0.4,0,0.2,1),
+              transform 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+.pdin-toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+.pdin-toast--hiding {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-12px);
+  pointer-events: none;
+}
+.pdin-toast-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: #e53e3e;
+}
+.pdin-toast-msg {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-dark);
+  line-height: 1.45;
+}
+.pdin-toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--mid-gray);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 0 0 6px;
+  cursor: pointer;
+  transition: color var(--transition);
+  display: flex;
+  align-items: center;
+}
+.pdin-toast-close:hover { color: var(--text-dark); }
+
+@media (max-width: 600px) {
+  .pdin-toast {
+    top: calc(var(--nav-h) + 10px);
+    min-width: 0;
+    width: calc(100vw - 24px);
+    left: 12px;
+    right: 12px;
+    transform: translateY(-18px);
+  }
+  .pdin-toast--visible  { transform: translateY(0); }
+  .pdin-toast--hiding   { transform: translateY(-12px); }
+  .pdin-toast-msg { font-size: 13.5px; }
+}
