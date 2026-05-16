@@ -380,7 +380,13 @@ function renderFind(searchLat, searchLng, searchLabel) {
 
   const cardsHTML = sorted.map(({ inst, km }) => instructorCardHTML(inst, km)).join('');
   const searchInfo = searchLabel
-    ? `<p class="find-search-info">${ICONS.mapPin} Results near <strong>${searchLabel}</strong> — sorted by distance &nbsp;<a href="#" id="clear-search-link">Clear</a></p>`
+    ? `<div class="find-search-info">
+        <div class="find-search-info-pill">
+          <span class="find-search-info-icon">${ICONS.mapPin}</span>
+          <span class="find-search-info-text">Results near <strong>${searchLabel}</strong> <span class="find-search-info-sub">— sorted by distance</span></span>
+        </div>
+        <a href="#" id="clear-search-link" class="find-search-clear">Clear</a>
+      </div>`
     : '';
 
   return `
@@ -583,22 +589,40 @@ function renderJoin() {
         <!-- ── STEP 3: Areas of Expertise ── -->
         <div class="join-step" id="join-step-3" style="display:none">
           <div class="form-section-head join-step-head"><span class="join-step-num">3</span> Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(select 3–5)</span></div>
+          <p style="font-size:14px;color:var(--text-light);margin:-4px 0 18px;">Choose the learners you enjoy working with most.</p>
           <div class="form-group">
-            <div class="join-expertise-grid" id="join-expertise-grid">
-              <label class="join-toggle-label"><input type="checkbox" value="First-Time &amp; Learner Drivers" /><span>First-Time &amp; Learner Drivers</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Nervous &amp; Confidence Building Drivers" /><span>Nervous &amp; Confidence Building Drivers</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="VicRoads Test Preparation" /><span>VicRoads Test Preparation</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Defensive Driving Techniques" /><span>Defensive Driving Techniques</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Adult Learners &amp; Late Starters" /><span>Adult Learners &amp; Late Starters</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Overseas Licence Conversion" /><span>Overseas Licence Conversion</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Manual Driving Instruction" /><span>Manual Driving Instruction</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Advanced Driving Confidence &amp; Decision Making" /><span>Advanced Driving Confidence &amp; Decision Making</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Highway &amp; Long Distance Driving" /><span>Highway &amp; Long Distance Driving</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Refresher Lessons (returning drivers)" /><span>Refresher Lessons (returning drivers)</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Logbook Hours &amp; Structured Driving Plans" /><span>Logbook Hours &amp; Structured Driving Plans</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="NDIS &amp; Supported Driving Instruction" /><span>NDIS &amp; Supported Driving Instruction</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Senior Driver Assessments &amp; Refresher Training" /><span>Senior Driver Assessments &amp; Refresher Training</span></label>
-              <label class="join-toggle-label"><input type="checkbox" value="Neurodiverse Learners" /><span>Neurodiverse Learners</span></label>
+            <div id="join-expertise-grid">
+
+              <p class="expertise-group-head">Core Instruction Areas</p>
+              <div class="join-expertise-grid expertise-group-items">
+                <label class="join-toggle-label"><input type="checkbox" value="First-Time &amp; Learner Drivers" /><span>First-Time &amp; Learner Drivers</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Nervous &amp; Confidence Building Drivers" /><span>Nervous &amp; Confidence Building Drivers</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Adult Learners &amp; Late Starters" /><span>Adult Learners &amp; Late Starters</span></label>
+              </div>
+
+              <p class="expertise-group-head">Driving Test Preparation &amp; Training Systems</p>
+              <div class="join-expertise-grid expertise-group-items">
+                <label class="join-toggle-label"><input type="checkbox" value="VicRoads Test Preparation" /><span>VicRoads Test Preparation</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Logbook Hours &amp; Structured Driving Plans" /><span>Logbook Hours &amp; Structured Driving Plans</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Refresher Lessons (returning drivers)" /><span>Refresher Lessons (returning drivers)</span></label>
+              </div>
+
+              <p class="expertise-group-head">Skill Development &amp; Road Confidence</p>
+              <div class="join-expertise-grid expertise-group-items">
+                <label class="join-toggle-label"><input type="checkbox" value="Defensive Driving Techniques" /><span>Defensive Driving Techniques</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Highway &amp; Long Distance Driving" /><span>Highway &amp; Long Distance Driving</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Advanced Driving Confidence &amp; Decision Making" /><span>Advanced Driving Confidence &amp; Decision Making</span></label>
+              </div>
+
+              <p class="expertise-group-head">Specialist Instruction Areas</p>
+              <div class="join-expertise-grid expertise-group-items">
+                <label class="join-toggle-label"><input type="checkbox" value="Overseas Licence Conversion" /><span>Overseas Licence Conversion</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Manual Driving Instruction" /><span>Manual Driving Instruction</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Senior Driver Assessments &amp; Refresher Training" /><span>Senior Driver Assessments &amp; Refresher Training</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="NDIS &amp; Supported Driving Instruction" /><span>NDIS &amp; Supported Driving Instruction</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Neurodiverse Learners" /><span>Neurodiverse Learners</span></label>
+              </div>
+
             </div>
             <small class="form-hint expertise-count-hint" id="expertise-count-hint"></small>
           </div>
@@ -627,13 +651,13 @@ function renderJoin() {
           </div>
           <div class="join-step-nav">
             <button class="btn btn-outline join-back-btn" data-back="3">← Back</button>
-            <button class="btn btn-navy join-next-btn" data-next="5">Next: Availability →</button>
+            <button class="btn btn-navy join-next-btn" data-next="5">Next: Availability &amp; Lesson Details →</button>
           </div>
         </div>
 
-        <!-- ── STEP 5: Availability ── -->
+        <!-- ── STEP 5: Availability & Lesson Details ── -->
         <div class="join-step" id="join-step-5" style="display:none">
-          <div class="form-section-head join-step-head"><span class="join-step-num">5</span> Availability</div>
+          <div class="form-section-head join-step-head"><span class="join-step-num">5</span> Availability &amp; Lesson Details</div>
           <div class="form-group">
             <label class="form-label">Preferred Days</label>
             <div class="join-avail-grid">
@@ -654,6 +678,25 @@ function renderJoin() {
             <label class="form-label">Typical Availability Notes <span class="form-label-optional">(optional)</span></label>
             <input type="text" class="form-input" id="avail-specific" placeholder='e.g. "Usually available weekdays after 3pm."' />
           </div>
+
+          <!-- Lesson Fees -->
+          <div class="form-section-head join-step-head" style="margin-top:28px">Lesson Fees</div>
+          <div class="form-group">
+            <label class="form-label">60 minute lesson <span>*</span></label>
+            <div class="fee-input-wrap">
+              <span class="fee-input-prefix">$</span>
+              <input type="number" class="form-input fee-input" id="join-fee-60" placeholder="e.g. 110" min="0" step="1" />
+            </div>
+            <small class="form-hint">Typical range on the platform: $85 – $135 per 60 minute lesson</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">90 minute lesson <span class="form-label-optional">(optional)</span></label>
+            <div class="fee-input-wrap">
+              <span class="fee-input-prefix">$</span>
+              <input type="number" class="form-input fee-input" id="join-fee-90" placeholder="e.g. 155" min="0" step="1" />
+            </div>
+          </div>
+
           <div class="join-step-nav">
             <button class="btn btn-outline join-back-btn" data-back="4">← Back</button>
             <button class="btn btn-navy join-next-btn" data-next="6">Next: About You →</button>
@@ -666,7 +709,7 @@ function renderJoin() {
           <div class="form-group">
             <label class="form-label">Tell us about yourself</label>
             <small class="form-hint" style="display:block;margin-bottom:8px">Tell learners a little about your teaching style, experience, personality, and what type of students you work best with.</small>
-            <textarea class="form-input" placeholder="e.g. I have 15 years of experience working with nervous drivers and first-timers. My approach is calm and structured…" id="join-bio" style="min-height:140px"></textarea>
+            <textarea class="form-input" placeholder="e.g. I'm a calm and patient driving instructor who focuses on building confidence through simple, structured lessons. I work with a range of students, including beginners, nervous drivers, and those preparing for their driving test. My goal is to help learners become safe, independent drivers not just pass the driving test." id="join-bio" style="min-height:140px"></textarea>
           </div>
           <div class="join-step-nav">
             <button class="btn btn-outline join-back-btn" data-back="5">← Back</button>
@@ -705,10 +748,7 @@ function renderJoin() {
           <div class="form-group">
             <div class="join-req-title" style="margin-bottom:14px">Instructor Declaration <span class="req-required">*</span></div>
             <div class="join-declaration-list">
-              <label class="join-req-confirm"><input type="checkbox" id="join-decl-1" /><span>I confirm I meet all Instructor Requirements outlined above.</span></label>
-              <label class="join-req-confirm"><input type="checkbox" id="join-decl-2" /><span>I confirm that the information provided is true and accurate to the best of my knowledge.</span></label>
-              <label class="join-req-confirm"><input type="checkbox" id="join-decl-3" /><span>I understand that submission does not guarantee approval and that my application may be reviewed before my profile is published.</span></label>
-              <label class="join-req-confirm"><input type="checkbox" id="join-decl-4" /><span>I agree to maintain accurate and up-to-date information on my profile.</span></label>
+              <label class="join-req-confirm"><input type="checkbox" id="join-decl-1" /><span>I confirm that I meet the Instructor Requirements outlined above and that the information provided is true and accurate. I understand that submission does not guarantee approval and that my application may be reviewed before my profile is published. I agree to keep my profile information accurate and up to date.</span></label>
             </div>
           </div>
           <div class="join-step-nav">
@@ -1090,11 +1130,11 @@ function navigate(page, extra, pushState = true) {
   requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   updateActiveLinks(page);
   closeMenu();
-  if (pushState) history.pushState(
-    { page, extra: extra||null, searchLat: _searchLat||null, searchLng: _searchLng||null, searchLabel: _searchLabel||'' },
-    '',
-    extra ? `#${page}/${extra}` : `#${page}`
-  );
+  if (pushState) {
+    const state = { page, extra: extra||null, searchLat: _searchLat||null, searchLng: _searchLng||null, searchLabel: _searchLabel||'' };
+    if (page === 'join') state.joinStep = 1;
+    history.pushState(state, '', extra ? `#${page}/${extra}` : `#${page}`);
+  }
   bindPageEvents();
   setTimeout(initReveal, 50);
 }
@@ -1155,7 +1195,97 @@ function bindPageEvents() {
     });
   }
 
-  /* Join step navigation */
+  /* ── Join form: step management with browser-history support ── */
+
+  // Collect all serialisable form values into a plain object
+  function collectJoinFormData() {
+    const get  = id => document.getElementById(id)?.value ?? '';
+    const chks = sel => [...document.querySelectorAll(sel)].filter(c => c.checked).map(c => c.value);
+    return {
+      name:        get('join-name'),
+      email:       get('join-email'),
+      phone:       get('join-phone'),
+      exp:         get('join-exp'),
+      dia:         get('join-dia'),
+      vAuto:       get('join-vehicle-auto'),
+      vManual:     get('join-vehicle-manual'),
+      langOther:   get('join-lang-other'),
+      suburb:      get('join-suburb'),
+      radius:      get('join-radius'),
+      availNote:   get('avail-specific'),
+      fee60:       get('join-fee-60'),
+      fee90:       get('join-fee-90'),
+      bio:         get('join-bio'),
+      languages:   chks('#join-languages-grid input'),
+      expertise:   chks('#join-expertise-grid input'),
+      availDays:   chks('#join-step-5 input[type="checkbox"][id^="avail-weekdays"], #join-step-5 input[type="checkbox"][id^="avail-saturday"], #join-step-5 input[type="checkbox"][id^="avail-sunday"]'),
+      availTimes:  chks('#join-step-5 input[type="checkbox"][id^="avail-morning"], #join-step-5 input[type="checkbox"][id^="avail-afternoon"], #join-step-5 input[type="checkbox"][id^="avail-evening"]'),
+      decl:        chks('#join-step-7 input[type="checkbox"]'),
+    };
+  }
+
+  // Restore form values from a saved data object (no file inputs — can't serialise those)
+  function restoreJoinFormData(d) {
+    if (!d) return;
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
+    set('join-name', d.name);  set('join-email', d.email); set('join-phone', d.phone);
+    set('join-exp', d.exp);    set('join-dia', d.dia);
+    set('join-vehicle-auto', d.vAuto); set('join-vehicle-manual', d.vManual);
+    set('join-lang-other', d.langOther);
+    set('join-suburb', d.suburb); set('join-radius', d.radius);
+    set('avail-specific', d.availNote); set('join-fee-60', d.fee60); set('join-fee-90', d.fee90); set('join-bio', d.bio);
+    const restoreChecks = (sel, vals) => {
+      if (!vals) return;
+      document.querySelectorAll(sel).forEach(c => { c.checked = vals.includes(c.value); });
+    };
+    restoreChecks('#join-languages-grid input', d.languages);
+    restoreChecks('#join-expertise-grid input', d.expertise);
+    restoreChecks('#join-step-5 input[type="checkbox"]', [...(d.availDays||[]), ...(d.availTimes||[])]);
+    restoreChecks('#join-step-7 input[type="checkbox"]', d.decl);
+    // Refresh expertise counter after restore
+    const hint = document.getElementById('expertise-count-hint');
+    if (hint) {
+      const count = (d.expertise || []).length;
+      if (count < 3) hint.textContent = `Select at least ${3-count} more`;
+      else if (count > 5) hint.textContent = 'Maximum 5 selected — please deselect one';
+      else hint.textContent = `${count} selected ✓`;
+      hint.style.color = (count < 3 || count > 5) ? '#e53e3e' : '#38a169';
+    }
+  }
+
+  function updateJoinProgress(step) {
+    const fill  = document.getElementById('join-progress-fill');
+    const label = document.getElementById('join-progress-label');
+    if (fill)  fill.style.width  = Math.round((step / 7) * 100) + '%';
+    if (label) label.textContent = `Step ${step} of 7`;
+  }
+
+  // Central function: show a step, update progress, optionally push a history entry
+  function goToJoinStep(step, pushToHistory) {
+    for (let i = 1; i <= 7; i++) {
+      const el = document.getElementById(`join-step-${i}`);
+      if (el) el.style.display = (i === step) ? 'block' : 'none';
+    }
+    // Clear any lingering validation error when moving between steps
+    const existingErr = document.querySelector('#join-form-box .form-error-msg');
+    if (existingErr) existingErr.remove();
+    updateJoinProgress(step);
+    const box = document.getElementById('join-form-box');
+    if (box) window.scrollTo({ top: box.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+    if (pushToHistory) {
+      history.pushState(
+        { page: 'join', extra: null, joinStep: step, joinFormData: collectJoinFormData(),
+          searchLat: _searchLat||null, searchLng: _searchLng||null, searchLabel: _searchLabel||'' },
+        '',
+        '#join'
+      );
+    }
+  }
+
+  // Expose so popstate can call it when the join page is already rendered
+  window._goToJoinStep = goToJoinStep;
+  window._restoreJoinFormData = restoreJoinFormData;
+
   document.querySelectorAll('.join-next-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const nextStep = parseInt(btn.dataset.next);
@@ -1165,43 +1295,37 @@ function bindPageEvents() {
       if (curStep === 1) {
         const name  = document.getElementById('join-name')?.value.trim();
         const email = document.getElementById('join-email')?.value.trim();
-        if (!name || !email) { showFormError('join-form-box', 'Please fill in your full name and email address.'); return; }
+        if (!name || !email) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 2) {
         const dia = document.getElementById('join-dia')?.value.trim();
-        if (!dia) { showFormError('join-form-box', 'Please enter your DIA number.'); return; }
+        if (!dia) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 3) {
         const expertise = [...document.querySelectorAll('#join-expertise-grid input:checked')];
-        if (expertise.length < 3 || expertise.length > 5) { showFormError('join-form-box', 'Please select between 3 and 5 areas of expertise.'); return; }
+        if (expertise.length < 3 || expertise.length > 5) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 4) {
         const suburb = document.getElementById('join-suburb')?.value.trim();
-        if (!suburb) { showFormError('join-form-box', 'Please enter your primary suburb.'); return; }
+        if (!suburb) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      }
+      if (curStep === 5) {
+        const fee60 = document.getElementById('join-fee-60')?.value.trim();
+        if (!fee60) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
       }
 
-      document.getElementById(`join-step-${curStep}`).style.display = 'none';
-      document.getElementById(`join-step-${nextStep}`).style.display = 'block';
-      updateJoinProgress(nextStep);
-      window.scrollTo({ top: document.getElementById('join-form-box').getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+      goToJoinStep(nextStep, true);
     });
   });
+
   document.querySelectorAll('.join-back-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const backStep = parseInt(btn.dataset.back);
-      const curStep  = backStep + 1;
-      document.getElementById(`join-step-${curStep}`).style.display = 'none';
-      document.getElementById(`join-step-${backStep}`).style.display = 'block';
-      updateJoinProgress(backStep);
-      window.scrollTo({ top: document.getElementById('join-form-box').getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+      goToJoinStep(backStep, true);
     });
   });
-  function updateJoinProgress(step) {
-    const fill  = document.getElementById('join-progress-fill');
-    const label = document.getElementById('join-progress-label');
-    if (fill)  fill.style.width  = Math.round((step / 7) * 100) + '%';
-    if (label) label.textContent = `Step ${step} of 7`;
-  }
+
+  // Set initial progress on first render (step 1, no history push — navigate() already pushed)
   updateJoinProgress(1);
 
   /* Expertise counter */
@@ -1276,14 +1400,11 @@ function bindPageEvents() {
       const dia    = (document.getElementById('join-dia') || {}).value?.trim() || '';
       const suburb = (document.getElementById('join-suburb') || {}).value?.trim() || '';
       const decl1  = document.getElementById('join-decl-1')?.checked || false;
-      const decl2  = document.getElementById('join-decl-2')?.checked || false;
-      const decl3  = document.getElementById('join-decl-3')?.checked || false;
-      const decl4  = document.getElementById('join-decl-4')?.checked || false;
 
-      if (!name || !email)             { showFormError('join-form-box', 'Please fill in your full name and email address.'); return; }
-      if (!dia)                        { showFormError('join-form-box', 'Please enter your DIA number.'); return; }
-      if (!suburb)                     { showFormError('join-form-box', 'Please enter your primary suburb.'); return; }
-      if (!decl1 || !decl2 || !decl3 || !decl4) { showFormError('join-form-box', 'Please tick all four declaration checkboxes to proceed.'); return; }
+      if (!name || !email)             { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!dia)                        { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!suburb)                     { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!decl1) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
 
       const phone   = document.getElementById('join-phone')?.value || '';
       const exp     = document.getElementById('join-exp')?.value || '';
@@ -1316,10 +1437,15 @@ function bindPageEvents() {
       const availSpecific = document.getElementById('avail-specific')?.value.trim() || '';
       const avail = [...availDays, ...availTimes, ...(availSpecific ? ['Note: ' + availSpecific] : [])];
 
+      // Lesson fees
+      const fee60 = document.getElementById('join-fee-60')?.value.trim() || '';
+      const fee90 = document.getElementById('join-fee-90')?.value.trim() || '';
+      if (!fee60) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+
       // Collect expertise (3-5 required)
       const expertise = [...document.querySelectorAll('#join-expertise-grid input:checked')].map(c => c.value);
       if (expertise.length < 3 || expertise.length > 5) {
-        showFormError('join-form-box', 'Please select between 3 and 5 areas of expertise.'); return;
+        showFormError('join-form-box', 'Please complete all required fields before continuing.'); return;
       }
 
       // Determine which web3forms key to use based on email match
@@ -1355,8 +1481,10 @@ function bindPageEvents() {
       fd.append('Preferred_Days',          availDays.join(', ')   || '(none selected)');
       fd.append('Preferred_Times',         availTimes.join(', ')  || '(none selected)');
       fd.append('Availability_Notes',      availSpecific          || '(not specified)');
+      fd.append('Fee_60min',               '$' + fee60);
+      fd.append('Fee_90min',               fee90 ? '$' + fee90 : '(not offered)');
       fd.append('Areas_of_Expertise',      expertise.join(' | '));
-      fd.append('Declaration_Confirmed',   'Yes — all 4 declaration points confirmed');
+      fd.append('Declaration_Confirmed',   'Yes — declaration confirmed');
       fd.append('About',                   bio);
       if (photoFile) fd.append('attachment', photoFile, photoFile.name);
 
@@ -1464,7 +1592,28 @@ window.addEventListener('popstate', e => {
     _searchLat   = e.state.searchLat   || undefined;
     _searchLng   = e.state.searchLng   || undefined;
     _searchLabel = e.state.searchLabel || '';
+
+    // If we're going back/forward within the Join form steps,
+    // and the join page is already rendered — just switch step, don't re-render
+    if (e.state.page === 'join' && e.state.joinStep) {
+      const joinFormBox = document.getElementById('join-form-box');
+      if (joinFormBox && document.getElementById('join-step-1')) {
+        // Page is already rendered — restore form data and jump to step
+        if (window._restoreJoinFormData) window._restoreJoinFormData(e.state.joinFormData);
+        if (window._goToJoinStep) window._goToJoinStep(e.state.joinStep, false);
+        return;
+      }
+    }
+
     navigate(e.state.page, e.state.extra||null, false);
+
+    // After rendering join page from history, restore step and form data
+    if (e.state.page === 'join' && e.state.joinStep && e.state.joinStep > 1) {
+      setTimeout(() => {
+        if (window._restoreJoinFormData) window._restoreJoinFormData(e.state.joinFormData);
+        if (window._goToJoinStep) window._goToJoinStep(e.state.joinStep, false);
+      }, 0);
+    }
   } else {
     navigate('home', null, false);
   }
@@ -1476,6 +1625,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (hash) {
     const [page, extra] = hash.split('/');
     navigate(page||'home', extra||null, false);
-    history.replaceState({ page: page||'home', extra: extra||null }, '', window.location.hash);
+    const initState = { page: page||'home', extra: extra||null };
+    if ((page||'home') === 'join') initState.joinStep = 1;
+    history.replaceState(initState, '', window.location.hash);
   } else { navigate('home', null, false); history.replaceState({ page:'home', extra:null }, '', '#home'); }
 });
