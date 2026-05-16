@@ -1014,6 +1014,51 @@ function showFormError(containerId, message) {
 }
 
 /* =============================================
+   TOAST NOTIFICATION
+   ============================================= */
+function showToast(message) {
+  // Remove any existing toast first
+  const existing = document.getElementById('pdin-toast');
+  if (existing) { existing.remove(); }
+
+  const toast = document.createElement('div');
+  toast.id = 'pdin-toast';
+  toast.className = 'pdin-toast';
+  toast.setAttribute('role', 'alert');
+  toast.innerHTML = `
+    <span class="pdin-toast-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </span>
+    <span class="pdin-toast-msg">${message}</span>
+    <button class="pdin-toast-close" aria-label="Dismiss">&times;</button>
+  `;
+
+  document.body.appendChild(toast);
+
+  // Trigger entrance animation
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('pdin-toast--visible'));
+  });
+
+  // Close button
+  toast.querySelector('.pdin-toast-close').addEventListener('click', () => dismissToast(toast));
+
+  // Auto-dismiss after 4 seconds
+  const timer = setTimeout(() => dismissToast(toast), 4000);
+  toast._dismissTimer = timer;
+}
+
+function dismissToast(toast) {
+  if (!toast || !toast.isConnected) return;
+  clearTimeout(toast._dismissTimer);
+  toast.classList.remove('pdin-toast--visible');
+  toast.classList.add('pdin-toast--hiding');
+  setTimeout(() => { if (toast.isConnected) toast.remove(); }, 340);
+}
+
+/* =============================================
    ROUTER
    ============================================= */
 let _searchLat, _searchLng, _searchLabel;
@@ -1295,23 +1340,23 @@ function bindPageEvents() {
       if (curStep === 1) {
         const name  = document.getElementById('join-name')?.value.trim();
         const email = document.getElementById('join-email')?.value.trim();
-        if (!name || !email) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+        if (!name || !email) { showToast('Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 2) {
         const dia = document.getElementById('join-dia')?.value.trim();
-        if (!dia) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+        if (!dia) { showToast('Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 3) {
         const expertise = [...document.querySelectorAll('#join-expertise-grid input:checked')];
-        if (expertise.length < 3 || expertise.length > 5) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+        if (expertise.length < 3 || expertise.length > 5) { showToast('Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 4) {
         const suburb = document.getElementById('join-suburb')?.value.trim();
-        if (!suburb) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+        if (!suburb) { showToast('Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 5) {
         const fee60 = document.getElementById('join-fee-60')?.value.trim();
-        if (!fee60) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+        if (!fee60) { showToast('Please complete all required fields before continuing.'); return; }
       }
 
       goToJoinStep(nextStep, true);
