@@ -1436,13 +1436,48 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .find-search-info {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: var(--text-body);
-  margin: 24px 0 -4px;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 20px 0 4px;
+  flex-wrap: wrap;
 }
-.find-search-info a { color: var(--navy); font-weight: 600; text-decoration: underline; margin-left: 4px; }
-.find-search-info svg { color: var(--navy); }
+.find-search-info-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 7px 14px 7px 10px;
+  font-size: 13.5px;
+  color: var(--text-body);
+  line-height: 1.4;
+  flex-wrap: wrap;
+}
+.find-search-info-icon {
+  display: flex;
+  align-items: center;
+  color: var(--navy);
+  flex-shrink: 0;
+}
+.find-search-info-icon svg { width: 14px; height: 14px; }
+.find-search-info-text strong { color: var(--text-dark); }
+.find-search-info-sub { color: var(--text-light); font-size: 12.5px; }
+.find-search-clear {
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.find-search-clear:hover { color: var(--navy-dark); }
+@media (max-width: 480px) {
+  .find-search-info { margin: 16px 0 2px; }
+  .find-search-info-pill { font-size: 13px; padding: 6px 12px 6px 9px; }
+  .find-search-info-sub { display: block; width: 100%; margin-top: 1px; padding-left: 21px; }
+}
 
 /* Input error flash */
 .input-error { border-color: #e53e3e !important; animation: shake 0.35s ease; }
@@ -1707,6 +1742,36 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 }
 
 /* =============================================
+   FEE INPUT (join form)
+   ============================================= */
+.fee-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  max-width: 180px;
+}
+.fee-input-prefix {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 12px;
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-body);
+  flex-shrink: 0;
+}
+.fee-input-wrap .fee-input {
+  border-radius: 0 8px 8px 0;
+  flex: 1;
+  min-width: 0;
+}
+
+/* =============================================
    APPROVAL NOTICE (join form)
    ============================================= */
 .join-approval-notice {
@@ -1890,7 +1955,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .price-highlight { font-size: 22px; }
 
   /* Find page search info */
-  .find-search-info { font-size: 14.5px; }
+  .find-search-info-pill { font-size: 14px; }
 
   /* Contact info */
   .contact-detail { font-size: 15px; }
@@ -2012,4 +2077,38 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .photo-upload-zone.has-photo { min-height: 220px; }
   .photo-upload-preview { min-height: 220px; }
   .photo-upload-preview img { height: 220px; object-fit: contain; }
+}
+/* =============================================
+   EXPERTISE GROUP HEADINGS (Join form step 3)
+   ============================================= */
+.expertise-group-head {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--navy);
+  margin: 22px 0 10px;
+  padding: 0 0 6px;
+  border-bottom: 1.5px solid var(--light-gray);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.expertise-group-head::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: var(--navy);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.expertise-group-head:first-child {
+  margin-top: 4px;
+}
+.expertise-group-items {
+  margin-bottom: 4px;
+}
+@media (max-width: 600px) {
+  .expertise-group-head { font-size: 11px; margin: 20px 0 9px; }
 }
