@@ -622,7 +622,7 @@ main { flex: 1; }
    PROFILE PAGE
    ============================================= */
 .profile-hero {
-  padding: 32px 0 24px;
+  padding: 20px 0 16px;
   animation: fadeIn 0.4s ease both;
 }
 .profile-hero-inner {
@@ -684,15 +684,15 @@ main { flex: 1; }
   background: var(--off-white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 30px;
+  padding: 20px 24px;
   animation: scaleIn 0.4s 0.08s ease both;
 }
-.qs-title { font-size: 17px; font-weight: 700; color: var(--text-dark); margin-bottom: 22px; }
+.qs-title { font-size: 17px; font-weight: 700; color: var(--text-dark); margin-bottom: 14px; }
 .qs-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px 32px;
-  margin-bottom: 26px;
+  gap: 12px 32px;
+  margin-bottom: 18px;
 }
 .qs-item-label { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray); margin-bottom: 4px; font-weight: 600; }
 .qs-item-value { font-size: 15px; font-weight: 600; color: var(--text-dark); line-height: 1.5; }
@@ -700,7 +700,7 @@ main { flex: 1; }
 .qs-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 /* Profile About */
-.profile-about { padding: 32px 0 0; }
+.profile-about { padding: 16px 0 0; }
 .profile-about-inner {
   max-width: 1200px;
   margin: 0 auto;
@@ -1187,7 +1187,7 @@ textarea:focus-visible {
 .qs-col-right {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 10px;
   padding: 0 12px 0 0;
 }
 .qs-col-right { padding: 0 0 0 20px; border-left: 1px solid var(--border); }
@@ -1215,7 +1215,7 @@ textarea:focus-visible {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
 }
 .qs-expertise-list li {
   font-size: 13.5px;
