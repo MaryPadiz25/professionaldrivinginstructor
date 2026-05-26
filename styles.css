@@ -699,8 +699,8 @@ main { flex: 1; }
 .qs-item-value + .qs-item-value { margin-top: 2px; }
 .qs-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-/* Profile About */
-.profile-about { padding: 32px 0 0; }
+/* Profile About — legacy block (kept for safety, now hidden) */
+.profile-about { display: none; }
 .profile-about-inner {
   max-width: 1200px;
   margin: 0 auto;
@@ -716,6 +716,28 @@ main { flex: 1; }
   font-size: 15.5px;
   color: var(--text-body);
   line-height: 1.8;
+}
+
+/* Profile About — inline version, sits in the left column alongside the quick-summary */
+.profile-about-inline {
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.profile-about-inline h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 10px;
+}
+.profile-about-inline p {
+  font-size: 14px;
+  color: var(--text-body);
+  line-height: 1.8;
+}
+@media (max-width: 860px) {
+  .profile-about-inline { margin-top: 4px; padding-top: 16px; }
 }
 
 /* Disclaimer */
