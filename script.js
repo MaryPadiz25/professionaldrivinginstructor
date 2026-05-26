@@ -461,6 +461,10 @@ function renderProfile(id) {
             <div class="profile-title">${inst.title}</div>
             <div class="profile-location">${ICONS.pin} ${inst.location}</div>
           </div>
+          <div class="profile-about-inline">
+            <h2>About ${inst.name}</h2>
+            <p>${inst.bio}</p>
+          </div>
         </div>
         <div class="quick-summary">
           <div class="qs-title">Instructor Profile</div>
@@ -473,12 +477,6 @@ function renderProfile(id) {
             }
           </div>
         </div>
-      </div>
-    </div>
-    <div class="profile-about">
-      <div class="profile-about-inner">
-        <h2>About ${inst.name}</h2>
-        <p>${inst.bio}</p>
       </div>
     </div>
     ${PROFILE_DISCLAIMER}`;
