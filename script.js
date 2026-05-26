@@ -52,7 +52,7 @@ const INSTRUCTORS = [
     serviceRadius: 15,
     travelBonus: true,
     travelFee: false,
-    location: 'Vermont (servicing surrounding suburbs)',
+    location: 'Vermont &amp; surrounding suburbs',
     experience: '20+ years',
     customQS: true,
     lessonFees: [
@@ -299,7 +299,7 @@ function instructorCardHTML(inst, distKm) {
     : `<div class="card-meta-row">${ICONS.pin} ${inst.location}</div>`;
 
   let metaRows = inst.customQS
-    ? `${distLabel}<div class="card-meta-row">${ICONS.car} Manual &amp; Automatic</div><div class="card-meta-row card-tagline">${ICONS.user} Patient and calm</div><div class="card-meta-row">${ICONS.clock} ${inst.experience}</div>`
+    ? `${distLabel}<div class="card-meta-row">${ICONS.car} Manual &amp; Automatic</div><div class="card-meta-row card-tagline">${ICONS.user} Patient, calm and supportive</div><div class="card-meta-row">${ICONS.clock} ${inst.experience}</div>`
     : `${distLabel}<div class="card-meta-row">${ICONS.car} ${inst.transmission}</div><div class="card-meta-row">${ICONS.clock} ${inst.experience}</div>`;
 
   return `
@@ -771,7 +771,7 @@ function renderAbout() {
   return `
     <div class="about-hero"><h1>About Us</h1></div>
     <section class="about-content">
-      <div class="container-narrow">
+      <div class="container">
         <p>The Professional Driving Instructors Network was created to support experienced instructors who take pride in their work and want to operate independently, without being forced to compete on price.</p>
         <p>Too often, talented instructors are listed alongside underqualified newcomers on discount-driven platforms that erode trust, lower standards, and devalue the profession. We believe there's a better way.</p>
         <p>Our network is built on a simple principle: <strong>quality instruction deserves quality presentation</strong>. We provide a professional platform where instructors who meet our standards can present their services in a way that reflects the true value of their work.</p>
@@ -786,7 +786,7 @@ function renderPricing() {
   return `
     <div class="pricing-hero"><h1>Pricing</h1><p>Transparent, fair pricing with no hidden fees or commissions.</p></div>
     <section class="pricing-content">
-      <div class="container-narrow">
+      <div class="container">
         <h2>Why We Don't Compete on Price</h2>
         <p>Many platforms focus on the cheapest lesson available. We don't.</p>
         <p>Lower prices often lead to rushed lessons, inexperienced instruction, inconsistent quality, and instructors needing to overbook to survive.</p>
@@ -795,7 +795,7 @@ function renderPricing() {
         <h2>Independent Instructor Pricing</h2>
         <p>All instructors on this platform are independent professionals. They set their own pricing, reflecting their experience and expertise.</p>
         <p>Typical lesson pricing across the network generally falls within:</p>
-        <div class="price-highlight">$85 – $135 per hour <span>(guide only)</span></div>
+        <h2>$85 – $135 per hour <span style="font-size:15px;font-weight:400;color:var(--text-light)">(guide only)</span></h2>
         <p>Some instructors may charge more or less depending on experience level, vehicle type, lesson type, and location.</p>
         <hr class="pricing-divider" />
         <h2>No Commission Model</h2>
@@ -826,7 +826,7 @@ function renderContact() {
             <div class="form-group"><label class="form-label">Full Name <span style="color:#e53e3e">*</span></label><input type="text" class="form-input" placeholder="Your full name" id="c-name" /></div>
             <div class="form-group"><label class="form-label">Email <span style="color:#e53e3e">*</span></label><input type="email" class="form-input" placeholder="your@email.com" id="c-email" /></div>
             <div class="form-group"><label class="form-label">Subject</label><input type="text" class="form-input" placeholder="How can we help?" id="c-subject" /></div>
-            <div class="form-group"><label class="form-label">Message <span style="color:#e53e3e">*</span></label><textarea class="form-input" placeholder="Your message..." id="c-message" style="min-height:140px"></textarea></div>
+            <div class="form-group"><label class="form-label">Message <span style="color:#e53e3e">*</span></label><textarea class="form-input" placeholder="Your message..." id="c-message" style="min-height:80px"></textarea></div>
             <button class="btn btn-navy btn-full btn-lg" id="contact-submit">Send Message</button>
           </div>
         </div>
