@@ -431,7 +431,7 @@ function renderFind(searchLat, searchLng, searchLabel) {
         <div class="find-search-inner">
           ${ICONS.search}
           <input type="text" id="find-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" value="${searchLabel || ''}" />
-          <button class="btn btn-gold" id="find-search-btn">Search Instructors</button>
+          <button class="btn btn-gold" id="find-search-btn">Find Instructors</button>
         </div>
         <div class="find-location-btn-wrap">
           <button class="btn btn-find-location" id="find-location-btn">
@@ -1287,7 +1287,7 @@ function bindPageEvents() {
       }
       findSearchBtn.disabled = true; findSearchBtn.innerHTML = '<span class="btn-spinner"></span>';
       const result = await geocodeSuburb(q).catch(() => null);
-      findSearchBtn.disabled = false; findSearchBtn.innerHTML = 'Search Instructors';
+      findSearchBtn.disabled = false; findSearchBtn.innerHTML = 'Find Instructors';
       if (result) { _searchLat = result.lat; _searchLng = result.lng; _searchLabel = result.display; navigate('find'); }
       else { findInput.classList.add('input-error'); setTimeout(() => findInput.classList.remove('input-error'), 2000); }
     }
