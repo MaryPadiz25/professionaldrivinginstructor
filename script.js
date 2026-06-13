@@ -170,7 +170,8 @@ function trackEnquiry(instructorId, instructorName, leadData) {
     const now    = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      mode:    'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         event:          'enquiry',
         instructorId,
@@ -215,7 +216,8 @@ function trackCall(instructorId, instructorName) {
     const now     = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      mode:    'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         event:          'call',
         instructorId,
