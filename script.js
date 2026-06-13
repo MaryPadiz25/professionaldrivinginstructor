@@ -66,7 +66,7 @@ const INSTRUCTORS = [
     availability: 'Weekdays',
     areasOfExpertise: [
       'First-Time & Learner Drivers',
-      'Nervous & Confidence Building Drivers',
+      'Supporting Nervous Drivers and Building Driving Confidence',
       'VicRoads Test Preparation',
       'Defensive Driving Techniques',
       'Adult Learners & Late Starters',
@@ -596,7 +596,7 @@ function renderJoin() {
               <p class="expertise-group-head">Core Instruction Areas</p>
               <div class="join-expertise-grid expertise-group-items">
                 <label class="join-toggle-label"><input type="checkbox" value="First-Time &amp; Learner Drivers" /><span>First-Time &amp; Learner Drivers</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Nervous &amp; Confidence Building Drivers" /><span>Nervous &amp; Confidence Building Drivers</span></label>
+                <label class="join-toggle-label"><input type="checkbox" value="Supporting Nervous Drivers and Building Driving Confidence" /><span>Supporting Nervous Drivers and Building Driving Confidence</span></label>
                 <label class="join-toggle-label"><input type="checkbox" value="Adult Learners &amp; Late Starters" /><span>Adult Learners &amp; Late Starters</span></label>
               </div>
 
