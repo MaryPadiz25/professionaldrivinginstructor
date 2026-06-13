@@ -170,8 +170,7 @@ function trackEnquiry(instructorId, instructorName, leadData) {
     const now    = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
       method:  'POST',
-      mode:    'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         event:          'enquiry',
         instructorId,
@@ -216,8 +215,7 @@ function trackCall(instructorId, instructorName) {
     const now     = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
       method:  'POST',
-      mode:    'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         event:          'call',
         instructorId,
@@ -561,7 +559,7 @@ function renderJoin() {
           <div class="form-section-head join-step-head"><span class="join-step-num">1</span> Personal Details</div>
           <div class="form-group"><label class="form-label">Full Name <span>*</span></label><input type="text" class="form-input" placeholder="Your full name" id="join-name" /></div>
           <div class="form-group"><label class="form-label">Email <span>*</span></label><input type="email" class="form-input" placeholder="your@email.com" id="join-email" /></div>
-          <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" placeholder="0412 345 678" id="join-phone" /></div>
+          <div class="form-group"><label class="form-label">Mobile Number <span>*</span></label><input type="tel" class="form-input" placeholder="0412 345 678" id="join-phone" /></div>
           <div class="form-group">
             <label class="form-label">Profile Photo</label>
             <div class="photo-upload-zone" id="photo-upload-zone">
@@ -1406,7 +1404,10 @@ function bindPageEvents() {
       if (curStep === 1) {
         const name  = document.getElementById('join-name')?.value.trim();
         const email = document.getElementById('join-email')?.value.trim();
-        if (!name || !email) { showToast('Please complete all required fields before continuing.'); return; }
+        const phone = document.getElementById('join-phone')?.value.trim();
+        if (!name) { showToast('Please enter your full name before continuing.'); return; }
+        if (!email) { showToast('Email address is required — for enquiry delivery, records, and reliable communication.'); return; }
+        if (!phone) { showToast('Mobile number is required — instructors are on the road all day, and this ensures quick contact.'); return; }
       }
       if (curStep === 2) {
         const dia = document.getElementById('join-dia')?.value.trim();
