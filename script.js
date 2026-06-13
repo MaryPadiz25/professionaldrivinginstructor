@@ -430,8 +430,14 @@ function renderFind(searchLat, searchLng, searchLabel) {
       <div class="find-search-bar">
         <div class="find-search-inner">
           ${ICONS.search}
-          <input type="text" id="find-suburb-input" placeholder="Enter your suburb or postcode…" autocomplete="off" value="${searchLabel || ''}" />
-          <button class="btn btn-gold" id="find-search-btn">Search</button>
+          <input type="text" id="find-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" value="${searchLabel || ''}" />
+          <button class="btn btn-gold" id="find-search-btn">Search Instructors</button>
+        </div>
+        <div class="find-location-btn-wrap">
+          <button class="btn btn-find-location" id="find-location-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/></svg>
+            Use my current location
+          </button>
         </div>
       </div>
     </div>
@@ -1273,10 +1279,15 @@ function bindPageEvents() {
   if (findSearchBtn && findInput) {
     async function doFindSearch() {
       const q = findInput.value.trim();
-      if (!q) { _searchLat = undefined; _searchLng = undefined; _searchLabel = ''; navigate('find'); return; }
+      if (!q) {
+        showToast('Please enter a suburb or postcode to search for instructors.');
+        findInput.classList.add('input-error');
+        setTimeout(() => findInput.classList.remove('input-error'), 2000);
+        return;
+      }
       findSearchBtn.disabled = true; findSearchBtn.innerHTML = '<span class="btn-spinner"></span>';
       const result = await geocodeSuburb(q).catch(() => null);
-      findSearchBtn.disabled = false; findSearchBtn.innerHTML = 'Search';
+      findSearchBtn.disabled = false; findSearchBtn.innerHTML = 'Search Instructors';
       if (result) { _searchLat = result.lat; _searchLng = result.lng; _searchLabel = result.display; navigate('find'); }
       else { findInput.classList.add('input-error'); setTimeout(() => findInput.classList.remove('input-error'), 2000); }
     }
@@ -1284,6 +1295,45 @@ function bindPageEvents() {
     findInput.addEventListener('keydown', e => { if (e.key === 'Enter') doFindSearch(); });
     const clearLink = document.getElementById('clear-search-link');
     if (clearLink) clearLink.addEventListener('click', e => { e.preventDefault(); _searchLat = undefined; _searchLng = undefined; _searchLabel = ''; navigate('find'); });
+  }
+
+  /* Use my current location button */
+  const locationBtn = document.getElementById('find-location-btn');
+  if (locationBtn) {
+    locationBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        showToast('Geolocation is not supported by your browser.');
+        return;
+      }
+      locationBtn.disabled = true;
+      locationBtn.innerHTML = '<span class="btn-spinner" style="border-color:rgba(44,74,110,0.3);border-top-color:var(--navy)"></span> Locating…';
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          // Reverse geocode to get a suburb name
+          try {
+            const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`, { headers: { 'Accept-Language': 'en' } });
+            const data = await res.json();
+            const suburb = data.address?.suburb || data.address?.town || data.address?.city || 'Your Location';
+            _searchLat = lat; _searchLng = lng; _searchLabel = suburb;
+          } catch {
+            _searchLat = lat; _searchLng = lng; _searchLabel = 'Your Location';
+          }
+          navigate('find');
+        },
+        (err) => {
+          locationBtn.disabled = false;
+          locationBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/></svg> Use my current location`;
+          if (err.code === err.PERMISSION_DENIED) {
+            showToast('Location access was denied. Please allow location access in your browser settings.');
+          } else {
+            showToast('Unable to determine your location. Please try entering your suburb manually.');
+          }
+        },
+        { timeout: 10000, maximumAge: 60000 }
+      );
+    });
   }
 
   /* Call instructor (obfuscated — decoded only on click) */
