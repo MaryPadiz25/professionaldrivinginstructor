@@ -38,8 +38,77 @@ const CONTACT = {
 };
 
 /* =============================================
+   EXPERTISE CATEGORIES — SINGLE SOURCE OF TRUTH
+   To rename a category: change `label` here only.
+   It automatically updates profiles, join form,
+   search filters, and directory listings everywhere.
+   To add a category: add an entry to the relevant
+   group below, then reference its `id` in any
+   instructor's expertiseIds array.
+   ============================================= */
+const EXPERTISE_CATEGORIES = [
+  {
+    group: 'Core Instruction Areas',
+    items: [
+      { id: 'learner-drivers',      label: 'First-Time & Learner Drivers' },
+      { id: 'nervous-drivers',      label: 'Supporting Nervous Drivers and Building Driving Confidence' },
+      { id: 'adult-learners',       label: 'Adult Learners & Late Starters' },
+    ]
+  },
+  {
+    group: 'Driving Test Preparation & Training Systems',
+    items: [
+      { id: 'vicroads-test',        label: 'VicRoads Test Preparation' },
+      { id: 'logbook-hours',        label: 'Logbook Hours & Structured Driving Plans' },
+      { id: 'refresher-lessons',    label: 'Refresher Lessons (returning drivers)' },
+    ]
+  },
+  {
+    group: 'Skill Development & Road Confidence',
+    items: [
+      { id: 'defensive-driving',    label: 'Defensive Driving Techniques' },
+      { id: 'highway-driving',      label: 'Highway & Long Distance Driving' },
+      { id: 'advanced-confidence',  label: 'Advanced Road Confidence & Decision Making' },
+    ]
+  },
+  {
+    group: 'Specialist Instruction Areas',
+    items: [
+      { id: 'overseas-licence',     label: 'Overseas Licence Conversion' },
+      { id: 'manual-instruction',   label: 'Manual Driving Instruction' },
+      { id: 'senior-drivers',       label: 'Senior Driver Assessments & Refresher Training' },
+      { id: 'ndis-supported',       label: 'NDIS & Supported Driving Instruction' },
+      { id: 'neurodiverse',         label: 'Neurodiverse Learners' },
+    ]
+  },
+];
+
+/* Helper: resolve an array of expertise IDs → display labels.
+   Unknown IDs are passed through as-is (graceful fallback). */
+function resolveExpertise(ids = []) {
+  const lookup = {};
+  EXPERTISE_CATEGORIES.forEach(g => g.items.forEach(item => { lookup[item.id] = item.label; }));
+  return ids.map(id => lookup[id] || id);
+}
+
+/* Helper: build the join-form expertise checkboxes from the master list */
+function buildExpertiseCheckboxes() {
+  return EXPERTISE_CATEGORIES.map(group => `
+    <p class="expertise-group-head">${group.group}</p>
+    <div class="join-expertise-grid expertise-group-items">
+      ${group.items.map(item => `
+        <label class="join-toggle-label">
+          <input type="checkbox" value="${item.id}" />
+          <span>${item.label}</span>
+        </label>`).join('')}
+    </div>`).join('');
+}
+
+/* =============================================
    INSTRUCTOR DATA
    No phone/email stored here — use CONTACT map
+   expertiseIds: reference IDs from EXPERTISE_CATEGORIES above.
+   Labels are resolved automatically — never store raw text here.
    ============================================= */
 const INSTRUCTORS = [
   {
@@ -64,19 +133,19 @@ const INSTRUCTORS = [
       { type: 'Manual', car: 'Toyota Corolla' },
     ],
     availability: 'Weekdays',
-    areasOfExpertise: [
-      'First-Time & Learner Drivers',
-      'Supporting Nervous Drivers and Building Driving Confidence',
-      'VicRoads Test Preparation',
-      'Defensive Driving Techniques',
-      'Adult Learners & Late Starters',
-      'Overseas Licence Conversion',
-      'Manual Driving Instruction',
-      'Advanced Road Confidence & Decision Making',
-      'Highway & Long Distance Driving',
-      'Refresher Lessons (returning drivers)',
-      'Logbook Hours & Structured Driving Plans',
-      'NDIS & Supported Driving Instruction',
+    expertiseIds: [
+      'learner-drivers',
+      'nervous-drivers',
+      'vicroads-test',
+      'defensive-driving',
+      'adult-learners',
+      'overseas-licence',
+      'manual-instruction',
+      'advanced-confidence',
+      'highway-driving',
+      'refresher-lessons',
+      'logbook-hours',
+      'ndis-supported',
     ],
     seniorBadge: true,
     photo: 'rob-lester.jpg',
@@ -466,7 +535,9 @@ function renderProfile(id) {
 
   let qsRows = '';
   if (inst.customQS) {
-    const expertiseHTML = inst.areasOfExpertise ? inst.areasOfExpertise.map(a => `<li>${a}</li>`).join('') : '';
+    // Resolve expertise IDs → labels from the centralized EXPERTISE_CATEGORIES master list
+    const expertiseLabels = resolveExpertise(inst.expertiseIds || inst.areasOfExpertise || []);
+    const expertiseHTML = expertiseLabels.map(a => `<li>${a}</li>`).join('');
     const feesHTML      = inst.lessonFees.map(f => `<div class="qs-item-value">${f.duration} — ${f.price}</div>`).join('');
     const vehiclesHTML  = inst.vehicles.map(v => `<div class="qs-item-value">${v.type} — ${v.car}</div>`).join('');
     qsRows = `
@@ -639,37 +710,7 @@ function renderJoin() {
           <p style="font-size:14px;color:var(--text-light);margin:-4px 0 18px;">Choose the learners you enjoy working with most.</p>
           <div class="form-group">
             <div id="join-expertise-grid">
-
-              <p class="expertise-group-head">Core Instruction Areas</p>
-              <div class="join-expertise-grid expertise-group-items">
-                <label class="join-toggle-label"><input type="checkbox" value="First-Time &amp; Learner Drivers" /><span>First-Time &amp; Learner Drivers</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Supporting Nervous Drivers and Building Driving Confidence" /><span>Supporting Nervous Drivers and Building Driving Confidence</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Adult Learners &amp; Late Starters" /><span>Adult Learners &amp; Late Starters</span></label>
-              </div>
-
-              <p class="expertise-group-head">Driving Test Preparation &amp; Training Systems</p>
-              <div class="join-expertise-grid expertise-group-items">
-                <label class="join-toggle-label"><input type="checkbox" value="VicRoads Test Preparation" /><span>VicRoads Test Preparation</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Logbook Hours &amp; Structured Driving Plans" /><span>Logbook Hours &amp; Structured Driving Plans</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Refresher Lessons (returning drivers)" /><span>Refresher Lessons (returning drivers)</span></label>
-              </div>
-
-              <p class="expertise-group-head">Skill Development &amp; Road Confidence</p>
-              <div class="join-expertise-grid expertise-group-items">
-                <label class="join-toggle-label"><input type="checkbox" value="Defensive Driving Techniques" /><span>Defensive Driving Techniques</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Highway &amp; Long Distance Driving" /><span>Highway &amp; Long Distance Driving</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Advanced Driving Confidence &amp; Decision Making" /><span>Advanced Driving Confidence &amp; Decision Making</span></label>
-              </div>
-
-              <p class="expertise-group-head">Specialist Instruction Areas</p>
-              <div class="join-expertise-grid expertise-group-items">
-                <label class="join-toggle-label"><input type="checkbox" value="Overseas Licence Conversion" /><span>Overseas Licence Conversion</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Manual Driving Instruction" /><span>Manual Driving Instruction</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Senior Driver Assessments &amp; Refresher Training" /><span>Senior Driver Assessments &amp; Refresher Training</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="NDIS &amp; Supported Driving Instruction" /><span>NDIS &amp; Supported Driving Instruction</span></label>
-                <label class="join-toggle-label"><input type="checkbox" value="Neurodiverse Learners" /><span>Neurodiverse Learners</span></label>
-              </div>
-
+              ${buildExpertiseCheckboxes()}
             </div>
             <small class="form-hint expertise-count-hint" id="expertise-count-hint"></small>
           </div>
@@ -1604,11 +1645,12 @@ function bindPageEvents() {
       const fee90 = document.getElementById('join-fee-90')?.value.trim() || '';
       if (!fee60) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
 
-      // Collect expertise (3-5 required)
-      const expertise = [...document.querySelectorAll('#join-expertise-grid input:checked')].map(c => c.value);
-      if (expertise.length < 3 || expertise.length > 5) {
+      // Collect expertise IDs (3-5 required), then resolve to human-readable labels for the email
+      const expertiseIds = [...document.querySelectorAll('#join-expertise-grid input:checked')].map(c => c.value);
+      if (expertiseIds.length < 3 || expertiseIds.length > 5) {
         showFormError('join-form-box', 'Please complete all required fields before continuing.'); return;
       }
+      const expertise = resolveExpertise(expertiseIds);
 
       // Determine which web3forms key to use based on email match
       // Rob: robert_samsung@hotmail.com → key 2c2335a7-edb1-4673-b7d7-6971217f4d96
