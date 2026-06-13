@@ -142,6 +142,12 @@ const INSTRUCTORS = [
 ];
 
 /* =============================================
+   SHARED TRACKER CONSTANTS
+   ============================================= */
+const SHEETS_CALL_LOG_URL = 'https://script.google.com/macros/s/AKfycbx33RYYAbRys6ms_0CLiY2IMD9tZQp8a9ILHXCpRG2opi8MCrQjalmEJY0chUitBJJ4/exec';
+const CALL_TRACKER_KEY    = 'pdin_calls';
+
+/* =============================================
    ENQUIRY TRACKER (localStorage + Google Sheets)
    ============================================= */
 const TRACKER_KEY = 'pdin_enquiries';
@@ -190,9 +196,6 @@ function trackEnquiry(instructorId, instructorName, leadData) {
 /* =============================================
    CALL TRACKER (localStorage)
    ============================================= */
-const SHEETS_CALL_LOG_URL = 'https://script.google.com/macros/s/AKfycbx33RYYAbRys6ms_0CLiY2IMD9tZQp8a9ILHXCpRG2opi8MCrQjalmEJY0chUitBJJ4/exec';
-const CALL_TRACKER_KEY    = 'pdin_calls';
-
 function trackCall(instructorId, instructorName) {
   // Always write to localStorage for instant local stats
   try {
