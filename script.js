@@ -8,28 +8,28 @@ function dec(arr) { return arr.map(c => String.fromCharCode(c)).join(''); }
 
 const CONTACT = {
   'rob-lester':  {
-    p: [48,52,49,50,32,48,48,54,32,49,57,57],
+    p: [43,54,49,52,49,50,32,48,48,54,32,49,57,57],
     e: [114,111,98,101,114,116,95,115,97,109,115,117,110,103,64,104,111,116,109,97,105,108,46,99,111,109],
     svc: 'service_qmll1g9', tpl: 'template_v9nyycm',
     w3f: '2c2335a7-edb1-4673-b7d7-6971217f4d96',
     unavailable: false
   },
   'john-stevens': {
-    p: [48,52,49,50,32,51,52,53,32,54,55,56],
+    p: [43,54,51,57,51,54,49,52,49,49,52,57,54],
     e: [109,97,114,121,106,111,121,46,112,97,100,105,122,49,64,103,109,97,105,108,46,99,111,109],
     svc: 'maryjoy.padiz1@gmail.com', tpl: 'template_v9nyycm',
     w3f: '1119cfb7-b03e-4f5d-ae4f-b8e3a077bac7',
     unavailable: false
   },
   'lisa-wong': {
-    p: [48,52,49,51,32,52,53,54,32,55,56,57],
+    p: [43,54,49,52,49,51,32,52,53,54,32,55,56,57],
     e: [109,97,114,105,97,102,114,101,121,112,97,100,105,122,64,103,109,97,105,108,46,99,111,109],
     svc: null, tpl: null,   // EmailJS not yet configured — enquiry button hidden
     unavailable: true,
     joinUnavailable: true
   },
   'mark-harris': {
-    p: [48,52,49,52,32,53,54,55,32,56,57,48],
+    p: [43,54,49,52,49,52,32,53,54,55,32,56,57,48],
     e: [109,97,114,121,106,111,121,46,112,97,100,105,122,64,111,117,116,108,111,111,107,46,99,111,109],
     svc: 'mariafreypadiz@gmail.com', tpl: 'template_vpug1fw',
     unavailable: false,
@@ -142,18 +142,49 @@ const INSTRUCTORS = [
 ];
 
 /* =============================================
-   ENQUIRY TRACKER (localStorage — lightweight)
+   ENQUIRY TRACKER (localStorage + Google Sheets)
    ============================================= */
 const TRACKER_KEY = 'pdin_enquiries';
-function trackEnquiry(instructorId, instructorName) {
+function trackEnquiry(instructorId, instructorName, leadData) {
+  // Always write to localStorage for instant local stats
   try {
     const raw  = localStorage.getItem(TRACKER_KEY);
     const data = raw ? JSON.parse(raw) : {};
-    if (!data[instructorId]) data[instructorId] = { name: instructorName, count: 0, lastDate: null };
+    if (!data[instructorId]) data[instructorId] = { name: instructorName, count: 0, lastDate: null, history: [] };
     data[instructorId].count++;
     data[instructorId].lastDate = new Date().toISOString();
+    data[instructorId].history.push(new Date().toISOString());
     localStorage.setItem(TRACKER_KEY, JSON.stringify(data));
   } catch(e) { /* storage unavailable */ }
+
+  // Fire-and-forget POST to Google Sheets (same endpoint as calls)
+  if (SHEETS_CALL_LOG_URL && SHEETS_CALL_LOG_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+    const inst   = INSTRUCTORS.find(i => i.id === instructorId);
+    const suburb = inst ? inst.baseSuburb : '';
+    const now    = new Date();
+    fetch(SHEETS_CALL_LOG_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event:          'enquiry',
+        instructorId,
+        instructorName,
+        suburb,
+        date:           now.toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' }),
+        time:           now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true }),
+        timestamp:      now.toISOString(),
+        studentName:    leadData?.name          || '',
+        studentMobile:  leadData?.mobile        || '',
+        studentEmail:   leadData?.email         || '',
+        studentSuburb:  leadData?.suburb        || '',
+        licenceStage:   leadData?.licence       || '',
+        transmission:   leadData?.transmission  || '',
+        preferredDays:  leadData?.days          || '',
+        preferredTime:  leadData?.starttime     || '',
+        message:        leadData?.message       || '',
+      })
+    }).catch(() => { /* silent fail — local record already saved */ });
+  }
 }
 
 /* =============================================
@@ -466,11 +497,18 @@ function renderProfile(id) {
           <div class="qs-title">Instructor Profile</div>
           <div class="${qsGridClass}">${qsRows}</div>
           <div class="qs-btns">
-            <button class="btn btn-navy" id="call-instructor-btn" data-id="${inst.id}">${ICONS.phoneSmall} Call Instructor</button>
-            ${(CONTACT[inst.id] && CONTACT[inst.id].unavailable)
-              ? `<button class="btn btn-gold btn-unavailable" disabled title="Online enquiry not yet available for this instructor">${ICONS.mail} Enquiry Unavailable</button>`
-              : `<button class="btn btn-gold" id="open-enquiry-btn" data-instructor-id="${inst.id}">${ICONS.mail} Send Enquiry</button>`
-            }
+            <div class="qs-btn-wrap">
+              <button class="btn btn-navy" id="call-instructor-btn" data-id="${inst.id}">${ICONS.phoneSmall} Call Instructor</button>
+              <p class="btn-trust-text">Call instantly — connects you directly to the instructor</p>
+            </div>
+            <div class="qs-btn-wrap">
+              ${(CONTACT[inst.id] && CONTACT[inst.id].unavailable)
+                ? `<button class="btn btn-gold btn-unavailable" disabled title="Online enquiry not yet available for this instructor">${ICONS.mail} Enquiry Unavailable</button>
+                   <p class="btn-trust-text">Online enquiry not yet available for this instructor</p>`
+                : `<button class="btn btn-gold" id="open-enquiry-btn" data-instructor-id="${inst.id}">${ICONS.mail} Send Enquiry</button>
+                   <p class="btn-trust-text">Send an enquiry — the instructor will respond directly to you</p>`
+              }
+            </div>
           </div>
         </div>
       </div>
@@ -959,7 +997,7 @@ function openEnquiryModal(inst) {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        trackEnquiry(inst.id, inst.name);
+        trackEnquiry(inst.id, inst.name, { name, mobile, email, suburb, licence, transmission, days: days.join(', '), starttime, message });
         document.getElementById('enquiry-form-body').innerHTML = `
           <div class="success-box">
             <div class="success-icon">${ICONS.check}</div>
@@ -1092,23 +1130,37 @@ function renderStatsPage() {
   });
 
   const rows = allIds.map(id => {
-    const inst    = INSTRUCTORS.find(i => i.id === id);
-    const calls   = callData[id]?.count    || 0;
-    const enqs    = enquiryData[id]?.count || 0;
-    const lastCall= callData[id]?.lastDate ? new Date(callData[id].lastDate).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    const inst      = INSTRUCTORS.find(i => i.id === id);
+    const calls     = callData[id]?.count    || 0;
+    const enqs      = enquiryData[id]?.count || 0;
+    const lastCall  = callData[id]?.lastDate    ? new Date(callData[id].lastDate).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    const lastEnq   = enquiryData[id]?.lastDate ? new Date(enquiryData[id].lastDate).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
 
-    // Sparkline: last 7 days
-    const history = callData[id]?.history || [];
-    const now     = Date.now();
-    const days    = Array.from({length:7}, (_,i) => {
+    // Call sparkline: last 7 days
+    const callHistory = callData[id]?.history || [];
+    const now         = Date.now();
+    const callDays    = Array.from({length:7}, (_,i) => {
       const dayStart = now - (6-i)*86400000;
       const dayEnd   = dayStart + 86400000;
-      return history.filter(d => { const t=new Date(d).getTime(); return t>=dayStart && t<dayEnd; }).length;
+      return callHistory.filter(d => { const t=new Date(d).getTime(); return t>=dayStart && t<dayEnd; }).length;
     });
-    const maxDay  = Math.max(...days, 1);
-    const bars    = days.map(v => {
-      const h = Math.round((v/maxDay)*28);
+    const maxCallDay  = Math.max(...callDays, 1);
+    const callBars    = callDays.map(v => {
+      const h = Math.round((v/maxCallDay)*28);
       return `<div class="spark-bar" style="height:${Math.max(h,2)}px" title="${v} call${v!==1?'s':''}"></div>`;
+    }).join('');
+
+    // Enquiry sparkline: last 7 days
+    const enqHistory = enquiryData[id]?.history || [];
+    const enqDays    = Array.from({length:7}, (_,i) => {
+      const dayStart = now - (6-i)*86400000;
+      const dayEnd   = dayStart + 86400000;
+      return enqHistory.filter(d => { const t=new Date(d).getTime(); return t>=dayStart && t<dayEnd; }).length;
+    });
+    const maxEnqDay  = Math.max(...enqDays, 1);
+    const enqBars    = enqDays.map(v => {
+      const h = Math.round((v/maxEnqDay)*28);
+      return `<div class="spark-bar spark-bar-gold" style="height:${Math.max(h,2)}px" title="${v} enquir${v!==1?'ies':'y'}"></div>`;
     }).join('');
 
     return `
@@ -1122,8 +1174,10 @@ function renderStatsPage() {
         </td>
         <td class="stats-num calls-num">${calls}</td>
         <td class="stats-num enq-num">${enqs}</td>
-        <td class="stats-spark"><div class="sparkline">${bars}</div><div class="spark-label">7 days</div></td>
+        <td class="stats-spark"><div class="sparkline">${callBars}</div><div class="spark-label">Calls 7d</div></td>
+        <td class="stats-spark"><div class="sparkline">${enqBars}</div><div class="spark-label">Enquiries 7d</div></td>
         <td class="stats-last">${lastCall}</td>
+        <td class="stats-last">${lastEnq}</td>
       </tr>`;
   }).join('');
 
@@ -1155,7 +1209,9 @@ function renderStatsPage() {
               <th>Calls</th>
               <th>Enquiries</th>
               <th>Calls (last 7 days)</th>
+              <th>Enquiries (last 7 days)</th>
               <th>Last Call</th>
+              <th>Last Enquiry</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -1235,7 +1291,12 @@ function bindPageEvents() {
       const inst = INSTRUCTORS.find(i => i.id === callBtn.dataset.id);
       if (ct && ct.p) {
         trackCall(callBtn.dataset.id, inst ? inst.name : callBtn.dataset.id);
-        window.location.href = 'tel:' + dec(ct.p).replace(/\s/g, '');
+        const a = document.createElement('a');
+        a.href = 'tel:' + dec(ct.p).replace(/\s/g, '');
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       }
     });
   }
