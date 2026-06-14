@@ -2457,49 +2457,34 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .admin-code-block  { font-size: 11px; }
   .admin-gate-box    { padding: 32px 20px 28px; }
 }
-/* ── About Page Additions ── */
-.about-callout {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--navy);
-  font-family: var(--font-serif);
-  font-style: italic;
-  text-align: center;
-  padding: 12px 0 8px;
-  margin: 8px 0;
-}
-.about-cta-section {
-  margin-top: 52px;
-  padding-top: 40px;
-  border-top: 1px solid var(--border);
-}
-.about-cta-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--navy);
-  margin-bottom: 28px;
-}
-.about-cta-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-.about-cta-card {
-  background: var(--light-gray);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 28px 24px;
+/* ── Credential Tags (Profile Page) ── */
+.cred-row {
   display: flex;
-  flex-direction: column;
-  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
 }
-.about-cta-label {
-  font-size: 15px;
+.cred-row:last-child { border-bottom: none; }
+.cred-label {
+  font-size: 13px;
   color: var(--text);
-  line-height: 1.6;
   flex: 1;
 }
-@media (max-width: 640px) {
-  .about-cta-grid { grid-template-columns: 1fr; }
-  .about-callout { font-size: 17px; }
+.cred-tag {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cred-provided {
+  background: #f0f4f0;
+  color: #4a6741;
+}
+.cred-not-provided {
+  background: #f5f5f5;
+  color: #999;
 }
