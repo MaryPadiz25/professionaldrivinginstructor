@@ -2457,3 +2457,49 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .admin-code-block  { font-size: 11px; }
   .admin-gate-box    { padding: 32px 20px 28px; }
 }
+/* ── About Page Additions ── */
+.about-callout {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--navy);
+  font-family: var(--font-serif);
+  font-style: italic;
+  text-align: center;
+  padding: 12px 0 8px;
+  margin: 8px 0;
+}
+.about-cta-section {
+  margin-top: 52px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+.about-cta-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 28px;
+}
+.about-cta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.about-cta-card {
+  background: var(--light-gray);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.about-cta-label {
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.6;
+  flex: 1;
+}
+@media (max-width: 640px) {
+  .about-cta-grid { grid-template-columns: 1fr; }
+  .about-callout { font-size: 17px; }
+}
