@@ -371,9 +371,11 @@ async function geocodeSuburb(query) {
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name.split(',')[0] };
 }
 
-function sortInstructorsByDistance(lat, lng) {
-  return INSTRUCTORS
+function sortInstructorsByDistance(lat, lng, instructorList) {
+  const list = instructorList || getAllInstructors();
+  return list
     .map(inst => {
+      if (!inst.baseLat || !inst.baseLng) return { inst, km: 9999, inRange: false };
       const km = haversineKm(lat, lng, inst.baseLat, inst.baseLng);
       const effectiveRadius = inst.travelBonus ? inst.serviceRadius + 8 : inst.serviceRadius;
       return { inst, km, inRange: km <= effectiveRadius };
@@ -417,6 +419,20 @@ function instructorCardHTML(inst, distKm) {
 }
 
 /* =============================================
+   LIVE PROFILE HELPERS
+   Approved applications are stored in pdin_live_profiles
+   and merged with hardcoded INSTRUCTORS at runtime.
+   ============================================= */
+function getLiveProfiles() {
+  try { return JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]'); } catch(e) { return []; }
+}
+function getAllInstructors() {
+  const live = getLiveProfiles();
+  const liveOnly = live.filter(lp => !INSTRUCTORS.find(i => i.id === lp.id));
+  return [...INSTRUCTORS, ...liveOnly];
+}
+
+/* =============================================
    PAGES
    ============================================= */
 function renderHome() {
@@ -454,7 +470,7 @@ function renderHome() {
       <div class="container">
         <h2 class="section-title reveal">Featured Instructors</h2>
         <div class="instructor-grid">
-          ${INSTRUCTORS.map(i => instructorCardHTML(i)).join('')}
+          ${getAllInstructors().map(i => instructorCardHTML(i)).join('')}
         </div>
       </div>
     </section>
@@ -477,9 +493,10 @@ function renderHome() {
 }
 
 function renderFind(searchLat, searchLng, searchLabel) {
+  const allInst = getAllInstructors();
   const sorted = (searchLat !== undefined)
-    ? sortInstructorsByDistance(searchLat, searchLng)
-    : INSTRUCTORS.map(i => ({ inst: i, km: undefined }));
+    ? sortInstructorsByDistance(searchLat, searchLng, allInst)
+    : allInst.map(i => ({ inst: i, km: undefined }));
 
   const cardsHTML = sorted.map(({ inst, km }) => instructorCardHTML(inst, km)).join('');
   const searchInfo = searchLabel
@@ -517,7 +534,8 @@ function renderFind(searchLat, searchLng, searchLabel) {
 }
 
 function renderProfile(id) {
-  const inst = INSTRUCTORS.find(i => i.id === id) || INSTRUCTORS[0];
+  const allInst = getAllInstructors();
+  const inst = allInst.find(i => i.id === id) || allInst[0];
   const effectiveRadius = inst.travelBonus ? inst.serviceRadius + 8 : inst.serviceRadius;
 
   const avatarEl = inst.photo
@@ -1160,10 +1178,406 @@ function getPageContent(page, extra) {
     case 'pricing': return renderPricing();
     case 'contact': return renderContact();
     case 'stats':   return renderStatsPage();
+    case 'admin':   return renderAdminPage(extra);
     default:        return renderHome();
   }
 }
 
+
+/* =============================================
+   ADMIN PAGE — pending applications (#admin?key=…)
+   ============================================= */
+const ADMIN_PASSWORD = 'pdin2026admin'; // ← change this to your own password
+
+function renderAdminPage(extra) {
+  // Password check via URL: #admin?key=yourpassword
+  const params = new URLSearchParams(window.location.search);
+  const key    = params.get('key') || '';
+  if (key !== ADMIN_PASSWORD) {
+    return `
+      <div class="admin-gate">
+        <div class="admin-gate-box">
+          <div class="admin-gate-logo">🔒</div>
+          <h2>Admin Access</h2>
+          <p>Enter the admin password to continue.</p>
+          <div class="form-group" style="margin-top:18px">
+            <input type="password" class="form-input" id="admin-key-input" placeholder="Password" autocomplete="current-password" />
+          </div>
+          <button class="btn btn-navy btn-full" id="admin-key-btn" style="margin-top:10px">Unlock</button>
+          <p id="admin-key-error" class="admin-key-error" style="display:none">Incorrect password.</p>
+        </div>
+      </div>`;
+  }
+
+  // Load applications from localStorage
+  let apps = [];
+  try { apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]'); } catch(e) {}
+
+  const pending  = apps.filter(a => a.status === 'pending');
+  const approved = apps.filter(a => a.status === 'approved');
+  const rejected = apps.filter(a => a.status === 'rejected');
+
+  function appCard(app) {
+    const initials   = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const expYears   = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
+    const expLabel   = expYears >= 1 ? expYears + '+ years' : 'Under 1 year';
+    const vehicles   = [app.vAuto ? 'Auto: ' + app.vAuto : '', app.vManual ? 'Manual: ' + app.vManual : ''].filter(Boolean).join(' · ') || '(none listed)';
+    const avail      = [...(app.availDays||[]), ...(app.availTimes||[])].join(', ') || '(not specified)';
+    const expertise  = resolveExpertise(app.expertiseIds || []);
+    const submitted  = new Date(app.submittedAt).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const statusBadge = app.status === 'approved'
+      ? `<span class="admin-status-badge admin-badge-approved">✓ Approved</span>`
+      : app.status === 'rejected'
+      ? `<span class="admin-status-badge admin-badge-rejected">✕ Rejected</span>`
+      : `<span class="admin-status-badge admin-badge-pending">Pending Review</span>`;
+
+    // Build the code block that gets copied on approve
+    const idSlug     = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+    const transmission = [app.vAuto ? 'Automatic' : '', app.vManual ? 'Manual' : ''].filter(Boolean).join(' & ') || 'Automatic';
+    const feesArr    = [`{ duration: '60 min', price: '$${app.fee60}' }`, ...(app.fee90 ? [`{ duration: '90 min', price: '$${app.fee90}' }`] : [])];
+    const vehiclesArr = [...(app.vAuto ? [`{ type: 'Auto',   car: '${app.vAuto}' }`] : []), ...(app.vManual ? [`{ type: 'Manual', car: '${app.vManual}' }`] : [])];
+    const availLabel = [...(app.availDays||[])].join(' / ') || 'Weekdays';
+    const expertiseIdStr = (app.expertiseIds||[]).map(id => `      '${id}',`).join('\n');
+
+    const codeBlock = `  {
+    id: '${idSlug}',
+    initials: '${initials}',
+    name: '${app.name}',
+    title: 'Professional Driving Instructor',
+    baseSuburb: '${app.suburb}',
+    baseLat: -37.8136, baseLng: 144.9631,  // TODO: update with real coords for ${app.suburb}
+    serviceRadius: ${app.radius || 10},
+    travelBonus: false,
+    travelFee: false,
+    location: '${app.suburb} & surrounding suburbs',
+    transmission: '${transmission}',
+    experience: '${expLabel}',
+    lessonFees: [
+      ${feesArr.join(',\n      ')},
+    ],${vehiclesArr.length ? `
+    vehicles: [
+      ${vehiclesArr.join(',\n      ')},
+    ],` : ''}
+    availability: '${availLabel}',
+    expertiseIds: [
+${expertiseIdStr}
+    ],
+    seniorBadge: ${expYears >= 10},
+    photo: '${idSlug}.jpg',  // TODO: upload photo as ${idSlug}.jpg
+    bio: "${(app.bio||'').replace(/"/g, '\\"')}",
+  },`;
+
+    const contactBlock = `  '${idSlug}': {
+    p: [],   // TODO: add phone as char-code array, e.g. using dec() helper
+    e: [],   // TODO: add email as char-code array
+    svc: null, tpl: null,
+    w3f: '',  // TODO: add Web3Forms key for this instructor
+    unavailable: true,
+  },`;
+
+    return `
+      <div class="admin-app-card" id="admin-card-${app.id}">
+        <div class="admin-app-header">
+          <div class="admin-app-avatar">${initials}</div>
+          <div class="admin-app-meta">
+            <div class="admin-app-name">${app.name} ${statusBadge}</div>
+            <div class="admin-app-sub">${app.email} · ${app.phone}</div>
+            <div class="admin-app-sub">DIA: ${app.dia} · Submitted: ${submitted}</div>
+          </div>
+        </div>
+
+        <div class="admin-app-details">
+          <div class="admin-detail-row"><span class="admin-detail-label">Suburb / Area</span><span>${app.suburb} (radius: ${app.radius} km)</span></div>
+          <div class="admin-detail-row"><span class="admin-detail-label">Experience</span><span>Since ${app.exp} (${expLabel})</span></div>
+          <div class="admin-detail-row"><span class="admin-detail-label">Vehicles</span><span>${vehicles}</span></div>
+          <div class="admin-detail-row"><span class="admin-detail-label">Languages</span><span>${(app.languages||[]).join(', ') || '(not specified)'}</span></div>
+          <div class="admin-detail-row"><span class="admin-detail-label">Availability</span><span>${avail}${app.availSpecific ? ' — ' + app.availSpecific : ''}</span></div>
+          <div class="admin-detail-row"><span class="admin-detail-label">Fees</span><span>60 min: $${app.fee60}${app.fee90 ? ' · 90 min: $'+app.fee90 : ''}</span></div>
+          <div class="admin-detail-row"><span class="admin-detail-label">Photo uploaded</span><span>${app.photoName || '(none)'}</span></div>
+          <div class="admin-detail-row admin-detail-full"><span class="admin-detail-label">Expertise</span>
+            <div class="admin-expertise-pills">${expertise.map(e => `<span class="admin-expertise-pill">${e}</span>`).join('')}</div>
+          </div>
+          ${app.bio ? `<div class="admin-detail-row admin-detail-full"><span class="admin-detail-label">Bio</span><p class="admin-bio-text">${app.bio}</p></div>` : ''}
+        </div>
+
+        <!-- Live profile preview -->
+        <details class="admin-preview-toggle">
+          <summary>👁 Preview profile as it would appear on the site</summary>
+          <div class="admin-profile-preview" id="admin-preview-${app.id}">
+            ${renderPendingProfile(app)}
+          </div>
+        </details>
+
+        <!-- Code block -->
+        <details class="admin-code-toggle">
+          <summary>📋 View generated code blocks</summary>
+          <div class="admin-code-wrap">
+            <p class="admin-code-label">1. Add this to the <code>INSTRUCTORS</code> array in <code>script.js</code>:</p>
+            <pre class="admin-code-block" id="code-instructors-${app.id}">${escHtml(codeBlock)}</pre>
+            <button class="btn btn-outline admin-copy-btn" data-copy="code-instructors-${app.id}">Copy INSTRUCTORS entry</button>
+
+            <p class="admin-code-label" style="margin-top:18px">2. Add this to the <code>CONTACT</code> map in <code>script.js</code>:</p>
+            <pre class="admin-code-block" id="code-contact-${app.id}">${escHtml(contactBlock)}</pre>
+            <button class="btn btn-outline admin-copy-btn" data-copy="code-contact-${app.id}">Copy CONTACT entry</button>
+          </div>
+        </details>
+
+        ${app.status === 'pending' ? `
+        <div class="admin-app-actions">
+          <button class="btn btn-navy admin-approve-btn" data-appid="${app.id}">✓ Approve &amp; Publish Live</button>
+          <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}">✕ Reject</button>
+          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete</button>
+        </div>` : app.status === 'approved' ? `
+        <div class="admin-app-actions">
+          <button class="btn btn-outline admin-view-live-btn" data-slug="${app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}">👁 View Live Profile</button>
+          <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}" style="color:#c0392b;border-color:#c0392b">✕ Remove from Site</button>
+          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete Record</button>
+        </div>` : `
+        <div class="admin-app-actions">
+          <button class="btn btn-outline admin-restore-btn" data-appid="${app.id}">↩ Restore to Pending</button>
+          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete Record</button>
+        </div>`}
+      </div>`;
+  }
+
+  const noneMsg = `<div class="admin-empty">No applications yet. They'll appear here when instructors submit the join form.</div>`;
+
+  return `
+    <div class="admin-page">
+      <div class="admin-page-header">
+        <h1>Admin — Instructor Applications</h1>
+        <p>Applications submitted via the Join the Network form. Stored in this browser's local storage.</p>
+      </div>
+
+      <div class="admin-tabs" id="admin-tabs">
+        <button class="admin-tab active" data-tab="pending">Pending <span class="admin-tab-count">${pending.length}</span></button>
+        <button class="admin-tab" data-tab="approved">Approved <span class="admin-tab-count">${approved.length}</span></button>
+        <button class="admin-tab" data-tab="rejected">Rejected <span class="admin-tab-count">${rejected.length}</span></button>
+      </div>
+
+      <div class="admin-tab-panel" id="admin-panel-pending">
+        ${pending.length ? pending.map(appCard).join('') : noneMsg}
+      </div>
+      <div class="admin-tab-panel" id="admin-panel-approved" style="display:none">
+        ${approved.length ? approved.map(appCard).join('') : noneMsg}
+      </div>
+      <div class="admin-tab-panel" id="admin-panel-rejected" style="display:none">
+        ${rejected.length ? rejected.map(appCard).join('') : noneMsg}
+      </div>
+
+      <div class="admin-footer-note">
+        <p>💡 <strong>How it works:</strong> Click <em>Approve &amp; Publish Live</em> and the profile appears on the site instantly — home page, find page, and a full profile URL. Click <em>Remove from Site</em> on an approved card to take it down immediately.</p>
+        <p style="margin-top:8px">⚠️ Live profiles are stored in <strong>this browser's localStorage</strong>. For permanent profiles visible to all visitors, also paste the generated code into <code>script.js</code> and push to GitHub. Access this page via <code>index.html?key=${ADMIN_PASSWORD}#admin</code></p>
+      </div>
+    </div>`;
+}
+
+/* Render a pending application as a live profile preview (no contact buttons) */
+function renderPendingProfile(app) {
+  const initials   = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const expYears   = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
+  const expLabel   = expYears >= 1 ? expYears + '+ years' : 'Under 1 year';
+  const expertise  = resolveExpertise(app.expertiseIds || []);
+  const transmission = [app.vAuto ? 'Automatic' : '', app.vManual ? 'Manual' : ''].filter(Boolean).join(' & ') || 'Automatic';
+  const avail      = [...(app.availDays||[]), ...(app.availTimes||[])].join(' / ') || '(not specified)';
+
+  const feesHTML = [
+    `<div class="qs-item"><div class="qs-item-label">60 min lesson</div><div class="qs-item-value">$${app.fee60}</div></div>`,
+    app.fee90 ? `<div class="qs-item"><div class="qs-item-label">90 min lesson</div><div class="qs-item-value">$${app.fee90}</div></div>` : ''
+  ].join('');
+
+  const vehiclesHTML = [
+    app.vAuto   ? `<div class="qs-item"><div class="qs-item-label">Automatic</div><div class="qs-item-value">${app.vAuto}</div></div>`   : '',
+    app.vManual ? `<div class="qs-item"><div class="qs-item-label">Manual</div><div class="qs-item-value">${app.vManual}</div></div>` : ''
+  ].join('');
+
+  return `
+    <div class="profile-card-wrap">
+      <div class="profile-header-row">
+        <div class="profile-avatar-circle" style="width:80px;height:80px;font-size:28px">${initials}</div>
+        <div>
+          <div class="profile-name" style="font-size:22px">${app.name}${expYears >= 10 ? '<span class="senior-badge" title="10+ Years Experience">⭐</span>' : ''}</div>
+          <div class="profile-title">Professional Driving Instructor</div>
+          <div class="profile-location">${ICONS.pin} ${app.suburb} &amp; surrounding suburbs</div>
+        </div>
+      </div>
+      <div class="quick-summary" style="margin-top:20px">
+        <div class="qs-title">Instructor Profile</div>
+        <div class="qs-grid">
+          <div class="qs-item"><div class="qs-item-label">Service Area</div><div class="qs-item-value">Based in ${app.suburb}</div></div>
+          <div class="qs-item"><div class="qs-item-label">Travel Radius</div><div class="qs-item-value">Up to ${app.radius} km</div></div>
+          <div class="qs-item"><div class="qs-item-label">Transmission</div><div class="qs-item-value">${transmission}</div></div>
+          <div class="qs-item"><div class="qs-item-label">Experience</div><div class="qs-item-value">${expLabel}</div></div>
+          <div class="qs-item"><div class="qs-item-label">Availability</div><div class="qs-item-value">${avail}</div></div>
+          ${feesHTML}
+          ${vehiclesHTML}
+          ${app.languages && app.languages.length ? `<div class="qs-item"><div class="qs-item-label">Languages</div><div class="qs-item-value">${app.languages.join(', ')}</div></div>` : ''}
+        </div>
+      </div>
+      ${app.bio ? `<div class="profile-about" style="margin-top:20px"><div class="profile-about-inner"><h2>About ${app.name}</h2><p>${app.bio}</p></div></div>` : ''}
+      ${expertise.length ? `
+        <div class="profile-expertise-wrap" style="margin-top:20px;padding:20px;background:var(--off-white);border-radius:var(--radius)">
+          <h3 style="font-size:15px;margin-bottom:14px;color:var(--text-dark)">Areas of Expertise</h3>
+          <div class="expertise-tags">${expertise.map(e=>`<span class="expertise-tag">${e}</span>`).join('')}</div>
+        </div>` : ''}
+    </div>`;
+}
+
+/* HTML-escape helper for code blocks */
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* Admin page event bindings */
+function bindAdminEvents() {
+  // Password gate
+  const keyBtn = document.getElementById('admin-key-btn');
+  if (keyBtn) {
+    const doUnlock = () => {
+      const val = document.getElementById('admin-key-input').value.trim();
+      if (val === ADMIN_PASSWORD) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('key', val);
+        window.location.href = url.toString();
+      } else {
+        document.getElementById('admin-key-error').style.display = 'block';
+      }
+    };
+    keyBtn.addEventListener('click', doUnlock);
+    document.getElementById('admin-key-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') doUnlock(); });
+    return;
+  }
+
+  // Tabs
+  document.querySelectorAll('.admin-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.admin-tab-panel').forEach(p => p.style.display = 'none');
+      tab.classList.add('active');
+      document.getElementById('admin-panel-' + tab.dataset.tab).style.display = 'block';
+    });
+  });
+
+  // Copy buttons
+  document.querySelectorAll('.admin-copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pre = document.getElementById(btn.dataset.copy);
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.textContent).then(() => {
+        const orig = btn.textContent; btn.textContent = '✓ Copied!'; btn.disabled = true;
+        setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
+      });
+    });
+  });
+
+  // View live profile button
+  document.querySelectorAll('.admin-view-live-btn').forEach(btn => {
+    btn.addEventListener('click', () => navigate('profile', btn.dataset.slug));
+  });
+
+  // Approve button — instantly publishes the profile live on the site
+  document.querySelectorAll('.admin-approve-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const appId = btn.dataset.appid;
+      let apps = [];
+      try { apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]'); } catch(e) {}
+      const idx = apps.findIndex(a => a.id === appId);
+      if (idx === -1) return;
+      const app = apps[idx];
+      apps[idx].status = 'approved';
+      try { localStorage.setItem('pdin_applications', JSON.stringify(apps)); } catch(e) {}
+
+      // Build a full instructor object from the application
+      const expYears   = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
+      const expLabel   = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
+      const idSlug     = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+      const initials   = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const availLabel = (app.availDays||[]).join(' / ') || 'Contact instructor';
+      const feesArr    = [{ duration: '60 min', price: '$' + app.fee60 }];
+      if (app.fee90) feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
+      const vehiclesArr = [];
+      if (app.vAuto)   vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
+      if (app.vManual) vehiclesArr.push({ type: 'Manual', car: app.vManual });
+
+      const liveProfile = {
+        id:           idSlug,
+        initials,
+        name:         app.name,
+        title:        'Professional Driving Instructor',
+        baseSuburb:   app.suburb,
+        baseLat:      null,
+        baseLng:      null,
+        serviceRadius: parseInt(app.radius) || 10,
+        travelBonus:  false,
+        travelFee:    false,
+        location:     app.suburb + ' &amp; surrounding suburbs',
+        experience:   expLabel,
+        customQS:     true,
+        lessonFees:   feesArr,
+        vehicles:     vehiclesArr,
+        availability: availLabel,
+        expertiseIds: app.expertiseIds || [],
+        seniorBadge:  expYears >= 10,
+        photo:        null,
+        bio:          app.bio || '',
+        languages:    app.languages || [],
+        _fromApp:     appId,
+      };
+
+      try {
+        const live = JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]');
+        const eIdx = live.findIndex(p => p._fromApp === appId);
+        if (eIdx >= 0) live[eIdx] = liveProfile; else live.push(liveProfile);
+        localStorage.setItem('pdin_live_profiles', JSON.stringify(live));
+      } catch(e) {}
+
+      showToast('✅ ' + app.name + ' is now live on the website!');
+      setTimeout(() => navigate('admin'), 400);
+    });
+  });
+
+  // Reject / Remove from site
+  document.querySelectorAll('.admin-reject-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm('Reject this application? If already approved, the profile will be removed from the site.')) return;
+      try {
+        const apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
+        const idx  = apps.findIndex(a => a.id === btn.dataset.appid);
+        if (idx !== -1) apps[idx].status = 'rejected';
+        localStorage.setItem('pdin_applications', JSON.stringify(apps));
+        // Remove from live profiles
+        const live = JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]');
+        localStorage.setItem('pdin_live_profiles', JSON.stringify(live.filter(p => p._fromApp !== btn.dataset.appid)));
+      } catch(e) {}
+      navigate('admin');
+    });
+  });
+
+  // Restore to pending
+  document.querySelectorAll('.admin-restore-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      try {
+        const apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
+        const idx  = apps.findIndex(a => a.id === btn.dataset.appid);
+        if (idx !== -1) apps[idx].status = 'pending';
+        localStorage.setItem('pdin_applications', JSON.stringify(apps));
+      } catch(e) {}
+      navigate('admin');
+    });
+  });
+
+  // Delete
+  document.querySelectorAll('.admin-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm('Permanently delete this application record?')) return;
+      try {
+        const apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
+        localStorage.setItem('pdin_applications', JSON.stringify(apps.filter(a => a.id !== btn.dataset.appid)));
+      } catch(e) {}
+      navigate('admin');
+    });
+  });
+}
 
 /* =============================================
    CALL STATS PAGE (admin — via #stats)
@@ -1297,6 +1711,7 @@ function bindPageEvents() {
   document.querySelectorAll('[data-action="profile"]').forEach(el => {
     el.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); navigate('profile', el.dataset.id); });
   });
+  bindAdminEvents();
 
   /* Hero suburb search */
   const heroSearchBtn = document.getElementById('hero-search-btn');
@@ -1700,6 +2115,30 @@ function bindPageEvents() {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
+          // ── Save application to localStorage for admin preview ──
+          const appId = 'app_' + Date.now();
+          const application = {
+            id:          appId,
+            submittedAt: new Date().toISOString(),
+            status:      'pending',
+            name, email, phone, dia,
+            exp, suburb,
+            radius:      parseInt(radius, 10),
+            vAuto:       vAuto  || '',
+            vManual:     vManual|| '',
+            languages:   languages.length ? languages : [],
+            availDays, availTimes, availSpecific,
+            fee60, fee90: fee90 || '',
+            expertiseIds,
+            bio,
+            photoName:   photoFile ? photoFile.name : '',
+          };
+          try {
+            const existing = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
+            existing.push(application);
+            localStorage.setItem('pdin_applications', JSON.stringify(existing));
+          } catch(e) { /* storage unavailable — no problem, email still went */ }
+
           document.getElementById('join-form-box').innerHTML = `
             <div class="success-box">
               <div class="success-icon">${ICONS.check}</div>
@@ -1832,5 +2271,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const initState = { page: page||'home', extra: extra||null };
     if ((page||'home') === 'join') initState.joinStep = 1;
     history.replaceState(initState, '', window.location.hash);
-  } else { navigate('home', null, false); history.replaceState({ page:'home', extra:null }, '', '#home'); }
+  } else {
+    // Check if arriving at ?key=…#admin via URL (no hash yet)
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('key')) {
+      navigate('admin', null, false);
+      history.replaceState({ page:'admin', extra:null }, '', window.location.href);
+    } else {
+      navigate('home', null, false);
+      history.replaceState({ page:'home', extra:null }, '', '#home');
+    }
+  }
 });
