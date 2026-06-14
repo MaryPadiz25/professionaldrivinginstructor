@@ -149,6 +149,7 @@ const INSTRUCTORS = [
     ],
     seniorBadge: true,
     photo: 'rob-lester.jpg',
+    credentials: { dia: true, wwcc: true },
     bio: "Rob is a professional driving instructor based in Melbourne's Eastern Suburbs with over 20 years of experience helping learner drivers build confidence and pass their driving tests safely and efficiently. He is also a qualified commercial pilot and flight instructor, bringing an aviation-based approach to training that focuses on calm decision-making, structure, and safety. His calm, structured approach helps students become safe, independent drivers.",
   },
   {
@@ -168,6 +169,7 @@ const INSTRUCTORS = [
     availability: 'Weekdays / Weekends',
     seniorBadge: true,
     photo: 'john-stevens.jpg',
+    credentials: { dia: true, wwcc: true },
     bio: "John is a professional driving instructor based in Melbourne's east with over 12 years of experience helping learner drivers build confidence and pass their driving test safely and efficiently. His calm, structured approach has helped hundreds of students become safe, independent drivers.",
   },
   {
@@ -187,6 +189,7 @@ const INSTRUCTORS = [
     availability: 'Weekdays / Saturdays',
     seniorBadge: false,
     photo: 'lisa-wong.jpg',
+    credentials: { dia: true, wwcc: false },
     bio: "Lisa is an experienced automatic driving instructor operating in Melbourne's CBD and inner suburbs. With 8 years of experience, she specialises in building confidence in busy urban environments, helping students master parallel parking, roundabouts, and city traffic with ease.",
   },
   {
@@ -206,6 +209,7 @@ const INSTRUCTORS = [
     availability: 'Weekdays / Weekends',
     seniorBadge: true,
     photo: 'mark-harris.jpg',
+    credentials: { dia: true, wwcc: true },
     bio: "Mark brings over 15 years of driving instruction experience to Melbourne's western suburbs. Known for his patient, structured teaching style, Mark has helped learners of all ages — from nervous first-timers to experienced drivers seeking to improve — become safe, confident road users.",
   }
 ];
@@ -387,9 +391,8 @@ function sortInstructorsByDistance(lat, lng, instructorList) {
    INSTRUCTOR CARD HTML
    ============================================= */
 function instructorCardHTML(inst, distKm) {
-  const photoSrc = inst.photoDataUrl || (inst.photo ? inst.photo : null);
-  const photoEl = photoSrc
-    ? `<img src="${photoSrc}" alt="${inst.name}" class="card-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="avatar-initials" style="display:none">${inst.initials}</div>`
+  const photoEl = inst.photo
+    ? `<img src="${inst.photo}" alt="${inst.name}" class="card-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="avatar-initials" style="display:none">${inst.initials}</div>`
     : `<div class="avatar-initials">${inst.initials}</div>`;
 
   // Smart badge
@@ -423,7 +426,6 @@ function instructorCardHTML(inst, distKm) {
    LIVE PROFILE HELPERS
    Approved applications are stored in pdin_live_profiles
    and merged with hardcoded INSTRUCTORS at runtime.
-   Photo is stored as base64 so it shows without a server.
    ============================================= */
 function getLiveProfiles() {
   try { return JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]'); } catch(e) { return []; }
@@ -447,8 +449,14 @@ function renderHome() {
         <div class="hero-search-bar">
           <div class="hero-search-inner">
             ${ICONS.search}
-            <input type="text" id="hero-suburb-input" placeholder="Enter your suburb or postcode…" autocomplete="off" />
+            <input type="text" id="hero-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" />
             <button class="btn btn-gold" id="hero-search-btn">Find Instructors</button>
+          </div>
+          <div class="find-location-btn-wrap">
+            <button class="btn btn-find-location" id="hero-location-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/></svg>
+              Use my current location
+            </button>
           </div>
         </div>
         <div class="hero-btns">
@@ -539,7 +547,6 @@ function renderProfile(id) {
   const allInst = getAllInstructors();
   const inst = allInst.find(i => i.id === id) || allInst[0];
   const effectiveRadius = inst.travelBonus ? inst.serviceRadius + 8 : inst.serviceRadius;
-
   const photoSrc = inst.photoDataUrl || inst.photo || null;
   const avatarEl = photoSrc
     ? `<img src="${photoSrc}" alt="${inst.name}" class="profile-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="profile-avatar-circle" style="display:none">${inst.initials}</div>`
@@ -561,9 +568,20 @@ function renderProfile(id) {
     const expertiseHTML = expertiseLabels.map(a => `<li>${a}</li>`).join('');
     const feesHTML      = inst.lessonFees.map(f => `<div class="qs-item-value">${f.duration} — ${f.price}</div>`).join('');
     const vehiclesHTML  = inst.vehicles.map(v => `<div class="qs-item-value">${v.type} — ${v.car}</div>`).join('');
+    const credTag = (provided) => provided
+      ? `<span class="cred-tag cred-provided">Provided</span>`
+      : `<span class="cred-tag cred-not-provided">Not provided</span>`;
+    const creds = inst.credentials || {};
+    const credentialsBlock = `
+      <div class="qs-block">
+        <div class="qs-item-label">Credentials</div>
+        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTag(creds.dia)}</div>
+        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTag(creds.wwcc)}</div>
+      </div>`;
     qsRows = `
       <div class="qs-col-left">
         <div class="qs-block"><div class="qs-item-label">Experience</div><div class="qs-item-value">${inst.experience}</div></div>
+        ${credentialsBlock}
         <div class="qs-block"><div class="qs-item-label">Areas of Expertise</div><ul class="qs-expertise-list">${expertiseHTML}</ul></div>
       </div>
       <div class="qs-col-right">
@@ -573,8 +591,17 @@ function renderProfile(id) {
         ${serviceAreaBlock}
       </div>`;
   } else {
+    const credTag = (provided) => provided
+      ? `<span class="cred-tag cred-provided">Provided</span>`
+      : `<span class="cred-tag cred-not-provided">Not provided</span>`;
+    const creds = inst.credentials || {};
     qsRows = `
       <div><div class="qs-item-label">Experience</div><div class="qs-item-value">${inst.experience}</div></div>
+      <div>
+        <div class="qs-item-label">Credentials</div>
+        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTag(creds.dia)}</div>
+        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTag(creds.wwcc)}</div>
+      </div>
       <div><div class="qs-item-label">Lesson Fee</div><div class="qs-item-value">${inst.fee}</div></div>
       <div><div class="qs-item-label">Transmission</div><div class="qs-item-value">${inst.transmission}</div></div>
       <div><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div></div>
@@ -690,7 +717,8 @@ function renderJoin() {
               ${yearOptions}
             </select>
           </div>
-          <div class="form-group"><label class="form-label">DIA Number <span>*</span></label><input type="text" class="form-input" placeholder="Your Driving Instructor Authority number" id="join-dia" /><small class="form-hint">For verification purposes. This will not be displayed publicly.</small></div>
+          <div class="form-group"><label class="form-label">Driving Instructor Authority (DIA) Number <span>*</span></label><input type="text" class="form-input" placeholder="Your Driving Instructor Authority number" id="join-dia" /><small class="form-hint">This information is used to check instructor eligibility and is not shown publicly.</small></div>
+          <div class="form-group"><label class="form-label">Working With Children Check (WWCC) Number</label><input type="text" class="form-input" placeholder="Enter your WWCC number" id="join-wwcc" /><small class="form-hint">This information is used to check instructor eligibility and is not shown publicly.</small></div>
           <div class="form-group">
             <label class="form-label">Automatic Vehicle</label>
             <input type="text" class="form-input" placeholder="Vehicle make &amp; model (if applicable)" id="join-vehicle-auto" />
@@ -1180,7 +1208,6 @@ function getPageContent(page, extra) {
     case 'about':   return renderAbout();
     case 'pricing': return renderPricing();
     case 'contact': return renderContact();
-    case 'admin':   return renderAdminPage(extra);
     case 'stats':   return renderStatsPage();
     case 'admin':   return renderAdminPage(extra);
     default:        return renderHome();
@@ -1370,8 +1397,8 @@ ${expertiseIdStr}
       </div>
 
       <div class="admin-footer-note">
-        <p>💡 <strong>How it works:</strong> Click <em>Approve &amp; Publish Live</em> — the profile including photo appears on the site instantly. Click <em>Remove from Site</em> on an approved card to take it down immediately.</p>
-        <p style="margin-top:8px">⚠️ Live profiles are stored in <strong>this browser's localStorage</strong>. To make a profile permanent for all visitors, also paste the generated code block into <code>script.js</code> and push to GitHub.</p>
+        <p>💡 <strong>How it works:</strong> When you click <em>Approve &amp; Copy Code</em>, the application is marked as approved and the ready-to-paste code block is copied to your clipboard. Open <code>script.js</code>, find the <code>INSTRUCTORS</code> array, and paste before the closing <code>]</code>. Do the same for the <code>CONTACT</code> entry. Then upload the instructor's photo.</p>
+        <p style="margin-top:8px">⚠️ Data is stored in <strong>this browser only</strong>. Do not clear site data or it will be lost. Access this page via <code>index.html?key=${ADMIN_PASSWORD}#admin</code></p>
       </div>
     </div>`;
 }
@@ -1398,10 +1425,7 @@ function renderPendingProfile(app) {
   return `
     <div class="profile-card-wrap">
       <div class="profile-header-row">
-        ${app.photoDataUrl
-          ? `<img src="${app.photoDataUrl}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="${app.name}" />`
-          : `<div class="profile-avatar-circle" style="width:80px;height:80px;font-size:28px">${initials}</div>`
-        }
+        <div class="profile-avatar-circle" style="width:80px;height:80px;font-size:28px">${initials}</div>
         <div>
           <div class="profile-name" style="font-size:22px">${app.name}${expYears >= 10 ? '<span class="senior-badge" title="10+ Years Experience">⭐</span>' : ''}</div>
           <div class="profile-title">Professional Driving Instructor</div>
@@ -1477,12 +1501,12 @@ function bindAdminEvents() {
     });
   });
 
-  // View live profile button
+  // View live profile
   document.querySelectorAll('.admin-view-live-btn').forEach(btn => {
     btn.addEventListener('click', () => navigate('profile', btn.dataset.slug));
   });
 
-  // Approve — instantly publishes the profile live on the site including photo
+  // Approve — instantly publishes profile live including photo and credentials
   document.querySelectorAll('.admin-approve-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
@@ -1494,16 +1518,16 @@ function bindAdminEvents() {
       apps[idx].status = 'approved';
       try { localStorage.setItem('pdin_applications', JSON.stringify(apps)); } catch(e) {}
 
-      const expYears   = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
-      const expLabel   = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
-      const idSlug     = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-      const initials   = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const availLabel = (app.availDays||[]).join(' / ') || 'Contact instructor';
-      const feesArr    = [{ duration: '60 min', price: '$' + app.fee60 }];
-      if (app.fee90) feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
+      const expYears    = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
+      const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
+      const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+      const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
+      const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
+      if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
       const vehiclesArr = [];
-      if (app.vAuto)   vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
-      if (app.vManual) vehiclesArr.push({ type: 'Manual', car: app.vManual });
+      if (app.vAuto)    vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
+      if (app.vManual)  vehiclesArr.push({ type: 'Manual', car: app.vManual });
 
       const liveProfile = {
         id:           idSlug,
@@ -1523,9 +1547,10 @@ function bindAdminEvents() {
         vehicles:     vehiclesArr,
         availability: availLabel,
         expertiseIds: app.expertiseIds || [],
+        credentials:  { dia: !!(app.dia), wwcc: !!(app.wwcc) },  // true if value was provided
         seniorBadge:  expYears >= 10,
         photo:        null,
-        photoDataUrl: app.photoDataUrl || null,   // ← photo from form, shows immediately
+        photoDataUrl: app.photoDataUrl || null,
         bio:          app.bio || '',
         languages:    app.languages || [],
         _fromApp:     appId,
@@ -1724,7 +1749,13 @@ function bindPageEvents() {
   const heroInput     = document.getElementById('hero-suburb-input');
   if (heroSearchBtn && heroInput) {
     async function doHeroSearch() {
-      const q = heroInput.value.trim(); if (!q) return;
+      const q = heroInput.value.trim();
+      if (!q) {
+        showToast('Please enter a suburb or postcode to search for instructors.');
+        heroInput.classList.add('input-error');
+        setTimeout(() => heroInput.classList.remove('input-error'), 2000);
+        return;
+      }
       heroSearchBtn.disabled = true; heroSearchBtn.innerHTML = '<span class="btn-spinner"></span>';
       const result = await geocodeSuburb(q).catch(() => null);
       heroSearchBtn.disabled = false; heroSearchBtn.innerHTML = 'Find Instructors';
@@ -1733,6 +1764,34 @@ function bindPageEvents() {
     }
     heroSearchBtn.addEventListener('click', doHeroSearch);
     heroInput.addEventListener('keydown', e => { if (e.key === 'Enter') doHeroSearch(); });
+  }
+
+  /* Hero — Use my current location */
+  const heroLocationBtn = document.getElementById('hero-location-btn');
+  if (heroLocationBtn) {
+    heroLocationBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) { showToast('Geolocation is not supported by your browser.'); return; }
+      heroLocationBtn.disabled = true;
+      heroLocationBtn.innerHTML = '<span class="btn-spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff"></span> Locating…';
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude, lng = pos.coords.longitude;
+          try {
+            const res    = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`, { headers: { 'Accept-Language': 'en' } });
+            const data   = await res.json();
+            const suburb = data.address?.suburb || data.address?.town || data.address?.city || 'Your Location';
+            _searchLat = lat; _searchLng = lng; _searchLabel = suburb;
+          } catch { _searchLat = lat; _searchLng = lng; _searchLabel = 'Your Location'; }
+          navigate('find');
+        },
+        (err) => {
+          heroLocationBtn.disabled = false;
+          heroLocationBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/></svg> Use my current location`;
+          showToast(err.code === err.PERMISSION_DENIED ? 'Location access was denied. Please allow location access in your browser settings.' : 'Unable to determine your location. Please enter your suburb manually.');
+        },
+        { timeout: 10000, maximumAge: 60000 }
+      );
+    });
   }
 
   /* Find page search */
@@ -1818,6 +1877,18 @@ function bindPageEvents() {
 
   /* ── Join form: step management with browser-history support ── */
 
+  /* Phone number auto-formatting — formats as 0412 345 678 */
+  const phoneInput = document.getElementById('join-phone');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', () => {
+      const digits = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+      let formatted = digits;
+      if (digits.length > 4 && digits.length <= 7) formatted = digits.slice(0,4) + ' ' + digits.slice(4);
+      else if (digits.length > 7) formatted = digits.slice(0,4) + ' ' + digits.slice(4,7) + ' ' + digits.slice(7);
+      phoneInput.value = formatted;
+    });
+  }
+
   // Collect all serialisable form values into a plain object
   function collectJoinFormData() {
     const get  = id => document.getElementById(id)?.value ?? '';
@@ -1828,6 +1899,7 @@ function bindPageEvents() {
       phone:       get('join-phone'),
       exp:         get('join-exp'),
       dia:         get('join-dia'),
+      wwcc:        get('join-wwcc'),
       vAuto:       get('join-vehicle-auto'),
       vManual:     get('join-vehicle-manual'),
       langOther:   get('join-lang-other'),
@@ -1850,7 +1922,7 @@ function bindPageEvents() {
     if (!d) return;
     const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
     set('join-name', d.name);  set('join-email', d.email); set('join-phone', d.phone);
-    set('join-exp', d.exp);    set('join-dia', d.dia);
+    set('join-exp', d.exp);    set('join-dia', d.dia);    set('join-wwcc', d.wwcc);
     set('join-vehicle-auto', d.vAuto); set('join-vehicle-manual', d.vManual);
     set('join-lang-other', d.langOther);
     set('join-suburb', d.suburb); set('join-radius', d.radius);
@@ -2032,6 +2104,7 @@ function bindPageEvents() {
 
       const phone   = document.getElementById('join-phone')?.value || '';
       const exp     = document.getElementById('join-exp')?.value || '';
+      const wwcc    = document.getElementById('join-wwcc')?.value?.trim() || '';
       const bio     = document.getElementById('join-bio')?.value || '';
       const radius  = document.getElementById('join-radius')?.value || '10';
       const vAuto   = document.getElementById('join-vehicle-auto')?.value || '';
@@ -2097,6 +2170,7 @@ function bindPageEvents() {
       fd.append('Email',                   email);
       fd.append('Phone',                   phone);
       fd.append('DIA_Number',              dia);
+      fd.append('WWCC_Number',             wwcc || '(not provided)');
       fd.append('Year_Started',            exp);
       fd.append('Primary_Suburb',          suburb);
       fd.append('Travel_Radius_km',        radius + ' km');
@@ -2113,17 +2187,6 @@ function bindPageEvents() {
       fd.append('About',                   bio);
       if (photoFile) fd.append('attachment', photoFile, photoFile.name);
 
-      // ── Convert photo to base64 so it's stored with the application ──
-      // This means the photo shows immediately on approval — no server needed.
-      let photoDataUrl = null;
-      if (photoFile) {
-        photoDataUrl = await new Promise(resolve => {
-          const reader = new FileReader();
-          reader.onload = e => resolve(e.target.result);
-          reader.readAsDataURL(photoFile);
-        });
-      }
-
       fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Accept': 'application/json' }, // NO Content-Type — browser sets multipart boundary
@@ -2138,7 +2201,7 @@ function bindPageEvents() {
             id:          appId,
             submittedAt: new Date().toISOString(),
             status:      'pending',
-            name, email, phone, dia,
+            name, email, phone, dia, wwcc,
             exp, suburb,
             radius:      parseInt(radius, 10),
             vAuto:       vAuto  || '',
@@ -2148,8 +2211,7 @@ function bindPageEvents() {
             fee60, fee90: fee90 || '',
             expertiseIds,
             bio,
-            photoName:    photoFile ? photoFile.name : '',
-            photoDataUrl: photoDataUrl || null,
+            photoName:   photoFile ? photoFile.name : '',
           };
           try {
             const existing = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
