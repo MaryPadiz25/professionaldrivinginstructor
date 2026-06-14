@@ -2282,3 +2282,178 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .stats-note { margin-top: 20px; font-size: 13px; color: var(--text-light); }
 .stats-note code { background: var(--bg-light); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
 .stats-actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+/* =============================================
+   ADMIN PAGE
+   ============================================= */
+
+/* Password gate */
+.admin-gate {
+  min-height: calc(100vh - var(--nav-h) - 120px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 20px;
+}
+.admin-gate-box {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 48px 40px 40px;
+  width: 100%; max-width: 380px;
+  text-align: center;
+}
+.admin-gate-logo { font-size: 36px; margin-bottom: 16px; }
+.admin-gate-box h2 { font-family: var(--font-serif); font-size: 22px; margin-bottom: 6px; }
+.admin-gate-box p  { color: var(--text-light); font-size: 14px; }
+.admin-key-error   { color: #c0392b; font-size: 13px; margin-top: 8px; }
+
+/* Page layout */
+.admin-page {
+  max-width: 900px; margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+.admin-page-header { margin-bottom: 28px; }
+.admin-page-header h1 { font-family: var(--font-serif); font-size: 28px; color: var(--text-dark); margin-bottom: 6px; }
+.admin-page-header p  { color: var(--text-light); font-size: 14px; }
+
+/* Tabs */
+.admin-tabs {
+  display: flex; gap: 4px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 28px;
+}
+.admin-tab {
+  background: none; border: none;
+  padding: 10px 20px; font-size: 14px; font-weight: 600;
+  color: var(--text-light); cursor: pointer; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color var(--transition), background var(--transition);
+  position: relative; bottom: -2px;
+}
+.admin-tab:hover  { color: var(--navy); background: var(--off-white); }
+.admin-tab.active {
+  color: var(--navy);
+  border: 2px solid var(--border);
+  border-bottom: 2px solid var(--white);
+  background: var(--white);
+}
+.admin-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--light-gray); color: var(--text-light);
+  font-size: 11px; font-weight: 700;
+  min-width: 20px; height: 20px; border-radius: 10px; padding: 0 5px;
+  margin-left: 6px;
+}
+.admin-tab.active .admin-tab-count { background: var(--navy); color: var(--white); }
+
+/* Application card */
+.admin-app-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.admin-app-header {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  background: var(--off-white);
+}
+.admin-app-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--navy); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; flex-shrink: 0;
+}
+.admin-app-meta { flex: 1; }
+.admin-app-name { font-size: 17px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.admin-app-sub  { font-size: 13px; color: var(--text-light); margin-top: 3px; }
+
+/* Status badges */
+.admin-status-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 9px;
+  border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.admin-badge-pending  { background: #fff8e1; color: #b8860b; }
+.admin-badge-approved { background: #e8f5e9; color: #2e7d32; }
+.admin-badge-rejected { background: #fce8e6; color: #c0392b; }
+
+/* Detail rows */
+.admin-app-details { padding: 20px 24px; display: grid; gap: 10px; }
+.admin-detail-row {
+  display: grid; grid-template-columns: 140px 1fr; gap: 8px;
+  font-size: 14px; color: var(--text-body); align-items: start;
+}
+.admin-detail-label { font-weight: 600; color: var(--text-dark); }
+.admin-detail-full  { grid-template-columns: 1fr; gap: 6px; }
+.admin-bio-text     { font-size: 14px; color: var(--text-body); line-height: 1.6; margin: 0; }
+.admin-expertise-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.admin-expertise-pill {
+  background: var(--light-gray); color: var(--navy);
+  font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 20px;
+}
+
+/* Profile preview */
+.admin-preview-toggle,
+.admin-code-toggle {
+  border-top: 1px solid var(--border);
+}
+.admin-preview-toggle > summary,
+.admin-code-toggle > summary {
+  padding: 14px 24px; font-size: 14px; font-weight: 600;
+  color: var(--navy); cursor: pointer; user-select: none;
+  list-style: none;
+}
+.admin-preview-toggle > summary::-webkit-details-marker,
+.admin-code-toggle > summary::-webkit-details-marker { display: none; }
+.admin-preview-toggle > summary:hover,
+.admin-code-toggle > summary:hover { background: var(--off-white); }
+.admin-profile-preview {
+  padding: 20px 24px; border-top: 1px solid var(--border); background: var(--off-white);
+}
+
+/* Code blocks */
+.admin-code-wrap    { padding: 20px 24px; border-top: 1px solid var(--border); }
+.admin-code-label   { font-size: 13px; color: var(--text-body); margin-bottom: 8px; }
+.admin-code-label code { background: var(--light-gray); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+.admin-code-block {
+  background: #1a2332; color: #e2e8f0;
+  font-size: 12px; line-height: 1.7; padding: 16px 18px;
+  border-radius: var(--radius-sm); overflow-x: auto;
+  white-space: pre; font-family: 'Courier New', monospace;
+  margin-bottom: 10px;
+}
+.admin-copy-btn { font-size: 13px; padding: 7px 16px; }
+
+/* Action buttons row */
+.admin-app-actions {
+  padding: 16px 24px; border-top: 1px solid var(--border);
+  display: flex; gap: 10px; flex-wrap: wrap;
+  background: var(--off-white);
+}
+.admin-approve-btn { background: var(--navy); color: var(--white); }
+.admin-approve-btn:hover { background: var(--navy-dark); }
+
+/* Empty state */
+.admin-empty {
+  text-align: center; padding: 48px 24px;
+  color: var(--text-light); font-size: 15px;
+  border: 1px dashed var(--border); border-radius: var(--radius);
+}
+
+/* Footer note */
+.admin-footer-note {
+  margin-top: 40px; padding: 20px 24px;
+  background: var(--off-white); border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 13px; color: var(--text-body); line-height: 1.7;
+}
+.admin-footer-note code {
+  background: var(--light-gray); padding: 1px 5px;
+  border-radius: 3px; font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .admin-detail-row { grid-template-columns: 1fr; gap: 2px; }
+  .admin-app-actions { flex-direction: column; }
+  .admin-code-block  { font-size: 11px; }
+  .admin-gate-box    { padding: 32px 20px 28px; }
+}
