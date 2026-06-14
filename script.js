@@ -149,7 +149,6 @@ const INSTRUCTORS = [
     ],
     seniorBadge: true,
     photo: 'rob-lester.jpg',
-    credentials: { dia: true, wwcc: true },
     bio: "Rob is a professional driving instructor based in Melbourne's Eastern Suburbs with over 20 years of experience helping learner drivers build confidence and pass their driving tests safely and efficiently. He is also a qualified commercial pilot and flight instructor, bringing an aviation-based approach to training that focuses on calm decision-making, structure, and safety. His calm, structured approach helps students become safe, independent drivers.",
   },
   {
@@ -169,7 +168,6 @@ const INSTRUCTORS = [
     availability: 'Weekdays / Weekends',
     seniorBadge: true,
     photo: 'john-stevens.jpg',
-    credentials: { dia: true, wwcc: true },
     bio: "John is a professional driving instructor based in Melbourne's east with over 12 years of experience helping learner drivers build confidence and pass their driving test safely and efficiently. His calm, structured approach has helped hundreds of students become safe, independent drivers.",
   },
   {
@@ -189,7 +187,6 @@ const INSTRUCTORS = [
     availability: 'Weekdays / Saturdays',
     seniorBadge: false,
     photo: 'lisa-wong.jpg',
-    credentials: { dia: true, wwcc: false },
     bio: "Lisa is an experienced automatic driving instructor operating in Melbourne's CBD and inner suburbs. With 8 years of experience, she specialises in building confidence in busy urban environments, helping students master parallel parking, roundabouts, and city traffic with ease.",
   },
   {
@@ -209,7 +206,6 @@ const INSTRUCTORS = [
     availability: 'Weekdays / Weekends',
     seniorBadge: true,
     photo: 'mark-harris.jpg',
-    credentials: { dia: true, wwcc: true },
     bio: "Mark brings over 15 years of driving instruction experience to Melbourne's western suburbs. Known for his patient, structured teaching style, Mark has helped learners of all ages — from nervous first-timers to experienced drivers seeking to improve — become safe, confident road users.",
   }
 ];
@@ -238,7 +234,7 @@ function trackEnquiry(instructorId, instructorName, leadData) {
 
   // Fire-and-forget POST to Google Sheets (same endpoint as calls)
   if (SHEETS_CALL_LOG_URL && SHEETS_CALL_LOG_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-    const inst   = getAllInstructors().find(i => i.id === instructorId);
+    const inst   = INSTRUCTORS.find(i => i.id === instructorId);
     const suburb = inst ? inst.baseSuburb : '';
     const now    = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
@@ -283,7 +279,7 @@ function trackCall(instructorId, instructorName) {
 
   // Fire-and-forget POST to Google Sheets
   if (SHEETS_CALL_LOG_URL && SHEETS_CALL_LOG_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-    const inst    = getAllInstructors().find(i => i.id === instructorId);
+    const inst    = INSTRUCTORS.find(i => i.id === instructorId);
     const suburb  = inst ? inst.baseSuburb : '';
     const now     = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
@@ -375,11 +371,9 @@ async function geocodeSuburb(query) {
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name.split(',')[0] };
 }
 
-function sortInstructorsByDistance(lat, lng, instructorList) {
-  const list = instructorList || getAllInstructors();
-  return list
+function sortInstructorsByDistance(lat, lng) {
+  return INSTRUCTORS
     .map(inst => {
-      if (!inst.baseLat || !inst.baseLng) return { inst, km: 9999, inRange: false };
       const km = haversineKm(lat, lng, inst.baseLat, inst.baseLng);
       const effectiveRadius = inst.travelBonus ? inst.serviceRadius + 8 : inst.serviceRadius;
       return { inst, km, inRange: km <= effectiveRadius };
@@ -423,20 +417,6 @@ function instructorCardHTML(inst, distKm) {
 }
 
 /* =============================================
-   LIVE PROFILE HELPERS
-   Approved applications are stored in pdin_live_profiles
-   and merged with hardcoded INSTRUCTORS at runtime.
-   ============================================= */
-function getLiveProfiles() {
-  try { return JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]'); } catch(e) { return []; }
-}
-function getAllInstructors() {
-  const live = getLiveProfiles();
-  const liveOnly = live.filter(lp => !INSTRUCTORS.find(i => i.id === lp.id));
-  return [...INSTRUCTORS, ...liveOnly];
-}
-
-/* =============================================
    PAGES
    ============================================= */
 function renderHome() {
@@ -449,14 +429,8 @@ function renderHome() {
         <div class="hero-search-bar">
           <div class="hero-search-inner">
             ${ICONS.search}
-            <input type="text" id="hero-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" />
+            <input type="text" id="hero-suburb-input" placeholder="Enter your suburb or postcode…" autocomplete="off" />
             <button class="btn btn-gold" id="hero-search-btn">Find Instructors</button>
-          </div>
-          <div class="find-location-btn-wrap">
-            <button class="btn btn-find-location" id="hero-location-btn">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/></svg>
-              Use my current location
-            </button>
           </div>
         </div>
         <div class="hero-btns">
@@ -480,7 +454,7 @@ function renderHome() {
       <div class="container">
         <h2 class="section-title reveal">Featured Instructors</h2>
         <div class="instructor-grid">
-          ${getAllInstructors().map(i => instructorCardHTML(i)).join('')}
+          ${INSTRUCTORS.map(i => instructorCardHTML(i)).join('')}
         </div>
       </div>
     </section>
@@ -503,10 +477,9 @@ function renderHome() {
 }
 
 function renderFind(searchLat, searchLng, searchLabel) {
-  const allInst = getAllInstructors();
   const sorted = (searchLat !== undefined)
-    ? sortInstructorsByDistance(searchLat, searchLng, allInst)
-    : allInst.map(i => ({ inst: i, km: undefined }));
+    ? sortInstructorsByDistance(searchLat, searchLng)
+    : INSTRUCTORS.map(i => ({ inst: i, km: undefined }));
 
   const cardsHTML = sorted.map(({ inst, km }) => instructorCardHTML(inst, km)).join('');
   const searchInfo = searchLabel
@@ -544,12 +517,11 @@ function renderFind(searchLat, searchLng, searchLabel) {
 }
 
 function renderProfile(id) {
-  const allInst = getAllInstructors();
-  const inst = allInst.find(i => i.id === id) || allInst[0];
+  const inst = INSTRUCTORS.find(i => i.id === id) || INSTRUCTORS[0];
   const effectiveRadius = inst.travelBonus ? inst.serviceRadius + 8 : inst.serviceRadius;
-  const photoSrc = inst.photoDataUrl || inst.photo || null;
-  const avatarEl = photoSrc
-    ? `<img src="${photoSrc}" alt="${inst.name}" class="profile-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="profile-avatar-circle" style="display:none">${inst.initials}</div>`
+
+  const avatarEl = inst.photo
+    ? `<img src="${inst.photo}" alt="${inst.name}" class="profile-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="profile-avatar-circle" style="display:none">${inst.initials}</div>`
     : `<div class="profile-avatar-circle">${inst.initials}</div>`;
 
   const serviceAreaBlock = `
@@ -568,20 +540,9 @@ function renderProfile(id) {
     const expertiseHTML = expertiseLabels.map(a => `<li>${a}</li>`).join('');
     const feesHTML      = inst.lessonFees.map(f => `<div class="qs-item-value">${f.duration} — ${f.price}</div>`).join('');
     const vehiclesHTML  = inst.vehicles.map(v => `<div class="qs-item-value">${v.type} — ${v.car}</div>`).join('');
-    const credTag = (provided) => provided
-      ? `<span class="cred-tag cred-provided">Provided</span>`
-      : `<span class="cred-tag cred-not-provided">Not provided</span>`;
-    const creds = inst.credentials || {};
-    const credentialsBlock = `
-      <div class="qs-block">
-        <div class="qs-item-label">Credentials</div>
-        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTag(creds.dia)}</div>
-        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTag(creds.wwcc)}</div>
-      </div>`;
     qsRows = `
       <div class="qs-col-left">
         <div class="qs-block"><div class="qs-item-label">Experience</div><div class="qs-item-value">${inst.experience}</div></div>
-        ${credentialsBlock}
         <div class="qs-block"><div class="qs-item-label">Areas of Expertise</div><ul class="qs-expertise-list">${expertiseHTML}</ul></div>
       </div>
       <div class="qs-col-right">
@@ -591,17 +552,8 @@ function renderProfile(id) {
         ${serviceAreaBlock}
       </div>`;
   } else {
-    const credTag = (provided) => provided
-      ? `<span class="cred-tag cred-provided">Provided</span>`
-      : `<span class="cred-tag cred-not-provided">Not provided</span>`;
-    const creds = inst.credentials || {};
     qsRows = `
       <div><div class="qs-item-label">Experience</div><div class="qs-item-value">${inst.experience}</div></div>
-      <div>
-        <div class="qs-item-label">Credentials</div>
-        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTag(creds.dia)}</div>
-        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTag(creds.wwcc)}</div>
-      </div>
       <div><div class="qs-item-label">Lesson Fee</div><div class="qs-item-value">${inst.fee}</div></div>
       <div><div class="qs-item-label">Transmission</div><div class="qs-item-value">${inst.transmission}</div></div>
       <div><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div></div>
@@ -717,8 +669,7 @@ function renderJoin() {
               ${yearOptions}
             </select>
           </div>
-          <div class="form-group"><label class="form-label">Driving Instructor Authority (DIA) Number <span>*</span></label><input type="text" class="form-input" placeholder="Your Driving Instructor Authority number" id="join-dia" /><small class="form-hint">This information is used to check instructor eligibility and is not shown publicly.</small></div>
-          <div class="form-group"><label class="form-label">Working With Children Check (WWCC) Number</label><input type="text" class="form-input" placeholder="Enter your WWCC number" id="join-wwcc" /><small class="form-hint">This information is used to check instructor eligibility and is not shown publicly.</small></div>
+          <div class="form-group"><label class="form-label">DIA Number <span>*</span></label><input type="text" class="form-input" placeholder="Your Driving Instructor Authority number" id="join-dia" /><small class="form-hint">For verification purposes. This will not be displayed publicly.</small></div>
           <div class="form-group">
             <label class="form-label">Automatic Vehicle</label>
             <input type="text" class="form-input" placeholder="Vehicle make &amp; model (if applicable)" id="join-vehicle-auto" />
@@ -906,15 +857,41 @@ function renderJoin() {
 
 function renderAbout() {
   return `
-    <div class="about-hero"><h1>About Us</h1></div>
+    <div class="about-hero"><h1>About PDIN</h1></div>
     <section class="about-content">
       <div class="container">
-        <p>The Professional Driving Instructors Network was created to support experienced instructors who take pride in their work and want to operate independently, without being forced to compete on price.</p>
-        <p>Too often, talented instructors are listed alongside underqualified newcomers on discount-driven platforms that erode trust, lower standards, and devalue the profession. We believe there's a better way.</p>
-        <p>Our network is built on a simple principle: <strong>quality instruction deserves quality presentation</strong>. We provide a professional platform where instructors who meet our standards can present their services in a way that reflects the true value of their work.</p>
-        <p>For learners, this means confidence. You're choosing from a network of instructors who have confirmed they meet our stated professional, safety, and compliance requirements at the time of joining.</p>
-        <p>For instructors, this means respect. No commission fees. No race to the bottom on pricing. No algorithm deciding your visibility. Just a professional platform that presents your business the way it deserves to be presented.</p>
-        <p>We're starting in Melbourne, with plans to expand to Sydney and Brisbane. If you're a professional instructor who meets our standards and shares our values, we'd love to hear from you.</p>
+
+        <p>The Professional Driving Instructors Network was created to help learner drivers find experienced, independent, professional driving instructors through clear and structured profiles.</p>
+
+        <p>Too often, learners are forced to choose between inconsistent listings, unclear experience levels, and price-driven platforms where quality can vary significantly. At the same time, many experienced instructors find themselves competing alongside underqualified newcomers on discount-driven platforms that fail to reflect the value of professional instruction.</p>
+
+        <p class="about-callout">We believe there is a better way.</p>
+
+        <p>PDIN provides a professional platform where driving instructors can present their services in a consistent and structured format, making it easier for learners to compare options and choose the right instructor for their needs.</p>
+
+        <p><strong>For learners,</strong> this means greater transparency. Instructor profiles include experience, lesson pricing, areas of expertise, vehicle information, service areas, and other important details, helping learners make informed decisions with confidence.</p>
+
+        <p><strong>For instructors,</strong> this means respect. No commission fees. No race to the bottom on pricing. No algorithm deciding your visibility. Just a professional platform designed to showcase your experience, services, and teaching strengths in a way that reflects the value you bring to your students.</p>
+
+        <p>Our goal is simple: to create a professional network that benefits both learners and instructors by making quality driving instruction easier to find and easier to present.</p>
+
+        <p>PDIN is currently launching in Melbourne, with plans to expand to Sydney and Brisbane.</p>
+
+        <div class="about-cta-section">
+          <h2 class="about-cta-title">Get Started</h2>
+
+          <div class="about-cta-grid">
+            <div class="about-cta-card">
+              <div class="about-cta-label">Looking for a driving instructor?</div>
+              <button class="btn btn-navy" data-action="nav" data-page="find">Find an Instructor</button>
+            </div>
+            <div class="about-cta-card">
+              <div class="about-cta-label">Are you a professional driving instructor who takes pride in your work and would like to be part of a growing network focused on quality, professionalism, and transparency?</div>
+              <button class="btn btn-gold" data-action="nav" data-page="join">Apply to Join PDIN</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>`;
 }
@@ -1355,18 +1332,13 @@ ${expertiseIdStr}
 
         ${app.status === 'pending' ? `
         <div class="admin-app-actions">
-          <button class="btn btn-navy admin-approve-btn" data-appid="${app.id}">✓ Approve &amp; Publish Live</button>
+          <button class="btn btn-navy admin-approve-btn" data-appid="${app.id}">✓ Approve &amp; Copy Code</button>
           <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}">✕ Reject</button>
           <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete</button>
-        </div>` : app.status === 'approved' ? `
-        <div class="admin-app-actions">
-          <button class="btn btn-outline admin-view-live-btn" data-slug="${app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}">👁 View Live Profile</button>
-          <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}" style="color:#c0392b;border-color:#c0392b">✕ Remove from Site</button>
-          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete Record</button>
         </div>` : `
         <div class="admin-app-actions">
-          <button class="btn btn-outline admin-restore-btn" data-appid="${app.id}">↩ Restore to Pending</button>
           <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete Record</button>
+          ${app.status === 'rejected' ? `<button class="btn btn-outline admin-restore-btn" data-appid="${app.id}">↩ Restore to Pending</button>` : ''}
         </div>`}
       </div>`;
   }
@@ -1501,84 +1473,39 @@ function bindAdminEvents() {
     });
   });
 
-  // View live profile
-  document.querySelectorAll('.admin-view-live-btn').forEach(btn => {
-    btn.addEventListener('click', () => navigate('profile', btn.dataset.slug));
-  });
-
-  // Approve — instantly publishes profile live including photo and credentials
+  // Approve button — mark approved + auto-copy INSTRUCTORS block
   document.querySelectorAll('.admin-approve-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
-      let apps = [];
-      try { apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]'); } catch(e) {}
-      const idx = apps.findIndex(a => a.id === appId);
-      if (idx === -1) return;
-      const app = apps[idx];
-      apps[idx].status = 'approved';
-      try { localStorage.setItem('pdin_applications', JSON.stringify(apps)); } catch(e) {}
-
-      const expYears    = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
-      const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
-      const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-      const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
-      const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
-      if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
-      const vehiclesArr = [];
-      if (app.vAuto)    vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
-      if (app.vManual)  vehiclesArr.push({ type: 'Manual', car: app.vManual });
-
-      const liveProfile = {
-        id:           idSlug,
-        initials,
-        name:         app.name,
-        title:        'Professional Driving Instructor',
-        baseSuburb:   app.suburb,
-        baseLat:      null,
-        baseLng:      null,
-        serviceRadius: parseInt(app.radius) || 10,
-        travelBonus:  false,
-        travelFee:    false,
-        location:     app.suburb + ' &amp; surrounding suburbs',
-        experience:   expLabel,
-        customQS:     true,
-        lessonFees:   feesArr,
-        vehicles:     vehiclesArr,
-        availability: availLabel,
-        expertiseIds: app.expertiseIds || [],
-        credentials:  { dia: !!(app.dia), wwcc: !!(app.wwcc) },  // true if value was provided
-        seniorBadge:  expYears >= 10,
-        photo:        null,
-        photoDataUrl: app.photoDataUrl || null,
-        bio:          app.bio || '',
-        languages:    app.languages || [],
-        _fromApp:     appId,
-      };
-
       try {
-        const live = JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]');
-        const eIdx = live.findIndex(p => p._fromApp === appId);
-        if (eIdx >= 0) live[eIdx] = liveProfile; else live.push(liveProfile);
-        localStorage.setItem('pdin_live_profiles', JSON.stringify(live));
+        const apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
+        const idx  = apps.findIndex(a => a.id === appId);
+        if (idx !== -1) apps[idx].status = 'approved';
+        localStorage.setItem('pdin_applications', JSON.stringify(apps));
       } catch(e) {}
 
-      showToast('✅ ' + app.name + ' is now live on the website!');
-      setTimeout(() => navigate('admin'), 400);
+      // Copy INSTRUCTORS code to clipboard
+      const pre = document.getElementById('code-instructors-' + appId);
+      if (pre) {
+        navigator.clipboard.writeText(pre.textContent).then(() => {
+          showToast('✓ Approved! INSTRUCTORS code copied to clipboard. Paste it into script.js then copy the CONTACT entry too.');
+        }).catch(() => {
+          showToast('Approved! Open the code block to copy it manually.');
+        });
+      }
+      setTimeout(() => navigate('admin'), 300);
     });
   });
 
-  // Reject / Remove from site
+  // Reject
   document.querySelectorAll('.admin-reject-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (!confirm('Reject this application? If already approved, the profile will be removed from the site.')) return;
+      if (!confirm('Mark this application as rejected?')) return;
       try {
         const apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
         const idx  = apps.findIndex(a => a.id === btn.dataset.appid);
         if (idx !== -1) apps[idx].status = 'rejected';
         localStorage.setItem('pdin_applications', JSON.stringify(apps));
-        const live = JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]');
-        localStorage.setItem('pdin_live_profiles', JSON.stringify(live.filter(p => p._fromApp !== btn.dataset.appid)));
       } catch(e) {}
       navigate('admin');
     });
@@ -1616,7 +1543,7 @@ function bindAdminEvents() {
 function renderStatsPage() {
   const callData    = getCallStats();
   const enquiryData = (function(){ try { const r=localStorage.getItem('pdin_enquiries'); return r?JSON.parse(r):{};} catch(e){return {};} })();
-  const allIds      = [...new Set([...Object.keys(callData), ...Object.keys(enquiryData), ...getAllInstructors().map(i=>i.id)])];
+  const allIds      = [...new Set([...Object.keys(callData), ...Object.keys(enquiryData), ...INSTRUCTORS.map(i=>i.id)])];
 
   let totalCalls = 0, totalEnquiries = 0;
   allIds.forEach(id => {
@@ -1625,7 +1552,7 @@ function renderStatsPage() {
   });
 
   const rows = allIds.map(id => {
-    const inst      = getAllInstructors().find(i => i.id === id);
+    const inst      = INSTRUCTORS.find(i => i.id === id);
     const calls     = callData[id]?.count    || 0;
     const enqs      = enquiryData[id]?.count || 0;
     const lastCall  = callData[id]?.lastDate    ? new Date(callData[id].lastDate).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
@@ -1749,13 +1676,7 @@ function bindPageEvents() {
   const heroInput     = document.getElementById('hero-suburb-input');
   if (heroSearchBtn && heroInput) {
     async function doHeroSearch() {
-      const q = heroInput.value.trim();
-      if (!q) {
-        showToast('Please enter a suburb or postcode to search for instructors.');
-        heroInput.classList.add('input-error');
-        setTimeout(() => heroInput.classList.remove('input-error'), 2000);
-        return;
-      }
+      const q = heroInput.value.trim(); if (!q) return;
       heroSearchBtn.disabled = true; heroSearchBtn.innerHTML = '<span class="btn-spinner"></span>';
       const result = await geocodeSuburb(q).catch(() => null);
       heroSearchBtn.disabled = false; heroSearchBtn.innerHTML = 'Find Instructors';
@@ -1764,34 +1685,6 @@ function bindPageEvents() {
     }
     heroSearchBtn.addEventListener('click', doHeroSearch);
     heroInput.addEventListener('keydown', e => { if (e.key === 'Enter') doHeroSearch(); });
-  }
-
-  /* Hero — Use my current location */
-  const heroLocationBtn = document.getElementById('hero-location-btn');
-  if (heroLocationBtn) {
-    heroLocationBtn.addEventListener('click', () => {
-      if (!navigator.geolocation) { showToast('Geolocation is not supported by your browser.'); return; }
-      heroLocationBtn.disabled = true;
-      heroLocationBtn.innerHTML = '<span class="btn-spinner" style="border-color:rgba(255,255,255,0.3);border-top-color:#fff"></span> Locating…';
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude, lng = pos.coords.longitude;
-          try {
-            const res    = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`, { headers: { 'Accept-Language': 'en' } });
-            const data   = await res.json();
-            const suburb = data.address?.suburb || data.address?.town || data.address?.city || 'Your Location';
-            _searchLat = lat; _searchLng = lng; _searchLabel = suburb;
-          } catch { _searchLat = lat; _searchLng = lng; _searchLabel = 'Your Location'; }
-          navigate('find');
-        },
-        (err) => {
-          heroLocationBtn.disabled = false;
-          heroLocationBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/></svg> Use my current location`;
-          showToast(err.code === err.PERMISSION_DENIED ? 'Location access was denied. Please allow location access in your browser settings.' : 'Unable to determine your location. Please enter your suburb manually.');
-        },
-        { timeout: 10000, maximumAge: 60000 }
-      );
-    });
   }
 
   /* Find page search */
@@ -1862,7 +1755,7 @@ function bindPageEvents() {
   if (callBtn) {
     callBtn.addEventListener('click', () => {
       const ct   = CONTACT[callBtn.dataset.id];
-      const inst = getAllInstructors().find(i => i.id === callBtn.dataset.id);
+      const inst = INSTRUCTORS.find(i => i.id === callBtn.dataset.id);
       if (ct && ct.p) {
         trackCall(callBtn.dataset.id, inst ? inst.name : callBtn.dataset.id);
         const a = document.createElement('a');
@@ -1877,18 +1770,6 @@ function bindPageEvents() {
 
   /* ── Join form: step management with browser-history support ── */
 
-  /* Phone number auto-formatting — formats as 0412 345 678 */
-  const phoneInput = document.getElementById('join-phone');
-  if (phoneInput) {
-    phoneInput.addEventListener('input', () => {
-      const digits = phoneInput.value.replace(/\D/g, '').slice(0, 10);
-      let formatted = digits;
-      if (digits.length > 4 && digits.length <= 7) formatted = digits.slice(0,4) + ' ' + digits.slice(4);
-      else if (digits.length > 7) formatted = digits.slice(0,4) + ' ' + digits.slice(4,7) + ' ' + digits.slice(7);
-      phoneInput.value = formatted;
-    });
-  }
-
   // Collect all serialisable form values into a plain object
   function collectJoinFormData() {
     const get  = id => document.getElementById(id)?.value ?? '';
@@ -1899,7 +1780,6 @@ function bindPageEvents() {
       phone:       get('join-phone'),
       exp:         get('join-exp'),
       dia:         get('join-dia'),
-      wwcc:        get('join-wwcc'),
       vAuto:       get('join-vehicle-auto'),
       vManual:     get('join-vehicle-manual'),
       langOther:   get('join-lang-other'),
@@ -1922,7 +1802,7 @@ function bindPageEvents() {
     if (!d) return;
     const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
     set('join-name', d.name);  set('join-email', d.email); set('join-phone', d.phone);
-    set('join-exp', d.exp);    set('join-dia', d.dia);    set('join-wwcc', d.wwcc);
+    set('join-exp', d.exp);    set('join-dia', d.dia);
     set('join-vehicle-auto', d.vAuto); set('join-vehicle-manual', d.vManual);
     set('join-lang-other', d.langOther);
     set('join-suburb', d.suburb); set('join-radius', d.radius);
@@ -2041,7 +1921,7 @@ function bindPageEvents() {
   const enquiryBtn = document.getElementById('open-enquiry-btn');
   if (enquiryBtn) {
     enquiryBtn.addEventListener('click', () => {
-      const inst = getAllInstructors().find(i => i.id === enquiryBtn.dataset.instructorId) || getAllInstructors()[0];
+      const inst = INSTRUCTORS.find(i => i.id === enquiryBtn.dataset.instructorId) || INSTRUCTORS[0];
       openEnquiryModal(inst);
     });
   }
@@ -2104,7 +1984,6 @@ function bindPageEvents() {
 
       const phone   = document.getElementById('join-phone')?.value || '';
       const exp     = document.getElementById('join-exp')?.value || '';
-      const wwcc    = document.getElementById('join-wwcc')?.value?.trim() || '';
       const bio     = document.getElementById('join-bio')?.value || '';
       const radius  = document.getElementById('join-radius')?.value || '10';
       const vAuto   = document.getElementById('join-vehicle-auto')?.value || '';
@@ -2170,7 +2049,6 @@ function bindPageEvents() {
       fd.append('Email',                   email);
       fd.append('Phone',                   phone);
       fd.append('DIA_Number',              dia);
-      fd.append('WWCC_Number',             wwcc || '(not provided)');
       fd.append('Year_Started',            exp);
       fd.append('Primary_Suburb',          suburb);
       fd.append('Travel_Radius_km',        radius + ' km');
@@ -2201,7 +2079,7 @@ function bindPageEvents() {
             id:          appId,
             submittedAt: new Date().toISOString(),
             status:      'pending',
-            name, email, phone, dia, wwcc,
+            name, email, phone, dia,
             exp, suburb,
             radius:      parseInt(radius, 10),
             vAuto:       vAuto  || '',
