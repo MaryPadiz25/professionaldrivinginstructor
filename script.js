@@ -906,15 +906,31 @@ function renderJoin() {
 
 function renderAbout() {
   return `
-    <div class="about-hero"><h1>About Us</h1></div>
+    <div class="about-hero"><h1>About PDIN</h1></div>
     <section class="about-content">
       <div class="container">
-        <p>The Professional Driving Instructors Network was created to support experienced instructors who take pride in their work and want to operate independently, without being forced to compete on price.</p>
-        <p>Too often, talented instructors are listed alongside underqualified newcomers on discount-driven platforms that erode trust, lower standards, and devalue the profession. We believe there's a better way.</p>
-        <p>Our network is built on a simple principle: <strong>quality instruction deserves quality presentation</strong>. We provide a professional platform where instructors who meet our standards can present their services in a way that reflects the true value of their work.</p>
-        <p>For learners, this means confidence. You're choosing from a network of instructors who have confirmed they meet our stated professional, safety, and compliance requirements at the time of joining.</p>
-        <p>For instructors, this means respect. No commission fees. No race to the bottom on pricing. No algorithm deciding your visibility. Just a professional platform that presents your business the way it deserves to be presented.</p>
-        <p>We're starting in Melbourne, with plans to expand to Sydney and Brisbane. If you're a professional instructor who meets our standards and shares our values, we'd love to hear from you.</p>
+        <p>The Professional Driving Instructors Network was created to help learner drivers find experienced, independent, professional driving instructors through clear and structured profiles.</p>
+        <p>Too often, learners are forced to choose between inconsistent listings, unclear experience levels, and price-driven platforms where quality can vary significantly. At the same time, many experienced instructors find themselves competing alongside underqualified newcomers on discount-driven platforms that fail to reflect the value of professional instruction.</p>
+        <p style="text-align:center;font-style:italic;font-weight:600;color:var(--navy);">We believe there is a better way.</p>
+        <p>PDIN provides a professional platform where driving instructors can present their services in a consistent and structured format, making it easier for learners to compare options and choose the right instructor for their needs.</p>
+        <p><strong>For learners,</strong> this means greater transparency. Instructor profiles include experience, lesson pricing, areas of expertise, vehicle information, service areas, and other important details, helping learners make informed decisions with confidence.</p>
+        <p><strong>For instructors,</strong> this means respect. No commission fees. No race to the bottom on pricing. No algorithm deciding your visibility. Just a professional platform designed to showcase your experience, services, and teaching strengths in a way that reflects the value you bring to your students.</p>
+        <p>Our goal is simple: to create a professional network that benefits both learners and instructors by making quality driving instruction easier to find and easier to present.</p>
+        <p>PDIN is currently launching in Melbourne, with plans to expand to Sydney and Brisbane.</p>
+
+        <hr class="pricing-divider" />
+
+        <h2>Get Started</h2>
+        <div class="about-cta-grid">
+          <div class="about-cta-card">
+            <p>Looking for a driving instructor?</p>
+            <a href="#" data-action="nav" data-page="find" class="btn btn-navy btn-full">Find an Instructor</a>
+          </div>
+          <div class="about-cta-card">
+            <p>Are you a professional driving instructor who takes pride in your work and would like to be part of a growing network focused on quality, professionalism, and transparency?</p>
+            <a href="#" data-action="nav" data-page="join" class="btn btn-gold btn-full">Apply to Join PDIN</a>
+          </div>
+        </div>
       </div>
     </section>`;
 }
