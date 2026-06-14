@@ -234,7 +234,7 @@ function trackEnquiry(instructorId, instructorName, leadData) {
 
   // Fire-and-forget POST to Google Sheets (same endpoint as calls)
   if (SHEETS_CALL_LOG_URL && SHEETS_CALL_LOG_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-    const inst   = INSTRUCTORS.find(i => i.id === instructorId);
+    const inst   = getAllInstructors().find(i => i.id === instructorId);
     const suburb = inst ? inst.baseSuburb : '';
     const now    = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
@@ -279,7 +279,7 @@ function trackCall(instructorId, instructorName) {
 
   // Fire-and-forget POST to Google Sheets
   if (SHEETS_CALL_LOG_URL && SHEETS_CALL_LOG_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-    const inst    = INSTRUCTORS.find(i => i.id === instructorId);
+    const inst    = getAllInstructors().find(i => i.id === instructorId);
     const suburb  = inst ? inst.baseSuburb : '';
     const now     = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
@@ -387,8 +387,9 @@ function sortInstructorsByDistance(lat, lng, instructorList) {
    INSTRUCTOR CARD HTML
    ============================================= */
 function instructorCardHTML(inst, distKm) {
-  const photoEl = inst.photo
-    ? `<img src="${inst.photo}" alt="${inst.name}" class="card-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="avatar-initials" style="display:none">${inst.initials}</div>`
+  const photoSrc = inst.photoDataUrl || (inst.photo ? inst.photo : null);
+  const photoEl = photoSrc
+    ? `<img src="${photoSrc}" alt="${inst.name}" class="card-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="avatar-initials" style="display:none">${inst.initials}</div>`
     : `<div class="avatar-initials">${inst.initials}</div>`;
 
   // Smart badge
@@ -422,6 +423,7 @@ function instructorCardHTML(inst, distKm) {
    LIVE PROFILE HELPERS
    Approved applications are stored in pdin_live_profiles
    and merged with hardcoded INSTRUCTORS at runtime.
+   Photo is stored as base64 so it shows without a server.
    ============================================= */
 function getLiveProfiles() {
   try { return JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]'); } catch(e) { return []; }
@@ -538,8 +540,9 @@ function renderProfile(id) {
   const inst = allInst.find(i => i.id === id) || allInst[0];
   const effectiveRadius = inst.travelBonus ? inst.serviceRadius + 8 : inst.serviceRadius;
 
-  const avatarEl = inst.photo
-    ? `<img src="${inst.photo}" alt="${inst.name}" class="profile-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="profile-avatar-circle" style="display:none">${inst.initials}</div>`
+  const photoSrc = inst.photoDataUrl || inst.photo || null;
+  const avatarEl = photoSrc
+    ? `<img src="${photoSrc}" alt="${inst.name}" class="profile-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="profile-avatar-circle" style="display:none">${inst.initials}</div>`
     : `<div class="profile-avatar-circle">${inst.initials}</div>`;
 
   const serviceAreaBlock = `
@@ -1177,6 +1180,7 @@ function getPageContent(page, extra) {
     case 'about':   return renderAbout();
     case 'pricing': return renderPricing();
     case 'contact': return renderContact();
+    case 'admin':   return renderAdminPage(extra);
     case 'stats':   return renderStatsPage();
     case 'admin':   return renderAdminPage(extra);
     default:        return renderHome();
@@ -1366,8 +1370,8 @@ ${expertiseIdStr}
       </div>
 
       <div class="admin-footer-note">
-        <p>💡 <strong>How it works:</strong> Click <em>Approve &amp; Publish Live</em> and the profile appears on the site instantly — home page, find page, and a full profile URL. Click <em>Remove from Site</em> on an approved card to take it down immediately.</p>
-        <p style="margin-top:8px">⚠️ Live profiles are stored in <strong>this browser's localStorage</strong>. For permanent profiles visible to all visitors, also paste the generated code into <code>script.js</code> and push to GitHub. Access this page via <code>index.html?key=${ADMIN_PASSWORD}#admin</code></p>
+        <p>💡 <strong>How it works:</strong> Click <em>Approve &amp; Publish Live</em> — the profile including photo appears on the site instantly. Click <em>Remove from Site</em> on an approved card to take it down immediately.</p>
+        <p style="margin-top:8px">⚠️ Live profiles are stored in <strong>this browser's localStorage</strong>. To make a profile permanent for all visitors, also paste the generated code block into <code>script.js</code> and push to GitHub.</p>
       </div>
     </div>`;
 }
@@ -1394,7 +1398,10 @@ function renderPendingProfile(app) {
   return `
     <div class="profile-card-wrap">
       <div class="profile-header-row">
-        <div class="profile-avatar-circle" style="width:80px;height:80px;font-size:28px">${initials}</div>
+        ${app.photoDataUrl
+          ? `<img src="${app.photoDataUrl}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="${app.name}" />`
+          : `<div class="profile-avatar-circle" style="width:80px;height:80px;font-size:28px">${initials}</div>`
+        }
         <div>
           <div class="profile-name" style="font-size:22px">${app.name}${expYears >= 10 ? '<span class="senior-badge" title="10+ Years Experience">⭐</span>' : ''}</div>
           <div class="profile-title">Professional Driving Instructor</div>
@@ -1475,7 +1482,7 @@ function bindAdminEvents() {
     btn.addEventListener('click', () => navigate('profile', btn.dataset.slug));
   });
 
-  // Approve button — instantly publishes the profile live on the site
+  // Approve — instantly publishes the profile live on the site including photo
   document.querySelectorAll('.admin-approve-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
@@ -1487,7 +1494,6 @@ function bindAdminEvents() {
       apps[idx].status = 'approved';
       try { localStorage.setItem('pdin_applications', JSON.stringify(apps)); } catch(e) {}
 
-      // Build a full instructor object from the application
       const expYears   = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
       const expLabel   = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
       const idSlug     = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
@@ -1519,6 +1525,7 @@ function bindAdminEvents() {
         expertiseIds: app.expertiseIds || [],
         seniorBadge:  expYears >= 10,
         photo:        null,
+        photoDataUrl: app.photoDataUrl || null,   // ← photo from form, shows immediately
         bio:          app.bio || '',
         languages:    app.languages || [],
         _fromApp:     appId,
@@ -1545,7 +1552,6 @@ function bindAdminEvents() {
         const idx  = apps.findIndex(a => a.id === btn.dataset.appid);
         if (idx !== -1) apps[idx].status = 'rejected';
         localStorage.setItem('pdin_applications', JSON.stringify(apps));
-        // Remove from live profiles
         const live = JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]');
         localStorage.setItem('pdin_live_profiles', JSON.stringify(live.filter(p => p._fromApp !== btn.dataset.appid)));
       } catch(e) {}
@@ -1585,7 +1591,7 @@ function bindAdminEvents() {
 function renderStatsPage() {
   const callData    = getCallStats();
   const enquiryData = (function(){ try { const r=localStorage.getItem('pdin_enquiries'); return r?JSON.parse(r):{};} catch(e){return {};} })();
-  const allIds      = [...new Set([...Object.keys(callData), ...Object.keys(enquiryData), ...INSTRUCTORS.map(i=>i.id)])];
+  const allIds      = [...new Set([...Object.keys(callData), ...Object.keys(enquiryData), ...getAllInstructors().map(i=>i.id)])];
 
   let totalCalls = 0, totalEnquiries = 0;
   allIds.forEach(id => {
@@ -1594,7 +1600,7 @@ function renderStatsPage() {
   });
 
   const rows = allIds.map(id => {
-    const inst      = INSTRUCTORS.find(i => i.id === id);
+    const inst      = getAllInstructors().find(i => i.id === id);
     const calls     = callData[id]?.count    || 0;
     const enqs      = enquiryData[id]?.count || 0;
     const lastCall  = callData[id]?.lastDate    ? new Date(callData[id].lastDate).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
@@ -1797,7 +1803,7 @@ function bindPageEvents() {
   if (callBtn) {
     callBtn.addEventListener('click', () => {
       const ct   = CONTACT[callBtn.dataset.id];
-      const inst = INSTRUCTORS.find(i => i.id === callBtn.dataset.id);
+      const inst = getAllInstructors().find(i => i.id === callBtn.dataset.id);
       if (ct && ct.p) {
         trackCall(callBtn.dataset.id, inst ? inst.name : callBtn.dataset.id);
         const a = document.createElement('a');
@@ -1963,7 +1969,7 @@ function bindPageEvents() {
   const enquiryBtn = document.getElementById('open-enquiry-btn');
   if (enquiryBtn) {
     enquiryBtn.addEventListener('click', () => {
-      const inst = INSTRUCTORS.find(i => i.id === enquiryBtn.dataset.instructorId) || INSTRUCTORS[0];
+      const inst = getAllInstructors().find(i => i.id === enquiryBtn.dataset.instructorId) || getAllInstructors()[0];
       openEnquiryModal(inst);
     });
   }
@@ -2107,6 +2113,17 @@ function bindPageEvents() {
       fd.append('About',                   bio);
       if (photoFile) fd.append('attachment', photoFile, photoFile.name);
 
+      // ── Convert photo to base64 so it's stored with the application ──
+      // This means the photo shows immediately on approval — no server needed.
+      let photoDataUrl = null;
+      if (photoFile) {
+        photoDataUrl = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = e => resolve(e.target.result);
+          reader.readAsDataURL(photoFile);
+        });
+      }
+
       fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Accept': 'application/json' }, // NO Content-Type — browser sets multipart boundary
@@ -2131,7 +2148,8 @@ function bindPageEvents() {
             fee60, fee90: fee90 || '',
             expertiseIds,
             bio,
-            photoName:   photoFile ? photoFile.name : '',
+            photoName:    photoFile ? photoFile.name : '',
+            photoDataUrl: photoDataUrl || null,
           };
           try {
             const existing = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
