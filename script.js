@@ -391,8 +391,9 @@ function sortInstructorsByDistance(lat, lng, instructorList) {
    INSTRUCTOR CARD HTML
    ============================================= */
 function instructorCardHTML(inst, distKm) {
-  const photoEl = inst.photo
-    ? `<img src="${inst.photo}" alt="${inst.name}" class="card-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="avatar-initials" style="display:none">${inst.initials}</div>`
+  const photoSrc = inst.photoDataUrl || inst.photo || null;
+  const photoEl = photoSrc
+    ? `<img src="${photoSrc}" alt="${inst.name}" class="card-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="avatar-initials" style="display:none">${inst.initials}</div>`
     : `<div class="avatar-initials">${inst.initials}</div>`;
 
   // Smart badge
@@ -1441,7 +1442,10 @@ function renderPendingProfile(app) {
   return `
     <div class="profile-card-wrap">
       <div class="profile-header-row">
-        <div class="profile-avatar-circle" style="width:80px;height:80px;font-size:28px">${initials}</div>
+        ${app.photoDataUrl
+          ? `<img src="${app.photoDataUrl}" alt="${app.name}" class="profile-photo" style="width:80px;height:80px;border-radius:50%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="profile-avatar-circle" style="width:80px;height:80px;font-size:28px;display:none">${initials}</div>`
+          : `<div class="profile-avatar-circle" style="width:80px;height:80px;font-size:28px">${initials}</div>`
+        }
         <div>
           <div class="profile-name" style="font-size:22px">${app.name}${expYears >= 10 ? '<span class="senior-badge" title="10+ Years Experience">⭐</span>' : ''}</div>
           <div class="profile-title">Professional Driving Instructor</div>
@@ -2228,12 +2232,46 @@ function bindPageEvents() {
             expertiseIds,
             bio,
             photoName:   photoFile ? photoFile.name : '',
+            photoDataUrl: null,
           };
-          try {
-            const existing = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
-            existing.push(application);
-            localStorage.setItem('pdin_applications', JSON.stringify(existing));
-          } catch(e) { /* storage unavailable — no problem, email still went */ }
+
+          // Read the photo, resize/compress it, then save as base64 data URL in localStorage.
+          // GitHub Pages is static — no server storage — so we embed the image directly.
+          // We resize to max 400x400px and compress to JPEG 0.82 quality to stay well
+          // under localStorage's ~5 MB limit (raw 5 MB file -> ~270 KB after resize).
+          const saveApp = (photoDataUrl) => {
+            if (photoDataUrl) application.photoDataUrl = photoDataUrl;
+            try {
+              const existing = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
+              existing.push(application);
+              localStorage.setItem('pdin_applications', JSON.stringify(existing));
+            } catch(e) { /* storage full or unavailable - profile will show initials instead */ }
+          };
+
+          if (photoFile) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              const img = new Image();
+              img.onload = () => {
+                const MAX = 400;
+                let w = img.width, h = img.height;
+                if (w > MAX || h > MAX) {
+                  if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                  else       { w = Math.round(w * MAX / h); h = MAX; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                saveApp(canvas.toDataURL('image/jpeg', 0.82));
+              };
+              img.onerror = () => saveApp(null);
+              img.src = ev.target.result;
+            };
+            reader.onerror = () => saveApp(null);
+            reader.readAsDataURL(photoFile);
+          } else {
+            saveApp(null);
+          }
 
           document.getElementById('join-form-box').innerHTML = `
             <div class="success-box">
