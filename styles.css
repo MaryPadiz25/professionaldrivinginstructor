@@ -844,6 +844,30 @@ textarea.form-input { resize: vertical; min-height: 120px; }
 }
 .about-content p:last-child { margin-bottom: 0; }
 .about-content strong { color: var(--text-dark); }
+.about-content h2 { font-size: 22px; font-weight: 700; color: var(--text-dark); margin-bottom: 20px; margin-top: 8px; }
+.about-cta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 4px;
+}
+.about-cta-card {
+  background: var(--bg-light, #f7f8fa);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+}
+.about-cta-card p {
+  margin-bottom: 0;
+  flex: 1;
+}
+@media (max-width: 640px) {
+  .about-cta-grid { grid-template-columns: 1fr; }
+}
 
 /* =============================================
    PRICING PAGE
