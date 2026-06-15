@@ -1,77 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset
-      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
+  <!-- Home page — highest priority -->
+  <url>
+    <loc>https://pdin.au/</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
 
-<url>
-  <loc>https://malapascuadivingadventures.com/</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>1.00</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/fundiving-malapascua.html</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/divecourses-malapascua</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/divecenters-malapascua</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/snorkeling-malapascua.html</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/islandhopping-malapascua.html</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/privatetransport-malapascua.html</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/about.html</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/gallery.html</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/blog-malapascua.html</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/frequentlyaskquestions-malapascua</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/ssi-diving.html</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://malapascuadivingadventures.com/padi-diving.html</loc>
-  <lastmod>2025-11-25T05:33:38+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
+  <!-- Find Instructors directory -->
+  <url>
+    <loc>https://pdin.au/#find</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
 
+  <!-- Instructor profiles -->
+  <url>
+    <loc>https://pdin.au/#profile/rob-lester</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pdin.au/#profile/john-stevens</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pdin.au/#profile/lisa-wong</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pdin.au/#profile/mark-harris</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Join the Network -->
+  <url>
+    <loc>https://pdin.au/#join</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- About -->
+  <url>
+    <loc>https://pdin.au/#about</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Pricing -->
+  <url>
+    <loc>https://pdin.au/#pricing</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Contact -->
+  <url>
+    <loc>https://pdin.au/#contact</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
 
 </urlset>
