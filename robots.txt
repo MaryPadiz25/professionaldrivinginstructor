@@ -1,0 +1,8 @@
+# robots.txt — Professional Driving Instructors Network
+# https://pdin.au
+
+User-agent: *
+Allow: /
+
+# Point crawlers to the sitemap
+Sitemap: https://pdin.au/sitemap.xml

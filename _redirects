@@ -1,0 +1,6 @@
+# _redirects — for Netlify hosting
+# Redirects HTTP → HTTPS (handled automatically by Netlify)
+# and ensures SPA hash routing works when deep-linking
+
+# SPA fallback: serve index.html for all routes
+/*    /index.html   200
