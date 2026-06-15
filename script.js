@@ -1740,11 +1740,79 @@ function renderStatsPage() {
     </section>`;
 }
 
+/* =============================================
+   DYNAMIC SEO META UPDATER
+   Updates <title> and <meta description> on every
+   page navigation so Googlebot's JS renderer sees
+   unique, keyword-rich meta for each "page".
+   ============================================= */
+const SEO_META = {
+  home: {
+    title: 'Professional Driving Instructors Network | Find a Driving Instructor in Melbourne',
+    desc:  'Find experienced, independent driving instructors across Melbourne. Learner drivers, VicRoads test prep, manual & automatic lessons. Book direct — no middleman.',
+  },
+  find: {
+    title: 'Find a Driving Instructor in Melbourne | PDIN Directory',
+    desc:  'Browse and search our directory of qualified driving instructors across Melbourne. Filter by suburb, transmission type and specialty. Connect directly with your instructor.',
+  },
+  join: {
+    title: 'Join the Driving Instructors Network | Apply to List Your Profile',
+    desc:  'Are you a professional driving instructor in Melbourne? Join PDIN for free — keep 100% of your fees, get discovered by new students, and build your professional profile.',
+  },
+  about: {
+    title: 'About PDIN | Professional Driving Instructors Network Melbourne',
+    desc:  'Learn about the Professional Driving Instructors Network — a quality-focused directory connecting learner drivers with experienced, independent Melbourne driving instructors.',
+  },
+  pricing: {
+    title: 'Driving Lesson Prices Melbourne | PDIN Instructor Pricing',
+    desc:  'Transparent driving lesson pricing from PDIN instructors in Melbourne. Lesson rates from $90/hr. No hidden fees, no commissions — pay your instructor directly.',
+  },
+  contact: {
+    title: 'Contact PDIN | Professional Driving Instructors Network',
+    desc:  'Get in touch with the Professional Driving Instructors Network. Questions about joining, listings, or finding an instructor in Melbourne? We\'re happy to help.',
+  },
+};
+
+function updatePageMeta(page, extra) {
+  let meta = SEO_META[page];
+  // For profile pages, generate instructor-specific meta
+  if (page === 'profile' && extra) {
+    const inst = getAllInstructors().find(i => i.id === extra);
+    if (inst) {
+      meta = {
+        title: `${inst.name} — Driving Instructor in ${inst.baseSuburb}, Melbourne | PDIN`,
+        desc:  inst.bio ? inst.bio.slice(0, 155) + '…' : `${inst.name} is a professional driving instructor based in ${inst.baseSuburb}, Melbourne. View profile, lesson fees, and contact details.`,
+      };
+    }
+  }
+  if (!meta) meta = SEO_META.home;
+
+  // Update <title>
+  document.title = meta.title;
+
+  // Update <meta name="description">
+  let descEl = document.querySelector('meta[name="description"]');
+  if (descEl) descEl.setAttribute('content', meta.desc);
+
+  // Update Open Graph title + description
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  const ogDesc  = document.querySelector('meta[property="og:description"]');
+  const ogUrl   = document.querySelector('meta[property="og:url"]');
+  if (ogTitle) ogTitle.setAttribute('content', meta.title);
+  if (ogDesc)  ogDesc.setAttribute('content', meta.desc);
+  if (ogUrl)   ogUrl.setAttribute('content', `https://pdin.au/${extra ? '#' + page + '/' + extra : '#' + page}`);
+
+  // Update canonical
+  let canonEl = document.querySelector('link[rel="canonical"]');
+  if (canonEl) canonEl.setAttribute('href', `https://pdin.au/${extra ? '#' + page + '/' + extra : '#' + page}`);
+}
+
 function navigate(page, extra, pushState = true) {
   const app = document.getElementById('app');
   app.innerHTML = getPageContent(page, extra);
   requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   updateActiveLinks(page);
+  updatePageMeta(page, extra);   // ← SEO: update title + meta per page
   closeMenu();
   if (pushState) {
     const state = { page, extra: extra||null, searchLat: _searchLat||null, searchLng: _searchLng||null, searchLabel: _searchLabel||'' };
