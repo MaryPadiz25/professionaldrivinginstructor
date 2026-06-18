@@ -756,7 +756,7 @@ function renderJoin() {
 
         <!-- ── STEP 3: Areas of Expertise ── -->
         <div class="join-step" id="join-step-3" style="display:none">
-          <div class="form-section-head join-step-head"><span class="join-step-num">3</span> Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(select 3–5)</span></div>
+          <div class="form-section-head join-step-head"><span class="join-step-num">3</span> Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(Select a total of 3–5)</span></div>
           <p style="font-size:14px;color:var(--text-light);margin:-4px 0 18px;">Choose the learners you enjoy working with most.</p>
           <div class="form-group">
             <div id="join-expertise-grid">
@@ -813,7 +813,7 @@ function renderJoin() {
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Typical Availability Notes <span class="form-label-optional">(optional)</span></label>
+            <label class="form-label">Additional Availability Information <span class="form-label-optional">(optional)</span></label>
             <input type="text" class="form-input" id="avail-specific" placeholder='e.g. "Usually available weekdays after 3pm."' />
           </div>
 
@@ -2083,19 +2083,20 @@ function bindPageEvents() {
       }
       if (curStep === 2) {
         const dia = document.getElementById('join-dia')?.value.trim();
-        if (!dia) { showToast('Please complete all required fields before continuing.'); return; }
+        if (!dia) { showToast('Your Driving Instructor Authority (DIA) number is required to verify your eligibility.'); return; }
       }
       if (curStep === 3) {
         const expertise = [...document.querySelectorAll('#join-expertise-grid input:checked')];
-        if (expertise.length < 3 || expertise.length > 5) { showToast('Please complete all required fields before continuing.'); return; }
+        if (expertise.length < 3) { showToast(`Please select at least 3 areas of expertise — you've selected ${expertise.length} so far.`); return; }
+        if (expertise.length > 5) { showToast(`Please select no more than 5 areas of expertise — you've selected ${expertise.length}. Deselect ${expertise.length - 5} to continue.`); return; }
       }
       if (curStep === 4) {
         const suburb = document.getElementById('join-suburb')?.value.trim();
-        if (!suburb) { showToast('Please complete all required fields before continuing.'); return; }
+        if (!suburb) { showToast('Please enter your primary suburb so students know where you are based.'); return; }
       }
       if (curStep === 5) {
         const fee60 = document.getElementById('join-fee-60')?.value.trim();
-        if (!fee60) { showToast('Please complete all required fields before continuing.'); return; }
+        if (!fee60) { showToast('Please enter your 60-minute lesson fee — this is required for your profile.'); return; }
       }
 
       goToJoinStep(nextStep, true);
@@ -2185,10 +2186,10 @@ function bindPageEvents() {
       const suburb = (document.getElementById('join-suburb') || {}).value?.trim() || '';
       const decl1  = document.getElementById('join-decl-1')?.checked || false;
 
-      if (!name || !email)             { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
-      if (!dia)                        { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
-      if (!suburb)                     { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
-      if (!decl1) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!name || !email)             { showFormError('join-form-box', !name ? 'Your full name is required.' : 'Your email address is required.'); return; }
+      if (!dia)                        { showFormError('join-form-box', 'Your Driving Instructor Authority (DIA) number is required to verify your eligibility.'); return; }
+      if (!suburb)                     { showFormError('join-form-box', 'Please enter your primary suburb so students know where you are based.'); return; }
+      if (!decl1) { showFormError('join-form-box', 'Please confirm the declaration at the bottom of the form before submitting.'); return; }
 
       const phone   = document.getElementById('join-phone')?.value || '';
       const exp     = document.getElementById('join-exp')?.value || '';
@@ -2225,12 +2226,15 @@ function bindPageEvents() {
       // Lesson fees
       const fee60 = document.getElementById('join-fee-60')?.value.trim() || '';
       const fee90 = document.getElementById('join-fee-90')?.value.trim() || '';
-      if (!fee60) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!fee60) { showFormError('join-form-box', 'Please enter your 60-minute lesson fee — this is required for your profile.'); return; }
 
       // Collect expertise IDs (3-5 required), then resolve to human-readable labels for the email
       const expertiseIds = [...document.querySelectorAll('#join-expertise-grid input:checked')].map(c => c.value);
       if (expertiseIds.length < 3 || expertiseIds.length > 5) {
-        showFormError('join-form-box', 'Please complete all required fields before continuing.'); return;
+        showFormError('join-form-box', expertiseIds.length < 3
+          ? `Please select at least 3 areas of expertise — you've selected ${expertiseIds.length}.`
+          : `Please select no more than 5 areas of expertise — you've selected ${expertiseIds.length}. Go back to Step 3 and deselect ${expertiseIds.length - 5}.`
+        ); return;
       }
       const expertise = resolveExpertise(expertiseIds);
 
