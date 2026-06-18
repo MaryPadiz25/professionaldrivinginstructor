@@ -425,11 +425,28 @@ function instructorCardHTML(inst, distKm) {
 
 /* =============================================
    LIVE PROFILE HELPERS
-   Approved applications are stored in pdin_live_profiles
-   and merged with hardcoded INSTRUCTORS at runtime.
+   Approved applications are stored in Firestore ("live_profiles"
+   collection) so they appear on the site for every visitor, on any
+   device. A real-time listener keeps _liveProfilesCache up to date;
+   getLiveProfiles() just reads that cache so existing render code
+   (which is synchronous) doesn't need to change.
    ============================================= */
+let _liveProfilesCache = [];
+
+function startLiveProfilesListener() {
+  db.collection('live_profiles').onSnapshot(snap => {
+    _liveProfilesCache = snap.docs.map(d => d.data());
+    // Re-render the current page if it shows instructor listings, so
+    // newly approved profiles appear without a manual refresh.
+    const page = (location.hash || '#home').replace('#','').split('/')[0];
+    if (['home','find','profile'].includes(page)) {
+      navigate(page, history.state?.extra, false);
+    }
+  }, err => console.error('live_profiles listener error:', err));
+}
+
 function getLiveProfiles() {
-  try { return JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]'); } catch(e) { return []; }
+  return _liveProfilesCache;
 }
 function getAllInstructors() {
   const live = getLiveProfiles();
@@ -756,7 +773,7 @@ function renderJoin() {
 
         <!-- ── STEP 3: Areas of Expertise ── -->
         <div class="join-step" id="join-step-3" style="display:none">
-          <div class="form-section-head join-step-head"><span class="join-step-num">3</span> Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(Select a total of 3–5)</span></div>
+          <div class="form-section-head join-step-head"><span class="join-step-num">3</span> Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(select 3–5)</span></div>
           <p style="font-size:14px;color:var(--text-light);margin:-4px 0 18px;">Choose the learners you enjoy working with most.</p>
           <div class="form-group">
             <div id="join-expertise-grid">
@@ -813,7 +830,7 @@ function renderJoin() {
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Additional Availability Information <span class="form-label-optional">(optional)</span></label>
+            <label class="form-label">Typical Availability Notes <span class="form-label-optional">(optional)</span></label>
             <input type="text" class="form-input" id="avail-specific" placeholder='e.g. "Usually available weekdays after 3pm."' />
           </div>
 
@@ -1226,7 +1243,7 @@ function getPageContent(page, extra) {
     case 'pricing': return renderPricing();
     case 'contact': return renderContact();
     case 'stats':   return renderStatsPage();
-    case 'admin':   return renderAdminPage(extra);
+    case 'admin':   return renderAdminPage(extra); // initial sync render (login gate or loading state); real data loads async in navigate()
     default:        return renderHome();
   }
 }
@@ -1235,31 +1252,32 @@ function getPageContent(page, extra) {
 /* =============================================
    ADMIN PAGE — pending applications (#admin?key=…)
    ============================================= */
-const ADMIN_PASSWORD = 'pdin2026admin'; // ← change this to your own password
+// Admin access is now controlled by Firebase Authentication (real sign-in)
+// plus Firestore Security Rules — see firestore.rules.txt. There is no
+// password stored in this file anymore.
 
-function renderAdminPage(extra) {
-  // Password check via URL: #admin?key=yourpassword
-  const params = new URLSearchParams(window.location.search);
-  const key    = params.get('key') || '';
-  if (key !== ADMIN_PASSWORD) {
+function renderAdminPage(extra, apps) {
+  // Not signed in → show login form instead of a password box
+  if (!auth.currentUser) {
     return `
       <div class="admin-gate">
         <div class="admin-gate-box">
           <div class="admin-gate-logo">🔒</div>
-          <h2>Admin Access</h2>
-          <p>Enter the admin password to continue.</p>
+          <h2>Admin Sign In</h2>
+          <p>Sign in with your admin account to continue.</p>
           <div class="form-group" style="margin-top:18px">
-            <input type="password" class="form-input" id="admin-key-input" placeholder="Password" autocomplete="current-password" />
+            <input type="email" class="form-input" id="admin-email-input" placeholder="Email" autocomplete="username" style="margin-bottom:10px" />
+            <input type="password" class="form-input" id="admin-pass-input" placeholder="Password" autocomplete="current-password" />
           </div>
-          <button class="btn btn-navy btn-full" id="admin-key-btn" style="margin-top:10px">Unlock</button>
-          <p id="admin-key-error" class="admin-key-error" style="display:none">Incorrect password.</p>
+          <button class="btn btn-navy btn-full" id="admin-key-btn" style="margin-top:10px">Sign In</button>
+          <p id="admin-key-error" class="admin-key-error" style="display:none">Incorrect email or password.</p>
         </div>
       </div>`;
   }
 
-  // Load applications from localStorage
-  let apps = [];
-  try { apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]'); } catch(e) {}
+  // apps is fetched asynchronously from Firestore by navigate() before this
+  // function is called with real data; until then it may be undefined.
+  apps = apps || [];
 
   const pending  = apps.filter(a => a.status === 'pending');
   const approved = apps.filter(a => a.status === 'approved');
@@ -1272,7 +1290,8 @@ function renderAdminPage(extra) {
     const vehicles   = [app.vAuto ? 'Auto: ' + app.vAuto : '', app.vManual ? 'Manual: ' + app.vManual : ''].filter(Boolean).join(' · ') || '(none listed)';
     const avail      = [...(app.availDays||[]), ...(app.availTimes||[])].join(', ') || '(not specified)';
     const expertise  = resolveExpertise(app.expertiseIds || []);
-    const submitted  = new Date(app.submittedAt).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const submittedDate = app.submittedAt && app.submittedAt.toDate ? app.submittedAt.toDate() : new Date(app.submittedAt || Date.now());
+    const submitted  = submittedDate.toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     const statusBadge = app.status === 'approved'
       ? `<span class="admin-status-badge admin-badge-approved">✓ Approved</span>`
       : app.status === 'rejected'
@@ -1356,17 +1375,17 @@ ${expertiseIdStr}
           </div>
         </details>
 
-        <!-- Code block -->
+        <!-- Optional: raw data reference (no longer required — Approve & Publish Live handles this automatically) -->
         <details class="admin-code-toggle">
-          <summary>📋 View generated code blocks</summary>
+          <summary>📋 View raw data (optional reference, not required)</summary>
           <div class="admin-code-wrap">
-            <p class="admin-code-label">1. Add this to the <code>INSTRUCTORS</code> array in <code>script.js</code>:</p>
+            <p class="admin-code-label">For reference only — clicking "Approve &amp; Publish Live" already does this automatically. <code>INSTRUCTORS</code>-style entry:</p>
             <pre class="admin-code-block" id="code-instructors-${app.id}">${escHtml(codeBlock)}</pre>
-            <button class="btn btn-outline admin-copy-btn" data-copy="code-instructors-${app.id}">Copy INSTRUCTORS entry</button>
+            <button class="btn btn-outline admin-copy-btn" data-copy="code-instructors-${app.id}">Copy</button>
 
-            <p class="admin-code-label" style="margin-top:18px">2. Add this to the <code>CONTACT</code> map in <code>script.js</code>:</p>
+            <p class="admin-code-label" style="margin-top:18px"><code>CONTACT</code>-style entry:</p>
             <pre class="admin-code-block" id="code-contact-${app.id}">${escHtml(contactBlock)}</pre>
-            <button class="btn btn-outline admin-copy-btn" data-copy="code-contact-${app.id}">Copy CONTACT entry</button>
+            <button class="btn btn-outline admin-copy-btn" data-copy="code-contact-${app.id}">Copy</button>
           </div>
         </details>
 
@@ -1394,7 +1413,8 @@ ${expertiseIdStr}
     <div class="admin-page">
       <div class="admin-page-header">
         <h1>Admin — Instructor Applications</h1>
-        <p>Applications submitted via the Join the Network form. Stored in this browser's local storage.</p>
+        <p>Signed in as ${auth.currentUser.email}. Applications submitted via the Join the Network form, synced live from any device.</p>
+        <button class="btn btn-outline" id="admin-signout-btn" style="margin-top:10px">Sign Out</button>
       </div>
 
       <div class="admin-tabs" id="admin-tabs">
@@ -1414,8 +1434,7 @@ ${expertiseIdStr}
       </div>
 
       <div class="admin-footer-note">
-        <p>💡 <strong>How it works:</strong> When you click <em>Approve &amp; Copy Code</em>, the application is marked as approved and the ready-to-paste code block is copied to your clipboard. Open <code>script.js</code>, find the <code>INSTRUCTORS</code> array, and paste before the closing <code>]</code>. Do the same for the <code>CONTACT</code> entry. Then upload the instructor's photo.</p>
-        <p style="margin-top:8px">⚠️ Data is stored in <strong>this browser only</strong>. Do not clear site data or it will be lost. Access this page via <code>index.html?key=${ADMIN_PASSWORD}#admin</code></p>
+        <p>💡 <strong>How it works:</strong> Click <em>Approve &amp; Publish Live</em> to instantly publish an instructor's profile on the live website — no manual copy-paste needed. Applications and live profiles are stored in a shared cloud database, so this admin panel works the same from any device once you're signed in.</p>
       </div>
     </div>`;
 }
@@ -1481,23 +1500,28 @@ function escHtml(str) {
 
 /* Admin page event bindings */
 function bindAdminEvents() {
-  // Password gate
+  // Firebase Auth sign-in
   const keyBtn = document.getElementById('admin-key-btn');
   if (keyBtn) {
     const doUnlock = () => {
-      const val = document.getElementById('admin-key-input').value.trim();
-      if (val === ADMIN_PASSWORD) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('key', val);
-        window.location.href = url.toString();
-      } else {
-        document.getElementById('admin-key-error').style.display = 'block';
-      }
+      const email = document.getElementById('admin-email-input').value.trim();
+      const pass  = document.getElementById('admin-pass-input').value;
+      keyBtn.disabled = true; keyBtn.textContent = 'Signing in…';
+      auth.signInWithEmailAndPassword(email, pass)
+        .then(() => navigate('admin'))
+        .catch(() => {
+          keyBtn.disabled = false; keyBtn.textContent = 'Sign In';
+          document.getElementById('admin-key-error').style.display = 'block';
+        });
     };
     keyBtn.addEventListener('click', doUnlock);
-    document.getElementById('admin-key-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') doUnlock(); });
+    document.getElementById('admin-pass-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') doUnlock(); });
     return;
   }
+
+  // Sign out
+  const signOutBtn = document.getElementById('admin-signout-btn');
+  if (signOutBtn) signOutBtn.addEventListener('click', () => auth.signOut().then(() => navigate('admin')));
 
   // Tabs
   document.querySelectorAll('.admin-tab').forEach(tab => {
@@ -1530,61 +1554,62 @@ function bindAdminEvents() {
   document.querySelectorAll('.admin-approve-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
-      let apps = [];
-      try { apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]'); } catch(e) {}
-      const idx = apps.findIndex(a => a.id === appId);
-      if (idx === -1) return;
-      const app = apps[idx];
-      apps[idx].status = 'approved';
-      try { localStorage.setItem('pdin_applications', JSON.stringify(apps)); } catch(e) {}
+      btn.disabled = true; btn.textContent = 'Publishing…';
 
-      const expYears    = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
-      const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
-      const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-      const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
-      const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
-      if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
-      const vehiclesArr = [];
-      if (app.vAuto)    vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
-      if (app.vManual)  vehiclesArr.push({ type: 'Manual', car: app.vManual });
+      db.collection('applications').doc(appId).get().then(doc => {
+        if (!doc.exists) return;
+        const app = doc.data();
 
-      const liveProfile = {
-        id:           idSlug,
-        initials,
-        name:         app.name,
-        title:        'Professional Driving Instructor',
-        baseSuburb:   app.suburb,
-        baseLat:      null,
-        baseLng:      null,
-        serviceRadius: parseInt(app.radius) || 10,
-        travelBonus:  false,
-        travelFee:    false,
-        location:     app.suburb + ' &amp; surrounding suburbs',
-        experience:   expLabel,
-        customQS:     true,
-        lessonFees:   feesArr,
-        vehicles:     vehiclesArr,
-        availability: availLabel,
-        expertiseIds: app.expertiseIds || [],
-        credentials:  { dia: !!(app.dia), wwcc: !!(app.wwcc) },  // true if value was provided
-        seniorBadge:  expYears >= 10,
-        photo:        null,
-        photoDataUrl: app.photoDataUrl || null,
-        bio:          app.bio || '',
-        languages:    app.languages || [],
-        _fromApp:     appId,
-      };
+        const expYears    = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
+        const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
+        const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+        const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
+        const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
+        if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
+        const vehiclesArr = [];
+        if (app.vAuto)    vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
+        if (app.vManual)  vehiclesArr.push({ type: 'Manual', car: app.vManual });
 
-      try {
-        const live = JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]');
-        const eIdx = live.findIndex(p => p._fromApp === appId);
-        if (eIdx >= 0) live[eIdx] = liveProfile; else live.push(liveProfile);
-        localStorage.setItem('pdin_live_profiles', JSON.stringify(live));
-      } catch(e) {}
+        const liveProfile = {
+          id:           idSlug,
+          initials,
+          name:         app.name,
+          title:        'Professional Driving Instructor',
+          baseSuburb:   app.suburb,
+          baseLat:      null,
+          baseLng:      null,
+          serviceRadius: parseInt(app.radius) || 10,
+          travelBonus:  false,
+          travelFee:    false,
+          location:     app.suburb + ' &amp; surrounding suburbs',
+          experience:   expLabel,
+          customQS:     true,
+          lessonFees:   feesArr,
+          vehicles:     vehiclesArr,
+          availability: availLabel,
+          expertiseIds: app.expertiseIds || [],
+          credentials:  { dia: !!(app.dia), wwcc: !!(app.wwcc) },  // true if value was provided
+          seniorBadge:  expYears >= 10,
+          photo:        null,
+          photoDataUrl: app.photoDataUrl || null,
+          bio:          app.bio || '',
+          languages:    app.languages || [],
+          _fromApp:     appId,
+        };
 
-      showToast('✅ ' + app.name + ' is now live on the website!');
-      setTimeout(() => navigate('admin'), 400);
+        return Promise.all([
+          db.collection('applications').doc(appId).update({ status: 'approved' }),
+          db.collection('live_profiles').doc(idSlug).set(liveProfile)
+        ]).then(() => {
+          showToast('✅ ' + app.name + ' is now live on the website!');
+          setTimeout(() => navigate('admin'), 400);
+        });
+      }).catch(err => {
+        console.error('Approve failed:', err);
+        showToast('Could not publish this profile. Please try again.');
+        btn.disabled = false; btn.textContent = '✓ Approve & Publish Live';
+      });
     });
   });
 
@@ -1592,28 +1617,27 @@ function bindAdminEvents() {
   document.querySelectorAll('.admin-reject-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (!confirm('Reject this application? If already approved, the profile will be removed from the site.')) return;
-      try {
-        const apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
-        const idx  = apps.findIndex(a => a.id === btn.dataset.appid);
-        if (idx !== -1) apps[idx].status = 'rejected';
-        localStorage.setItem('pdin_applications', JSON.stringify(apps));
-        const live = JSON.parse(localStorage.getItem('pdin_live_profiles') || '[]');
-        localStorage.setItem('pdin_live_profiles', JSON.stringify(live.filter(p => p._fromApp !== btn.dataset.appid)));
-      } catch(e) {}
-      navigate('admin');
+      const appId = btn.dataset.appid;
+      btn.disabled = true;
+      db.collection('applications').doc(appId).update({ status: 'rejected' })
+        .then(() => {
+          // Find any live profile published from this application and remove it
+          return db.collection('live_profiles').where('_fromApp', '==', appId).get();
+        })
+        .then(snap => Promise.all(snap.docs.map(d => d.ref.delete())))
+        .then(() => navigate('admin'))
+        .catch(err => { console.error('Reject failed:', err); showToast('Could not reject this application.'); btn.disabled = false; });
     });
   });
 
   // Restore to pending
   document.querySelectorAll('.admin-restore-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      try {
-        const apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
-        const idx  = apps.findIndex(a => a.id === btn.dataset.appid);
-        if (idx !== -1) apps[idx].status = 'pending';
-        localStorage.setItem('pdin_applications', JSON.stringify(apps));
-      } catch(e) {}
-      navigate('admin');
+      const appId = btn.dataset.appid;
+      btn.disabled = true;
+      db.collection('applications').doc(appId).update({ status: 'pending' })
+        .then(() => navigate('admin'))
+        .catch(err => { console.error('Restore failed:', err); showToast('Could not restore this application.'); btn.disabled = false; });
     });
   });
 
@@ -1621,11 +1645,11 @@ function bindAdminEvents() {
   document.querySelectorAll('.admin-delete-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (!confirm('Permanently delete this application record?')) return;
-      try {
-        const apps = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
-        localStorage.setItem('pdin_applications', JSON.stringify(apps.filter(a => a.id !== btn.dataset.appid)));
-      } catch(e) {}
-      navigate('admin');
+      const appId = btn.dataset.appid;
+      btn.disabled = true;
+      db.collection('applications').doc(appId).delete()
+        .then(() => navigate('admin'))
+        .catch(err => { console.error('Delete failed:', err); showToast('Could not delete this record.'); btn.disabled = false; });
     });
   });
 }
@@ -1821,6 +1845,22 @@ function navigate(page, extra, pushState = true) {
   }
   bindPageEvents();
   setTimeout(initReveal, 50);
+
+  // Admin page needs an async Firestore fetch once signed in. Re-render
+  // with real data after the synchronous login-gate/loading render above.
+  if (page === 'admin' && auth.currentUser) {
+    db.collection('applications').orderBy('submittedAt', 'desc').get()
+      .then(snap => {
+        const apps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const appEl = document.getElementById('app');
+        if (appEl) appEl.innerHTML = renderAdminPage(extra, apps);
+        bindPageEvents();
+      })
+      .catch(err => {
+        console.error('Failed to load applications:', err);
+        showToast('Could not load applications. Check your connection and try again.');
+      });
+  }
 }
 
 function bindPageEvents() {
@@ -2083,20 +2123,19 @@ function bindPageEvents() {
       }
       if (curStep === 2) {
         const dia = document.getElementById('join-dia')?.value.trim();
-        if (!dia) { showToast('Your Driving Instructor Authority (DIA) number is required to verify your eligibility.'); return; }
+        if (!dia) { showToast('Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 3) {
         const expertise = [...document.querySelectorAll('#join-expertise-grid input:checked')];
-        if (expertise.length < 3) { showToast(`Please select at least 3 areas of expertise — you've selected ${expertise.length} so far.`); return; }
-        if (expertise.length > 5) { showToast(`Please select no more than 5 areas of expertise — you've selected ${expertise.length}. Deselect ${expertise.length - 5} to continue.`); return; }
+        if (expertise.length < 3 || expertise.length > 5) { showToast('Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 4) {
         const suburb = document.getElementById('join-suburb')?.value.trim();
-        if (!suburb) { showToast('Please enter your primary suburb so students know where you are based.'); return; }
+        if (!suburb) { showToast('Please complete all required fields before continuing.'); return; }
       }
       if (curStep === 5) {
         const fee60 = document.getElementById('join-fee-60')?.value.trim();
-        if (!fee60) { showToast('Please enter your 60-minute lesson fee — this is required for your profile.'); return; }
+        if (!fee60) { showToast('Please complete all required fields before continuing.'); return; }
       }
 
       goToJoinStep(nextStep, true);
@@ -2186,10 +2225,10 @@ function bindPageEvents() {
       const suburb = (document.getElementById('join-suburb') || {}).value?.trim() || '';
       const decl1  = document.getElementById('join-decl-1')?.checked || false;
 
-      if (!name || !email)             { showFormError('join-form-box', !name ? 'Your full name is required.' : 'Your email address is required.'); return; }
-      if (!dia)                        { showFormError('join-form-box', 'Your Driving Instructor Authority (DIA) number is required to verify your eligibility.'); return; }
-      if (!suburb)                     { showFormError('join-form-box', 'Please enter your primary suburb so students know where you are based.'); return; }
-      if (!decl1) { showFormError('join-form-box', 'Please confirm the declaration at the bottom of the form before submitting.'); return; }
+      if (!name || !email)             { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!dia)                        { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!suburb)                     { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!decl1) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
 
       const phone   = document.getElementById('join-phone')?.value || '';
       const exp     = document.getElementById('join-exp')?.value || '';
@@ -2226,15 +2265,12 @@ function bindPageEvents() {
       // Lesson fees
       const fee60 = document.getElementById('join-fee-60')?.value.trim() || '';
       const fee90 = document.getElementById('join-fee-90')?.value.trim() || '';
-      if (!fee60) { showFormError('join-form-box', 'Please enter your 60-minute lesson fee — this is required for your profile.'); return; }
+      if (!fee60) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
 
       // Collect expertise IDs (3-5 required), then resolve to human-readable labels for the email
       const expertiseIds = [...document.querySelectorAll('#join-expertise-grid input:checked')].map(c => c.value);
       if (expertiseIds.length < 3 || expertiseIds.length > 5) {
-        showFormError('join-form-box', expertiseIds.length < 3
-          ? `Please select at least 3 areas of expertise — you've selected ${expertiseIds.length}.`
-          : `Please select no more than 5 areas of expertise — you've selected ${expertiseIds.length}. Go back to Step 3 and deselect ${expertiseIds.length - 5}.`
-        ); return;
+        showFormError('join-form-box', 'Please complete all required fields before continuing.'); return;
       }
       const expertise = resolveExpertise(expertiseIds);
 
@@ -2287,11 +2323,10 @@ function bindPageEvents() {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          // ── Save application to localStorage for admin preview ──
-          const appId = 'app_' + Date.now();
+          // ── Save application to Firestore so it shows up in the admin
+          //    panel from ANY device, not just the applicant's browser ──
           const application = {
-            id:          appId,
-            submittedAt: new Date().toISOString(),
+            submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
             status:      'pending',
             name, email, phone, dia, wwcc,
             exp, suburb,
@@ -2307,17 +2342,26 @@ function bindPageEvents() {
             photoDataUrl: null,
           };
 
-          // Read the photo, resize/compress it, then save as base64 data URL in localStorage.
-          // GitHub Pages is static — no server storage — so we embed the image directly.
-          // We resize to max 400x400px and compress to JPEG 0.82 quality to stay well
-          // under localStorage's ~5 MB limit (raw 5 MB file -> ~270 KB after resize).
+          // Read the photo, resize/compress it, then embed it as a base64
+          // data URL on the application document (kept small so it stays
+          // well under Firestore's 1 MB per-document limit). Resize to
+          // max 400x400px, JPEG quality 0.82.
           const saveApp = (photoDataUrl) => {
             if (photoDataUrl) application.photoDataUrl = photoDataUrl;
-            try {
-              const existing = JSON.parse(localStorage.getItem('pdin_applications') || '[]');
-              existing.push(application);
-              localStorage.setItem('pdin_applications', JSON.stringify(existing));
-            } catch(e) { /* storage full or unavailable - profile will show initials instead */ }
+            db.collection('applications').add(application)
+              .then(() => {
+                document.getElementById('join-form-box').innerHTML = `
+                  <div class="success-box">
+                    <div class="success-icon">${ICONS.check}</div>
+                    <h3>Application Received!</h3>
+                    <p>Thank you, ${name}. We'll review your application and be in touch within 2–3 business days.</p>
+                  </div>`;
+              })
+              .catch(err => {
+                console.error('Failed to save application:', err);
+                showFormError('join-form-box', 'Submission failed. Please try again.');
+                setButtonLoading('join-submit', false, 'Apply to Join');
+              });
           };
 
           if (photoFile) {
@@ -2344,13 +2388,6 @@ function bindPageEvents() {
           } else {
             saveApp(null);
           }
-
-          document.getElementById('join-form-box').innerHTML = `
-            <div class="success-box">
-              <div class="success-icon">${ICONS.check}</div>
-              <h3>Application Received!</h3>
-              <p>Thank you, ${name}. We'll review your application and be in touch within 2–3 business days.</p>
-            </div>`;
         } else { showFormError('join-form-box', 'Submission failed. Please try again.'); setButtonLoading('join-submit', false, 'Apply to Join'); }
       })
       .catch(() => { showFormError('join-form-box', 'Network error. Please try again.'); setButtonLoading('join-submit', false, 'Apply to Join'); });
@@ -2470,6 +2507,19 @@ window.addEventListener('popstate', e => {
 document.addEventListener('DOMContentLoaded', () => {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   bindNavEvents();
+
+  // Live instructor profiles (approved applications) — keep these in sync
+  // for every visitor, on every device, from the moment the page loads.
+  startLiveProfilesListener();
+
+  // Re-render the admin page automatically when sign-in state changes,
+  // so a successful login (or a sign-out) immediately reflects in the UI.
+  auth.onAuthStateChanged(() => {
+    if ((location.hash || '').replace('#','').split('/')[0] === 'admin') {
+      navigate('admin', null, false);
+    }
+  });
+
   const hash = window.location.hash.replace('#', '');
   if (hash) {
     const [page, extra] = hash.split('/');
@@ -2478,14 +2528,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if ((page||'home') === 'join') initState.joinStep = 1;
     history.replaceState(initState, '', window.location.hash);
   } else {
-    // Check if arriving at ?key=…#admin via URL (no hash yet)
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('key')) {
-      navigate('admin', null, false);
-      history.replaceState({ page:'admin', extra:null }, '', window.location.href);
-    } else {
-      navigate('home', null, false);
-      history.replaceState({ page:'home', extra:null }, '', '#home');
-    }
+    navigate('home', null, false);
+    history.replaceState({ page:'home', extra:null }, '', '#home');
   }
 });
