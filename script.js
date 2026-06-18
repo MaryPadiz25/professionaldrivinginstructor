@@ -1392,15 +1392,18 @@ ${expertiseIdStr}
         ${app.status === 'pending' ? `
         <div class="admin-app-actions">
           <button class="btn btn-navy admin-approve-btn" data-appid="${app.id}">✓ Approve &amp; Publish Live</button>
+          <button class="btn btn-outline admin-edit-btn" data-appid="${app.id}">✎ Edit</button>
           <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}">✕ Reject</button>
           <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete</button>
         </div>` : app.status === 'approved' ? `
         <div class="admin-app-actions">
           <button class="btn btn-outline admin-view-live-btn" data-slug="${app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}">👁 View Live Profile</button>
+          <button class="btn btn-outline admin-edit-btn" data-appid="${app.id}">✎ Edit</button>
           <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}" style="color:#c0392b;border-color:#c0392b">✕ Remove from Site</button>
           <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete Record</button>
         </div>` : `
         <div class="admin-app-actions">
+          <button class="btn btn-outline admin-edit-btn" data-appid="${app.id}">✎ Edit</button>
           <button class="btn btn-outline admin-restore-btn" data-appid="${app.id}">↩ Restore to Pending</button>
           <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete Record</button>
         </div>`}
@@ -1440,6 +1443,105 @@ ${expertiseIdStr}
 }
 
 /* Render a pending application as a live profile preview (no contact buttons) */
+/* =============================================
+   ADMIN — EDIT APPLICATION MODAL
+   Lets the admin correct/update any field on a
+   pending, approved, or rejected application before
+   (re-)publishing. Mirrors the join-form fields.
+   ============================================= */
+const EDIT_LANGUAGE_OPTIONS = ['English','Mandarin','Cantonese','Hindi','Punjabi','Vietnamese','Arabic','Greek','Tagalog / Filipino','Korean','Japanese','Thai'];
+const EDIT_AVAIL_DAYS  = [{id:'Weekdays (Mon–Fri)', label:'Weekdays (Mon–Fri)'}, {id:'Saturday', label:'Saturday'}, {id:'Sunday', label:'Sunday'}];
+const EDIT_AVAIL_TIMES = [{id:'Morning (8am–12pm)', label:'Morning (8am–12pm)'}, {id:'Afternoon (12pm–5pm)', label:'Afternoon (12pm–5pm)'}, {id:'Evening (5pm–8pm)', label:'Evening (5pm–8pm)'}];
+
+function buildEditModal(app) {
+  const chk = (val, list) => (list||[]).includes(val);
+  const languageBoxes = EDIT_LANGUAGE_OPTIONS.map(l => `
+    <label class="join-toggle-label"><input type="checkbox" class="edit-lang-chk" value="${l}" ${chk(l, app.languages) ? 'checked' : ''} /><span>${l}</span></label>`).join('');
+
+  const expertiseBoxes = EXPERTISE_CATEGORIES.map(group => `
+    <div class="edit-expertise-group">
+      <p class="edit-expertise-group-label">${group.group}</p>
+      ${group.items.map(item => `
+        <label class="join-toggle-label"><input type="checkbox" class="edit-expertise-chk" value="${item.id}" ${chk(item.id, app.expertiseIds) ? 'checked' : ''} /><span>${item.label}</span></label>`).join('')}
+    </div>`).join('');
+
+  const dayBoxes  = EDIT_AVAIL_DAYS.map(d => `
+    <label class="join-toggle-label"><input type="checkbox" class="edit-avail-day-chk" value="${d.id}" ${chk(d.id, app.availDays) ? 'checked' : ''} /><span>${d.label}</span></label>`).join('');
+  const timeBoxes = EDIT_AVAIL_TIMES.map(t => `
+    <label class="join-toggle-label"><input type="checkbox" class="edit-avail-time-chk" value="${t.id}" ${chk(t.id, app.availTimes) ? 'checked' : ''} /><span>${t.label}</span></label>`).join('');
+
+  const yearOptions = (function(){
+    const cur = new Date().getFullYear();
+    let opts = '';
+    for (let y = cur; y >= cur - 60; y--) opts += `<option value="${y}" ${String(app.exp) === String(y) ? 'selected' : ''}>${y}</option>`;
+    return opts;
+  })();
+
+  return `
+    <div class="enquiry-overlay" id="edit-app-overlay" role="dialog" aria-modal="true">
+      <div class="enquiry-modal edit-app-modal" id="edit-app-modal">
+        <button class="enquiry-close" id="edit-app-close" aria-label="Close">&times;</button>
+        <div class="enquiry-header">
+          <div class="enquiry-title">Edit Application</div>
+          <div class="enquiry-subtitle">Update this applicant's details. Changes save to their application record${app.status === 'approved' ? ', and will also update their live profile on the site.' : '.'}</div>
+        </div>
+
+        <div class="enquiry-section-label">Basic Info</div>
+        <div class="form-group"><label class="form-label">Full Name <span>*</span></label><input type="text" class="form-input" id="edit-name" value="${escAttr(app.name)}" /></div>
+        <div class="form-group"><label class="form-label">Email <span>*</span></label><input type="email" class="form-input" id="edit-email" value="${escAttr(app.email)}" /></div>
+        <div class="form-group"><label class="form-label">Mobile Number <span>*</span></label><input type="tel" class="form-input" id="edit-phone" value="${escAttr(app.phone)}" /></div>
+
+        <div class="enquiry-section-label">Credentials &amp; Experience</div>
+        <div class="form-group"><label class="form-label">Year Started Driving Instruction</label>
+          <select class="form-input" id="edit-exp"><option value="" disabled ${!app.exp ? 'selected' : ''}>Select year…</option>${yearOptions}</select>
+        </div>
+        <div class="form-group"><label class="form-label">DIA Number</label><input type="text" class="form-input" id="edit-dia" value="${escAttr(app.dia)}" /></div>
+        <div class="form-group"><label class="form-label">WWCC Number</label><input type="text" class="form-input" id="edit-wwcc" value="${escAttr(app.wwcc)}" /></div>
+
+        <div class="enquiry-section-label">Vehicles</div>
+        <div class="form-group"><label class="form-label">Automatic Vehicle</label><input type="text" class="form-input" id="edit-vauto" value="${escAttr(app.vAuto)}" /></div>
+        <div class="form-group"><label class="form-label">Manual Vehicle</label><input type="text" class="form-input" id="edit-vmanual" value="${escAttr(app.vManual)}" /></div>
+
+        <div class="enquiry-section-label">Languages</div>
+        <div class="join-expertise-grid">${languageBoxes}</div>
+
+        <div class="enquiry-section-label">Areas of Expertise</div>
+        <div class="edit-expertise-wrap">${expertiseBoxes}</div>
+
+        <div class="enquiry-section-label">Location</div>
+        <div class="form-group"><label class="form-label">Suburb / Area</label><input type="text" class="form-input" id="edit-suburb" value="${escAttr(app.suburb)}" /></div>
+        <div class="form-group"><label class="form-label">Service Radius (km)</label>
+          <select class="form-input" id="edit-radius">
+            ${[10,15,20,30,50].map(r => `<option value="${r}" ${parseInt(app.radius)===r ? 'selected':''}>${r} km</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="enquiry-section-label">Availability</div>
+        <div class="join-avail-grid">${dayBoxes}</div>
+        <div class="join-avail-grid" style="margin-top:8px">${timeBoxes}</div>
+        <div class="form-group" style="margin-top:12px"><label class="form-label">Availability Notes</label><input type="text" class="form-input" id="edit-avail-note" value="${escAttr(app.availSpecific)}" /></div>
+
+        <div class="enquiry-section-label">Fees</div>
+        <div class="form-group"><label class="form-label">60 min Lesson Fee ($)</label><input type="number" class="form-input" id="edit-fee60" value="${escAttr(app.fee60)}" min="0" step="1" /></div>
+        <div class="form-group"><label class="form-label">90 min Lesson Fee ($, optional)</label><input type="number" class="form-input" id="edit-fee90" value="${escAttr(app.fee90)}" min="0" step="1" /></div>
+
+        <div class="enquiry-section-label">Bio</div>
+        <div class="form-group"><textarea class="form-input" id="edit-bio" style="min-height:120px">${app.bio || ''}</textarea></div>
+
+        <div class="admin-app-actions" style="margin-top:24px">
+          <button class="btn btn-navy" id="edit-app-save" data-appid="${app.id}" data-status="${app.status}">💾 Save Changes</button>
+          <button class="btn btn-outline" id="edit-app-cancel">Cancel</button>
+        </div>
+        <p id="edit-app-error" class="admin-key-error" style="display:none;margin-top:12px"></p>
+      </div>
+    </div>`;
+}
+
+/* HTML-attribute-escape helper for safely inserting saved values back into input value="" */
+function escAttr(val) {
+  return String(val ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function renderPendingProfile(app) {
   const initials   = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const expYears   = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
@@ -1550,6 +1652,29 @@ function bindAdminEvents() {
     btn.addEventListener('click', () => navigate('profile', btn.dataset.slug));
   });
 
+  // Edit — open modal pre-filled with this application's current data
+  document.querySelectorAll('.admin-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const appId = btn.dataset.appid;
+      btn.disabled = true;
+      const origText = btn.textContent;
+      btn.textContent = 'Loading…';
+      db.collection('applications').doc(appId).get().then(doc => {
+        btn.disabled = false; btn.textContent = origText;
+        if (!doc.exists) { showToast('This application could not be found — it may have been deleted.'); return; }
+        const app = { id: doc.id, ...doc.data() };
+        document.body.insertAdjacentHTML('beforeend', buildEditModal(app));
+        document.body.classList.add('modal-open');
+        requestAnimationFrame(() => document.getElementById('edit-app-overlay').classList.add('visible'));
+        bindEditModalEvents(app);
+      }).catch(err => {
+        console.error('Failed to load application for edit:', err);
+        btn.disabled = false; btn.textContent = origText;
+        showToast('Could not load this application. Please try again.');
+      });
+    });
+  });
+
   // Approve — instantly publishes profile live including photo and credentials
   document.querySelectorAll('.admin-approve-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1559,48 +1684,11 @@ function bindAdminEvents() {
       db.collection('applications').doc(appId).get().then(doc => {
         if (!doc.exists) return;
         const app = doc.data();
-
-        const expYears    = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
-        const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
-        const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-        const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
-        const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
-        if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
-        const vehiclesArr = [];
-        if (app.vAuto)    vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
-        if (app.vManual)  vehiclesArr.push({ type: 'Manual', car: app.vManual });
-
-        const liveProfile = {
-          id:           idSlug,
-          initials,
-          name:         app.name,
-          title:        'Professional Driving Instructor',
-          baseSuburb:   app.suburb,
-          baseLat:      null,
-          baseLng:      null,
-          serviceRadius: parseInt(app.radius) || 10,
-          travelBonus:  false,
-          travelFee:    false,
-          location:     app.suburb + ' &amp; surrounding suburbs',
-          experience:   expLabel,
-          customQS:     true,
-          lessonFees:   feesArr,
-          vehicles:     vehiclesArr,
-          availability: availLabel,
-          expertiseIds: app.expertiseIds || [],
-          credentials:  { dia: !!(app.dia), wwcc: !!(app.wwcc) },  // true if value was provided
-          seniorBadge:  expYears >= 10,
-          photo:        null,
-          photoDataUrl: app.photoDataUrl || null,
-          bio:          app.bio || '',
-          languages:    app.languages || [],
-          _fromApp:     appId,
-        };
+        const liveProfile = buildLiveProfileFromApp(app, appId);
 
         return Promise.all([
           db.collection('applications').doc(appId).update({ status: 'approved' }),
-          db.collection('live_profiles').doc(idSlug).set(liveProfile)
+          db.collection('live_profiles').doc(liveProfile.id).set(liveProfile)
         ]).then(() => {
           showToast('✅ ' + app.name + ' is now live on the website!');
           setTimeout(() => navigate('admin'), 400);
@@ -1651,6 +1739,130 @@ function bindAdminEvents() {
         .then(() => navigate('admin'))
         .catch(err => { console.error('Delete failed:', err); showToast('Could not delete this record.'); btn.disabled = false; });
     });
+  });
+}
+
+/* Build a live_profiles-shaped object from an application record.
+   Shared by Approve and by Edit-Save (when re-syncing an already-live profile)
+   so both paths stay consistent. */
+function buildLiveProfileFromApp(app, appId) {
+  const expYears    = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
+  const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
+  const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
+  const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
+  if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
+  const vehiclesArr = [];
+  if (app.vAuto)    vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
+  if (app.vManual)  vehiclesArr.push({ type: 'Manual', car: app.vManual });
+
+  return {
+    id:           idSlug,
+    initials,
+    name:         app.name,
+    title:        'Professional Driving Instructor',
+    baseSuburb:   app.suburb,
+    baseLat:      null,
+    baseLng:      null,
+    serviceRadius: parseInt(app.radius) || 10,
+    travelBonus:  false,
+    travelFee:    false,
+    location:     app.suburb + ' &amp; surrounding suburbs',
+    experience:   expLabel,
+    customQS:     true,
+    lessonFees:   feesArr,
+    vehicles:     vehiclesArr,
+    availability: availLabel,
+    expertiseIds: app.expertiseIds || [],
+    credentials:  { dia: !!(app.dia), wwcc: !!(app.wwcc) },
+    seniorBadge:  expYears >= 10,
+    photo:        null,
+    photoDataUrl: app.photoDataUrl || null,
+    bio:          app.bio || '',
+    languages:    app.languages || [],
+    _fromApp:     appId,
+  };
+}
+
+/* Close the edit modal (used by close button, cancel button, and overlay click) */
+function closeEditModal() {
+  const overlay = document.getElementById('edit-app-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+  document.body.classList.remove('modal-open');
+  setTimeout(() => overlay.remove(), 260);
+}
+
+/* Wire up the edit modal's checkboxes-collection, save, and close behaviour */
+function bindEditModalEvents(app) {
+  const overlay = document.getElementById('edit-app-overlay');
+  document.getElementById('edit-app-close')?.addEventListener('click', closeEditModal);
+  document.getElementById('edit-app-cancel')?.addEventListener('click', closeEditModal);
+  overlay?.addEventListener('click', e => { if (e.target === overlay) closeEditModal(); });
+
+  document.getElementById('edit-app-save')?.addEventListener('click', () => {
+    const saveBtn   = document.getElementById('edit-app-save');
+    const errorEl   = document.getElementById('edit-app-error');
+    const get  = id => document.getElementById(id)?.value.trim() ?? '';
+    const chk  = sel => [...document.querySelectorAll(sel)].filter(c => c.checked).map(c => c.value);
+
+    const name  = get('edit-name');
+    const email = get('edit-email');
+    const phone = get('edit-phone');
+    const fee60 = get('edit-fee60');
+
+    if (!name || !email || !phone || !fee60) {
+      errorEl.textContent = 'Name, email, phone, and the 60-minute fee are required.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    const updated = {
+      name, email, phone,
+      exp:          get('edit-exp'),
+      dia:          get('edit-dia'),
+      wwcc:         get('edit-wwcc'),
+      vAuto:        get('edit-vauto'),
+      vManual:      get('edit-vmanual'),
+      languages:    chk('.edit-lang-chk'),
+      expertiseIds: chk('.edit-expertise-chk'),
+      suburb:       get('edit-suburb'),
+      radius:       parseInt(get('edit-radius'), 10) || 10,
+      availDays:    chk('.edit-avail-day-chk'),
+      availTimes:   chk('.edit-avail-time-chk'),
+      availSpecific: get('edit-avail-note'),
+      fee60,
+      fee90:        get('edit-fee90'),
+      bio:          get('edit-bio'),
+    };
+
+    errorEl.style.display = 'none';
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+
+    const appId = app.id;
+    db.collection('applications').doc(appId).update(updated)
+      .then(() => {
+        // If this application is already live, keep the published profile in sync
+        if (app.status === 'approved') {
+          const mergedApp = { ...app, ...updated };
+          const liveProfile = buildLiveProfileFromApp(mergedApp, appId);
+          return db.collection('live_profiles').doc(liveProfile.id).set(liveProfile);
+        }
+      })
+      .then(() => {
+        closeEditModal();
+        showToast('✅ Changes saved' + (app.status === 'approved' ? ' and live profile updated.' : '.'));
+        navigate('admin');
+      })
+      .catch(err => {
+        console.error('Save failed:', err);
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Save Changes';
+        errorEl.textContent = 'Could not save changes. Please check your connection and try again.';
+        errorEl.style.display = 'block';
+      });
   });
 }
 
