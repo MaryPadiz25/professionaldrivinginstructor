@@ -773,7 +773,7 @@ function renderJoin() {
 
         <!-- ── STEP 3: Areas of Expertise ── -->
         <div class="join-step" id="join-step-3" style="display:none">
-          <div class="form-section-head join-step-head"><span class="join-step-num">3</span> Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(select 3–5)</span></div>
+          <div class="form-section-head join-step-head"><span class="join-step-num">3</span> Areas of Expertise <span style="font-size:12px;font-weight:400;color:var(--text-light)">(Select a total of 3–5)</span></div>
           <p style="font-size:14px;color:var(--text-light);margin:-4px 0 18px;">Choose the learners you enjoy working with most.</p>
           <div class="form-group">
             <div id="join-expertise-grid">
@@ -830,7 +830,7 @@ function renderJoin() {
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Typical Availability Notes <span class="form-label-optional">(optional)</span></label>
+            <label class="form-label">Additional Availability Information <span class="form-label-optional">(optional)</span></label>
             <input type="text" class="form-input" id="avail-specific" placeholder='e.g. "Usually available weekdays after 3pm."' />
           </div>
 
@@ -910,7 +910,7 @@ function renderJoin() {
             <button class="btn btn-outline join-back-btn" data-back="6">← Back</button>
             <span></span>
           </div>
-          <button class="btn btn-navy btn-full btn-lg" id="join-submit" style="margin-top:24px">Apply to Join</button>
+          <button class="btn btn-navy btn-full btn-lg" id="join-submit" style="margin-top:24px">Submit Application</button>
           <div class="join-approval-notice">
             <p>Once your instructor profile has been approved, you will receive a confirmation email. Your profile, including your photo and submitted details, will then be visible to users, allowing them to view your information and contact you directly.</p>
             <p>If you have any questions or require assistance, please contact our team at <a href="mailto:support@professionaldrivinginstructorsnetwork.com">support@professionaldrivinginstructorsnetwork.com</a></p>
@@ -2123,19 +2123,20 @@ function bindPageEvents() {
       }
       if (curStep === 2) {
         const dia = document.getElementById('join-dia')?.value.trim();
-        if (!dia) { showToast('Please complete all required fields before continuing.'); return; }
+        if (!dia) { showToast('Your Driving Instructor Authority (DIA) number is required to continue.'); return; }
       }
       if (curStep === 3) {
         const expertise = [...document.querySelectorAll('#join-expertise-grid input:checked')];
-        if (expertise.length < 3 || expertise.length > 5) { showToast('Please complete all required fields before continuing.'); return; }
+        if (expertise.length < 3) { showToast('Please select at least 3 areas of expertise before continuing.'); return; }
+        if (expertise.length > 5) { showToast('You have selected more than 5 areas of expertise — please deselect some to continue.'); return; }
       }
       if (curStep === 4) {
         const suburb = document.getElementById('join-suburb')?.value.trim();
-        if (!suburb) { showToast('Please complete all required fields before continuing.'); return; }
+        if (!suburb) { showToast('Please enter your primary suburb before continuing.'); return; }
       }
       if (curStep === 5) {
         const fee60 = document.getElementById('join-fee-60')?.value.trim();
-        if (!fee60) { showToast('Please complete all required fields before continuing.'); return; }
+        if (!fee60) { showToast('Please enter your 60-minute lesson fee before continuing.'); return; }
       }
 
       goToJoinStep(nextStep, true);
@@ -2225,10 +2226,10 @@ function bindPageEvents() {
       const suburb = (document.getElementById('join-suburb') || {}).value?.trim() || '';
       const decl1  = document.getElementById('join-decl-1')?.checked || false;
 
-      if (!name || !email)             { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
-      if (!dia)                        { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
-      if (!suburb)                     { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
-      if (!decl1) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!name || !email)             { showFormError('join-form-box', 'Your name and email address are required. Please go back and fill them in.'); return; }
+      if (!dia)                        { showFormError('join-form-box', 'Your Driving Instructor Authority (DIA) number is missing. Please go back to Step 2 and enter it.'); return; }
+      if (!suburb)                     { showFormError('join-form-box', 'Your primary suburb is missing. Please go back to Step 4 and enter it.'); return; }
+      if (!decl1) { showFormError('join-form-box', 'You must confirm the Instructor Declaration before submitting your application.'); return; }
 
       const phone   = document.getElementById('join-phone')?.value || '';
       const exp     = document.getElementById('join-exp')?.value || '';
@@ -2265,12 +2266,15 @@ function bindPageEvents() {
       // Lesson fees
       const fee60 = document.getElementById('join-fee-60')?.value.trim() || '';
       const fee90 = document.getElementById('join-fee-90')?.value.trim() || '';
-      if (!fee60) { showFormError('join-form-box', 'Please complete all required fields before continuing.'); return; }
+      if (!fee60) { showFormError('join-form-box', 'Your 60-minute lesson fee is missing. Please go back to Step 5 and enter it.'); return; }
 
       // Collect expertise IDs (3-5 required), then resolve to human-readable labels for the email
       const expertiseIds = [...document.querySelectorAll('#join-expertise-grid input:checked')].map(c => c.value);
-      if (expertiseIds.length < 3 || expertiseIds.length > 5) {
-        showFormError('join-form-box', 'Please complete all required fields before continuing.'); return;
+      if (expertiseIds.length < 3) {
+        showFormError('join-form-box', 'Please select at least 3 areas of expertise. Go back to Step 3 to update your selections.'); return;
+      }
+      if (expertiseIds.length > 5) {
+        showFormError('join-form-box', 'You have selected more than 5 areas of expertise. Go back to Step 3 and deselect some.'); return;
       }
       const expertise = resolveExpertise(expertiseIds);
 
@@ -2286,7 +2290,7 @@ function bindPageEvents() {
         w3fKey = '1119cfb7-b03e-4f5d-ae4f-b8e3a077bac7'; // John
       }
 
-      setButtonLoading('join-submit', true, 'Apply to Join');
+      setButtonLoading('join-submit', true, 'Submit Application');
 
       // Build FormData — web3forms requires multipart/form-data to receive file attachments
       const fd = new FormData();
@@ -2315,82 +2319,81 @@ function bindPageEvents() {
       fd.append('About',                   bio);
       if (photoFile) fd.append('attachment', photoFile, photoFile.name);
 
-      fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' }, // NO Content-Type — browser sets multipart boundary
-        body: fd
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          // ── Save application to Firestore so it shows up in the admin
-          //    panel from ANY device, not just the applicant's browser ──
-          const application = {
-            submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            status:      'pending',
-            name, email, phone, dia, wwcc,
-            exp, suburb,
-            radius:      parseInt(radius, 10),
-            vAuto:       vAuto  || '',
-            vManual:     vManual|| '',
-            languages:   languages.length ? languages : [],
-            availDays, availTimes, availSpecific,
-            fee60, fee90: fee90 || '',
-            expertiseIds,
-            bio,
-            photoName:   photoFile ? photoFile.name : '',
-            photoDataUrl: null,
-          };
+      // ── PRIMARY: Save to Firestore first (always runs, no email dependency) ──
+      // The Firestore security rules allow unauthenticated creates, so this
+      // always works regardless of web3forms status. The admin panel reads
+      // directly from Firestore — this is what you check for applications.
+      const application = {
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        status:      'pending',
+        name, email, phone, dia, wwcc,
+        exp, suburb,
+        radius:      parseInt(radius, 10),
+        vAuto:       vAuto  || '',
+        vManual:     vManual|| '',
+        languages:   languages.length ? languages : [],
+        availDays, availTimes, availSpecific,
+        fee60, fee90: fee90 || '',
+        expertiseIds,
+        bio,
+        photoName:   photoFile ? photoFile.name : '',
+        photoDataUrl: null,
+      };
 
-          // Read the photo, resize/compress it, then embed it as a base64
-          // data URL on the application document (kept small so it stays
-          // well under Firestore's 1 MB per-document limit). Resize to
-          // max 400x400px, JPEG quality 0.82.
-          const saveApp = (photoDataUrl) => {
-            if (photoDataUrl) application.photoDataUrl = photoDataUrl;
-            db.collection('applications').add(application)
-              .then(() => {
-                document.getElementById('join-form-box').innerHTML = `
-                  <div class="success-box">
-                    <div class="success-icon">${ICONS.check}</div>
-                    <h3>Application Received!</h3>
-                    <p>Thank you, ${name}. We'll review your application and be in touch within 2–3 business days.</p>
-                  </div>`;
-              })
-              .catch(err => {
-                console.error('Failed to save application:', err);
-                showFormError('join-form-box', 'Submission failed. Please try again.');
-                setButtonLoading('join-submit', false, 'Apply to Join');
-              });
-          };
+      function showSuccess() {
+        const box = document.getElementById('join-form-box');
+        if (box) {
+          box.innerHTML = `
+            <div class="success-box">
+              <div class="success-icon">${ICONS.check}</div>
+              <h3>Application Received!</h3>
+              <p>Thank you, ${name}. We'll review your application and be in touch within 2–3 business days.</p>
+            </div>`;
+        }
+        // ── SECONDARY (non-blocking): send email notification via web3forms ──
+        fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+          body: fd
+        }).catch(() => { /* silent — Firestore record already saved */ });
+      }
 
-          if (photoFile) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-              const img = new Image();
-              img.onload = () => {
-                const MAX = 400;
-                let w = img.width, h = img.height;
-                if (w > MAX || h > MAX) {
-                  if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-                  else       { w = Math.round(w * MAX / h); h = MAX; }
-                }
-                const canvas = document.createElement('canvas');
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                saveApp(canvas.toDataURL('image/jpeg', 0.82));
-              };
-              img.onerror = () => saveApp(null);
-              img.src = ev.target.result;
-            };
-            reader.onerror = () => saveApp(null);
-            reader.readAsDataURL(photoFile);
-          } else {
-            saveApp(null);
-          }
-        } else { showFormError('join-form-box', 'Submission failed. Please try again.'); setButtonLoading('join-submit', false, 'Apply to Join'); }
-      })
-      .catch(() => { showFormError('join-form-box', 'Network error. Please try again.'); setButtonLoading('join-submit', false, 'Apply to Join'); });
+      function saveToFirestore(photoDataUrl) {
+        if (photoDataUrl) application.photoDataUrl = photoDataUrl;
+        db.collection('applications').add(application)
+          .then(() => { showSuccess(); })
+          .catch(err => {
+            console.error('Firestore save failed:', err);
+            showFormError('join-form-box', 'Could not save your application. Please check your internet connection and try again.');
+            setButtonLoading('join-submit', false, 'Submit Application');
+          });
+      }
+
+      // Resize & compress photo if provided, then save
+      if (photoFile) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 400;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+              else       { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            saveToFirestore(canvas.toDataURL('image/jpeg', 0.82));
+          };
+          img.onerror = () => saveToFirestore(null);
+          img.src = ev.target.result;
+        };
+        reader.onerror = () => saveToFirestore(null);
+        reader.readAsDataURL(photoFile);
+      } else {
+        saveToFirestore(null);
+      }
     });
   }
 
