@@ -1050,6 +1050,31 @@ body.modal-open { overflow: hidden; }
 }
 
 /* =============================================
+   ADMIN — EDIT APPLICATION MODAL
+   (extends .enquiry-overlay / .enquiry-modal)
+   ============================================= */
+.edit-app-modal {
+  max-width: 680px;
+}
+.edit-app-modal .form-group { margin-bottom: 16px; }
+.edit-expertise-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.edit-expertise-group-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+.edit-expertise-group .join-toggle-label { margin-bottom: 6px; }
+
+@media (max-width: 600px) {
+  .edit-app-modal { padding: 28px 18px 22px; }
+}
+
+/* =============================================
    FOOTER
    ============================================= */
 .footer { background: var(--navy-dark); padding: 40px 28px; }
