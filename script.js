@@ -910,7 +910,7 @@ function renderJoin() {
             <button class="btn btn-outline join-back-btn" data-back="6">← Back</button>
             <span></span>
           </div>
-          <button class="btn btn-navy btn-full btn-lg" id="join-submit" style="margin-top:24px">Submit Application</button>
+          <button class="btn btn-navy btn-full btn-lg" id="join-submit" style="margin-top:24px">Apply to Join</button>
           <div class="join-approval-notice">
             <p>Once your instructor profile has been approved, you will receive a confirmation email. Your profile, including your photo and submitted details, will then be visible to users, allowing them to view your information and contact you directly.</p>
             <p>If you have any questions or require assistance, please contact our team at <a href="mailto:support@professionaldrivinginstructorsnetwork.com">support@professionaldrivinginstructorsnetwork.com</a></p>
@@ -2290,7 +2290,7 @@ function bindPageEvents() {
         w3fKey = '1119cfb7-b03e-4f5d-ae4f-b8e3a077bac7'; // John
       }
 
-      setButtonLoading('join-submit', true, 'Submit Application');
+      setButtonLoading('join-submit', true, 'Apply to Join');
 
       // Build FormData — web3forms requires multipart/form-data to receive file attachments
       const fd = new FormData();
@@ -2340,15 +2340,16 @@ function bindPageEvents() {
         photoDataUrl: null,
       };
 
-      function showSuccess() {
+      function showSuccess(applicantName) {
         const box = document.getElementById('join-form-box');
         if (box) {
           box.innerHTML = `
             <div class="success-box">
               <div class="success-icon">${ICONS.check}</div>
               <h3>Application Received!</h3>
-              <p>Thank you, ${name}. We'll review your application and be in touch within 2–3 business days.</p>
+              <p>Thank you, <strong>${applicantName}</strong>. We’ll review your application and be in touch within 2–3 business days.</p>
             </div>`;
+          box.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
         // ── SECONDARY (non-blocking): send email notification via web3forms ──
         fetch('https://api.web3forms.com/submit', {
@@ -2361,11 +2362,11 @@ function bindPageEvents() {
       function saveToFirestore(photoDataUrl) {
         if (photoDataUrl) application.photoDataUrl = photoDataUrl;
         db.collection('applications').add(application)
-          .then(() => { showSuccess(); })
+          .then(() => { showSuccess(name); })
           .catch(err => {
             console.error('Firestore save failed:', err);
+            setButtonLoading('join-submit', false, 'Apply to Join');
             showFormError('join-form-box', 'Could not save your application. Please check your internet connection and try again.');
-            setButtonLoading('join-submit', false, 'Submit Application');
           });
       }
 
