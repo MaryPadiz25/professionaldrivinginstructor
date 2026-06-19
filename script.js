@@ -6,6 +6,16 @@
    ============================================= */
 function dec(arr) { return arr.map(c => String.fromCharCode(c)).join(''); }
 
+/* Resolve the Web3Forms access key to use for a given instructor.
+   Legacy hardcoded instructors keep their key in CONTACT; instructors
+   approved through the admin panel carry their own w3f field straight
+   from their live_profiles document. */
+function getEnquiryKey(inst) {
+  const legacy = CONTACT[inst.id];
+  if (legacy && legacy.w3f) return legacy.w3f;
+  return inst.w3f || '';
+}
+
 const CONTACT = {
   'rob-lester':  {
     p: [43,54,49,52,49,50,32,48,48,54,32,49,57,57],
@@ -648,7 +658,7 @@ function renderProfile(id) {
               <p class="btn-trust-text">Call instantly — connects you directly to the instructor</p>
             </div>
             <div class="qs-btn-wrap">
-              ${(CONTACT[inst.id] && CONTACT[inst.id].unavailable)
+              ${(!getEnquiryKey(inst) || (CONTACT[inst.id] && CONTACT[inst.id].unavailable))
                 ? `<button class="btn btn-gold btn-unavailable" disabled title="Online enquiry not yet available for this instructor">${ICONS.mail} Enquiry Unavailable</button>
                    <p class="btn-trust-text">Online enquiry not yet available for this instructor</p>`
                 : `<button class="btn btn-gold" id="open-enquiry-btn" data-instructor-id="${inst.id}">${ICONS.mail} Send Enquiry</button>
@@ -1101,7 +1111,8 @@ function openEnquiryModal(inst) {
 
     // Use the instructor's own web3forms access key so the enquiry
     // lands directly in their inbox
-    if (!ct.w3f) {
+    const w3fKey = getEnquiryKey(inst);
+    if (!w3fKey) {
       showEnquiryError('Online enquiry is not yet available for this instructor. Please call them directly.');
       setEnquiryButtonLoading(false);
       return;
@@ -1111,7 +1122,7 @@ function openEnquiryModal(inst) {
       method: 'POST',
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        access_key:      ct.w3f,
+        access_key:      w3fKey,
         subject:         'New Lesson Enquiry from ' + name + ' — Professional Driving Instructors Network',
         from_name:       'Professional Driving Instructors Network',
         Instructor:      inst.name,
@@ -1388,6 +1399,21 @@ ${expertiseIdStr}
             <button class="btn btn-outline admin-copy-btn" data-copy="code-contact-${app.id}">Copy</button>
           </div>
         </details>
+
+        <!-- Web3Forms access key — powers the "Send Enquiry" button for this instructor -->
+        <div class="admin-w3f-box">
+          <label class="form-label" for="w3f-input-${app.id}">Web3Forms Access Key (for "Send Enquiry")</label>
+          <div class="admin-w3f-row">
+            <input type="text" class="form-input" id="w3f-input-${app.id}" placeholder="e.g. 1119cfb7-b03e-4f5d-ae4f-b8e3a077bac7" value="${escAttr(app.w3f)}" />
+            <button class="btn btn-outline admin-savew3f-btn" data-appid="${app.id}" data-slug="${idSlug}">💾 Save Key</button>
+          </div>
+          <small class="form-hint">
+            Create a free access key at <a href="https://web3forms.com" target="_blank" rel="noopener">web3forms.com</a> using <strong>this instructor's personal email</strong>, then paste it here.
+            ${app.w3f
+              ? ' ✅ Key saved — online enquiries will work once this profile is live.'
+              : ' ⚠️ No key yet — the "Send Enquiry" button will stay disabled for this instructor until one is added.'}
+          </small>
+        </div>
 
         ${app.status === 'pending' ? `
         <div class="admin-app-actions">
@@ -1675,22 +1701,53 @@ function bindAdminEvents() {
     });
   });
 
+  // Save Web3Forms access key — works for both pending and already-live applications
+  document.querySelectorAll('.admin-savew3f-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const appId = btn.dataset.appid;
+      const slug  = btn.dataset.slug;
+      const input = document.getElementById('w3f-input-' + appId);
+      const key   = input ? input.value.trim() : '';
+      btn.disabled = true; const origText = btn.textContent; btn.textContent = 'Saving…';
+
+      db.collection('applications').doc(appId).update({ w3f: key })
+        .then(() => db.collection('live_profiles').doc(slug).get())
+        .then(doc => doc.exists ? doc.ref.update({ w3f: key }) : null)
+        .then(() => {
+          showToast(key ? '✅ Web3Forms key saved.' : '✅ Web3Forms key cleared.');
+          navigate('admin');
+        })
+        .catch(err => {
+          console.error('Save Web3Forms key failed:', err);
+          showToast('Could not save the key. Please try again.');
+          btn.disabled = false; btn.textContent = origText;
+        });
+    });
+  });
+
   // Approve — instantly publishes profile live including photo and credentials
   document.querySelectorAll('.admin-approve-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
       btn.disabled = true; btn.textContent = 'Publishing…';
 
+      // Pick up whatever's currently typed in the Web3Forms key field, even if
+      // the admin didn't click "Save Key" first, so it's never lost on approve.
+      const w3fInput = document.getElementById('w3f-input-' + appId);
+      const typedKey = w3fInput ? w3fInput.value.trim() : '';
+
       db.collection('applications').doc(appId).get().then(doc => {
         if (!doc.exists) return;
-        const app = doc.data();
+        const app = { ...doc.data(), w3f: typedKey || doc.data().w3f || '' };
         const liveProfile = buildLiveProfileFromApp(app, appId);
 
         return Promise.all([
-          db.collection('applications').doc(appId).update({ status: 'approved' }),
+          db.collection('applications').doc(appId).update({ status: 'approved', w3f: app.w3f }),
           db.collection('live_profiles').doc(liveProfile.id).set(liveProfile)
         ]).then(() => {
-          showToast('✅ ' + app.name + ' is now live on the website!');
+          showToast(app.w3f
+            ? '✅ ' + app.name + ' is now live, with online enquiries enabled!'
+            : '✅ ' + app.name + ' is now live — add a Web3Forms key to enable online enquiries.');
           setTimeout(() => navigate('admin'), 400);
         });
       }).catch(err => {
@@ -1781,6 +1838,7 @@ function buildLiveProfileFromApp(app, appId) {
     photoDataUrl: app.photoDataUrl || null,
     bio:          app.bio || '',
     languages:    app.languages || [],
+    w3f:          app.w3f || '',
     _fromApp:     appId,
   };
 }
