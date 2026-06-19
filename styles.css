@@ -2412,6 +2412,13 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .admin-badge-pending  { background: #fff8e1; color: #b8860b; }
 .admin-badge-approved { background: #e8f5e9; color: #2e7d32; }
 .admin-badge-rejected { background: #fce8e6; color: #c0392b; }
+.admin-badge-trashed  { background: #f3f0fa; color: #6b4fbb; }
+
+/* Trash countdown note */
+.admin-trash-note {
+  padding: 10px 24px; border-top: 1px solid var(--border);
+  background: #f9f7fd; color: #6b4fbb; font-size: 13px; font-weight: 600;
+}
 
 /* Detail rows */
 .admin-app-details { padding: 20px 24px; display: grid; gap: 10px; }
