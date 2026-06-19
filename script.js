@@ -610,7 +610,7 @@ function renderProfile(id) {
               <p class="btn-trust-text">Call instantly — connects you directly to the instructor</p>
             </div>
             <div class="qs-btn-wrap">
-              ${(CONTACT[inst.id] && CONTACT[inst.id].unavailable)
+              ${((CONTACT[inst.id] && CONTACT[inst.id].unavailable) || inst.contactUnavailable)
                 ? `<button class="btn btn-gold btn-unavailable" disabled title="Online enquiry not yet available for this instructor">${ICONS.mail} Enquiry Unavailable</button>
                    <p class="btn-trust-text">Online enquiry not yet available for this instructor</p>`
                 : `<button class="btn btn-gold" id="open-enquiry-btn" data-instructor-id="${inst.id}">${ICONS.mail} Send Enquiry</button>
@@ -1105,10 +1105,12 @@ function openEnquiryModal(inst) {
     setEnquiryButtonLoading(true);
 
     const ct = CONTACT[inst.id] || {};
+    // Prefer the w3fKey stored on the live profile in Firestore (set via
+    // the admin Edit Profile panel), then fall back to the static CONTACT map
+    const w3fKey = inst.w3fKey || ct.w3f || null;
+    const isUnavailable = inst.contactUnavailable || ct.unavailable || false;
 
-    // Use the instructor's own web3forms access key so the enquiry
-    // lands directly in their inbox
-    if (!ct.w3f) {
+    if (!w3fKey) {
       showEnquiryError('Online enquiry is not yet available for this instructor. Please call them directly.');
       setEnquiryButtonLoading(false);
       return;
@@ -1118,7 +1120,7 @@ function openEnquiryModal(inst) {
       method: 'POST',
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        access_key:      ct.w3f,
+        access_key:      w3fKey,
         subject:         'New Lesson Enquiry from ' + name + ' — Professional Driving Instructors Network',
         from_name:       'Professional Driving Instructors Network',
         Instructor:      inst.name,
@@ -1508,15 +1510,18 @@ ${expertiseIdStr}
         <div class="admin-app-actions">
           <button class="btn btn-navy admin-approve-btn" data-appid="${app.id}">✓ Approve &amp; Publish Live</button>
           <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}">✕ Reject</button>
+          <button class="btn btn-outline admin-edit-btn" data-appid="${app.id}">✏️ Edit Profile</button>
           <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Move to Trash</button>
         </div>` : app.status === 'approved' ? `
         <div class="admin-app-actions">
           <button class="btn btn-outline admin-view-live-btn" data-slug="${app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}">👁 View Live Profile</button>
+          <button class="btn btn-outline admin-edit-btn" data-appid="${app.id}">✏️ Edit Profile</button>
           <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}" style="color:#c0392b;border-color:#c0392b">✕ Remove from Site</button>
           <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Move to Trash</button>
         </div>` : app.status === 'rejected' ? `
         <div class="admin-app-actions">
           <button class="btn btn-outline admin-restore-btn" data-appid="${app.id}">↩ Restore to Pending</button>
+          <button class="btn btn-outline admin-edit-btn" data-appid="${app.id}">✏️ Edit Profile</button>
           <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Move to Trash</button>
         </div>` : `
         <div class="admin-trash-note">🗑 ${trashCountdown}</div>
@@ -1524,6 +1529,115 @@ ${expertiseIdStr}
           <button class="btn btn-navy admin-trash-restore-btn" data-appid="${app.id}">↩ Restore</button>
           <button class="btn btn-outline admin-trash-purge-btn" data-appid="${app.id}" style="color:#c0392b;border-color:#c0392b">🗑 Delete Permanently</button>
         </div>`}
+
+        <!-- ── Inline Edit Panel (hidden until ✏️ Edit is clicked) ── -->
+        <div class="admin-edit-panel" id="edit-panel-${app.id}" style="display:none">
+          <div class="admin-edit-panel-title">✏️ Edit Profile — ${app.name}</div>
+          <div class="admin-edit-grid">
+            <div class="admin-edit-section">
+              <div class="admin-edit-section-head">Personal Details</div>
+              <div class="admin-edit-row"><label>Full Name</label><input class="form-input" id="ep-name-${app.id}" value="${escHtml(app.name||'')}" /></div>
+              <div class="admin-edit-row"><label>Email</label><input class="form-input" type="email" id="ep-email-${app.id}" value="${escHtml(app.email||'')}" /></div>
+              <div class="admin-edit-row"><label>Phone</label><input class="form-input" id="ep-phone-${app.id}" value="${escHtml(app.phone||'')}" /></div>
+            </div>
+            <div class="admin-edit-section">
+              <div class="admin-edit-section-head">Location &amp; Service Area</div>
+              <div class="admin-edit-row"><label>Primary Suburb</label><input class="form-input" id="ep-suburb-${app.id}" value="${escHtml(app.suburb||'')}" /></div>
+              <div class="admin-edit-row"><label>State</label>
+                <select class="form-input" id="ep-state-${app.id}">
+                  ${['VIC','NSW','QLD','SA','WA','TAS','ACT','NT'].map(s=>`<option value="${s}" ${app.state===s?'selected':''}>${s}</option>`).join('')}
+                </select>
+              </div>
+              <div class="admin-edit-row"><label>Travel Radius (km)</label>
+                <select class="form-input" id="ep-radius-${app.id}">
+                  ${[10,15,20,30,50].map(r=>`<option value="${r}" ${parseInt(app.radius)===r?'selected':''}>${r} km</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div class="admin-edit-section">
+              <div class="admin-edit-section-head">Lesson Fees</div>
+              <div class="admin-edit-row"><label>60-min fee ($)</label><input class="form-input" type="number" id="ep-fee60-${app.id}" value="${app.fee60||''}" min="0" /></div>
+              <div class="admin-edit-row"><label>90-min fee ($) <span style="font-weight:400;color:var(--text-light)">(optional)</span></label><input class="form-input" type="number" id="ep-fee90-${app.id}" value="${app.fee90||''}" min="0" /></div>
+            </div>
+            <div class="admin-edit-section">
+              <div class="admin-edit-section-head">Vehicles</div>
+              <div class="admin-edit-row"><label>Automatic vehicle</label><input class="form-input" id="ep-vauto-${app.id}" value="${escHtml(app.vAuto||'')}" placeholder="Make &amp; model" /></div>
+              <div class="admin-edit-row"><label>Manual vehicle</label><input class="form-input" id="ep-vmanual-${app.id}" value="${escHtml(app.vManual||'')}" placeholder="Make &amp; model" /></div>
+            </div>
+            <div class="admin-edit-section">
+              <div class="admin-edit-section-head">Credentials</div>
+              <div class="admin-edit-row"><label>DIA Number</label><input class="form-input" id="ep-dia-${app.id}" value="${escHtml(app.dia||'')}" /></div>
+              <div class="admin-edit-row"><label>WWCC Number <span style="font-weight:400;color:var(--text-light)">(optional)</span></label><input class="form-input" id="ep-wwcc-${app.id}" value="${escHtml(app.wwcc||'')}" /></div>
+              <div class="admin-edit-row admin-edit-row-check">
+                <label><input type="checkbox" id="ep-cred-dia-${app.id}" ${app.credentials?.dia?'checked':''} /> DIA credential verified</label>
+                <label><input type="checkbox" id="ep-cred-wwcc-${app.id}" ${app.credentials?.wwcc?'checked':''} /> WWCC credential verified</label>
+              </div>
+            </div>
+            <div class="admin-edit-section">
+              <div class="admin-edit-section-head">Contact / Enquiry</div>
+              <div class="admin-edit-row">
+                <label>Web3Forms Access Key
+                  <span class="admin-edit-hint">Paste the instructor's Web3Forms key here so student enquiries land directly in their inbox. Get a key at <a href="https://web3forms.com" target="_blank">web3forms.com</a> (free).</span>
+                </label>
+                <input class="form-input" id="ep-w3f-${app.id}" value="${escHtml(app.w3fKey||'')}" placeholder="e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              </div>
+              <div class="admin-edit-row admin-edit-row-check">
+                <label><input type="checkbox" id="ep-unavailable-${app.id}" ${app.contactUnavailable?'checked':''} /> Mark enquiry as unavailable (hides Send Enquiry button on profile)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-edit-section" style="margin-top:0">
+            <div class="admin-edit-section-head">Availability</div>
+            <div class="admin-edit-avail">
+              ${['Weekdays (Mon–Fri)','Saturday','Sunday'].map(d=>`
+                <label class="join-toggle-label"><input type="checkbox" class="ep-avail-day-${app.id}" value="${d}" ${(app.availDays||[]).includes(d)?'checked':''}/><span>${d}</span></label>`).join('')}
+              ${['Morning (8am–12pm)','Afternoon (12pm–5pm)','Evening (5pm–8pm)'].map(t=>`
+                <label class="join-toggle-label"><input type="checkbox" class="ep-avail-time-${app.id}" value="${t}" ${(app.availTimes||[]).includes(t)?'checked':''}/><span>${t}</span></label>`).join('')}
+            </div>
+            <input class="form-input" style="margin-top:8px" id="ep-availnote-${app.id}" value="${escHtml(app.availSpecific||'')}" placeholder="Additional availability notes (optional)" />
+          </div>
+
+          <div class="admin-edit-section" style="margin-top:16px">
+            <div class="admin-edit-section-head">Teaching Approach <span style="font-weight:400;font-size:12px;color:var(--text-light)">(select 2–3)</span></div>
+            <div class="admin-edit-checks" id="ep-teaching-${app.id}">
+              ${TEACHING_APPROACH_CATEGORIES.map(g=>`
+                <p class="expertise-group-head" style="font-size:12px;margin:8px 0 4px">${g.group}</p>
+                <div class="admin-edit-tag-grid">
+                ${g.items.map(item=>`<label class="join-toggle-label"><input type="checkbox" value="${item.id}" ${(app.teachingApproachIds||[]).includes(item.id)?'checked':''}/><span>${item.label}</span></label>`).join('')}
+                </div>`).join('')}
+            </div>
+          </div>
+
+          <div class="admin-edit-section" style="margin-top:16px">
+            <div class="admin-edit-section-head">Areas of Expertise <span style="font-weight:400;font-size:12px;color:var(--text-light)">(select 3–5)</span></div>
+            <div class="admin-edit-checks" id="ep-expertise-${app.id}">
+              ${EXPERTISE_CATEGORIES.map(g=>`
+                <p class="expertise-group-head" style="font-size:12px;margin:8px 0 4px">${g.group}</p>
+                <div class="admin-edit-tag-grid">
+                ${g.items.map(item=>`<label class="join-toggle-label"><input type="checkbox" value="${item.id}" ${(app.expertiseIds||[]).includes(item.id)?'checked':''}/><span>${item.label}</span></label>`).join('')}
+                </div>`).join('')}
+            </div>
+          </div>
+
+          <div class="admin-edit-section" style="margin-top:16px">
+            <div class="admin-edit-section-head">Bio / About</div>
+            <textarea class="form-input" id="ep-bio-${app.id}" style="min-height:120px">${escHtml(app.bio||'')}</textarea>
+          </div>
+
+          <div class="admin-edit-section" style="margin-top:16px">
+            <div class="admin-edit-section-head">Photo</div>
+            ${app.photoDataUrl ? `<img src="${app.photoDataUrl}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;display:block;margin-bottom:10px" alt="Current photo" />` : '<p style="font-size:13px;color:var(--text-light);margin-bottom:8px">No photo uploaded.</p>'}
+            <label style="font-size:13px;color:var(--text-dark);display:block;margin-bottom:4px">Replace photo <span style="font-weight:400;color:var(--text-light)">(JPG/PNG, max 5 MB)</span></label>
+            <input type="file" class="form-input" id="ep-photo-${app.id}" accept="image/jpeg,image/png,image/webp" style="padding:6px" />
+          </div>
+
+          <div class="admin-edit-actions">
+            <button class="btn btn-navy admin-edit-save-btn" data-appid="${app.id}" data-status="${app.status}">💾 Save Changes</button>
+            <button class="btn btn-outline admin-edit-cancel-btn" data-appid="${app.id}">Cancel</button>
+            <span class="admin-edit-saved-msg" id="edit-saved-${app.id}" style="display:none;color:#38a169;font-size:13px;font-weight:600">✓ Saved!</span>
+          </div>
+        </div>
       </div>`;
   }
 
@@ -1735,7 +1849,165 @@ function bindAdminEvents() {
     });
   });
 
-  // Move to Trash (soft delete — recoverable for 24h)
+  // ── Edit Profile: toggle panel open/closed ──
+  document.querySelectorAll('.admin-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const appId = btn.dataset.appid;
+      const panel = document.getElementById('edit-panel-' + appId);
+      if (!panel) return;
+      const isOpen = panel.style.display !== 'none';
+      panel.style.display = isOpen ? 'none' : 'block';
+      btn.textContent = isOpen ? '✏️ Edit Profile' : '✖ Close Editor';
+      if (!isOpen) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+
+  // ── Edit Profile: cancel ──
+  document.querySelectorAll('.admin-edit-cancel-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const appId = btn.dataset.appid;
+      const panel = document.getElementById('edit-panel-' + appId);
+      if (panel) panel.style.display = 'none';
+      const editBtn = document.querySelector(`.admin-edit-btn[data-appid="${appId}"]`);
+      if (editBtn) editBtn.textContent = '✏️ Edit Profile';
+    });
+  });
+
+  // ── Edit Profile: save ──
+  document.querySelectorAll('.admin-edit-save-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const appId  = btn.dataset.appid;
+      const status = btn.dataset.status;
+      btn.disabled = true; btn.textContent = '💾 Saving…';
+
+      const v  = id => (document.getElementById(id)?.value || '').trim();
+      const cb = id => document.getElementById(id)?.checked || false;
+      const chks = cls => [...document.querySelectorAll('.' + cls)].filter(c=>c.checked).map(c=>c.value);
+
+      const name     = v(`ep-name-${appId}`);
+      const email    = v(`ep-email-${appId}`);
+      const phone    = v(`ep-phone-${appId}`);
+      const suburb   = v(`ep-suburb-${appId}`);
+      const state    = v(`ep-state-${appId}`);
+      const radius   = parseInt(v(`ep-radius-${appId}`)) || 10;
+      const fee60    = v(`ep-fee60-${appId}`);
+      const fee90    = v(`ep-fee90-${appId}`);
+      const vAuto    = v(`ep-vauto-${appId}`);
+      const vManual  = v(`ep-vmanual-${appId}`);
+      const dia      = v(`ep-dia-${appId}`);
+      const wwcc     = v(`ep-wwcc-${appId}`);
+      const credDia  = cb(`ep-cred-dia-${appId}`);
+      const credWwcc = cb(`ep-cred-wwcc-${appId}`);
+      const w3fKey   = v(`ep-w3f-${appId}`);
+      const unavail  = cb(`ep-unavailable-${appId}`);
+      const bio      = (document.getElementById(`ep-bio-${appId}`)?.value || '').trim();
+      const availNote= v(`ep-availnote-${appId}`);
+      const availDays  = chks(`ep-avail-day-${appId}`);
+      const availTimes = chks(`ep-avail-time-${appId}`);
+      const teachingApproachIds = [...document.querySelectorAll(`#ep-teaching-${appId} input:checked`)].map(c=>c.value);
+      const expertiseIds        = [...document.querySelectorAll(`#ep-expertise-${appId} input:checked`)].map(c=>c.value);
+
+      // Build the updates object for the application doc
+      const updates = {
+        name, email, phone, suburb, state, radius,
+        fee60, fee90, vAuto, vManual, dia, wwcc,
+        credentials: { dia: credDia, wwcc: credWwcc },
+        w3fKey, contactUnavailable: unavail,
+        bio, availDays, availTimes, availSpecific: availNote,
+        teachingApproachIds, expertiseIds,
+      };
+
+      // Recalculate derived fields
+      const expYears   = updates.exp ? (new Date().getFullYear() - parseInt(updates.exp)) : 0;
+      const idSlug     = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+      const initials   = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const availLabel = availDays.join(' / ') || 'Contact instructor';
+      const feesArr    = [{ duration: '60 min', price: '$' + fee60 }];
+      if (fee90) feesArr.push({ duration: '90 min', price: '$' + fee90 });
+      const vehiclesArr = [];
+      if (vAuto)   vehiclesArr.push({ type: 'Auto',   car: vAuto });
+      if (vManual) vehiclesArr.push({ type: 'Manual', car: vManual });
+
+      // Handle photo replacement
+      const photoInput = document.getElementById(`ep-photo-${appId}`);
+      const photoFile  = photoInput?.files?.[0] || null;
+
+      function doSave(photoDataUrl) {
+        if (photoDataUrl !== undefined) updates.photoDataUrl = photoDataUrl;
+
+        const writes = [db.collection('applications').doc(appId).update(updates)];
+
+        // If approved, also update the live_profiles document in Firestore
+        if (status === 'approved') {
+          const liveUpdates = {
+            name, initials,
+            baseSuburb: suburb, state,
+            serviceRadius: radius,
+            location: suburb + (state ? ', ' + state : '') + ' &amp; Surrounding Suburbs',
+            availability: availLabel,
+            lessonFees: feesArr,
+            vehicles: vehiclesArr,
+            bio, teachingApproachIds, expertiseIds,
+            credentials: { dia: credDia, wwcc: credWwcc },
+            w3fKey, contactUnavailable: unavail,
+          };
+          if (photoDataUrl !== undefined) liveUpdates.photoDataUrl = photoDataUrl;
+
+          writes.push(
+            db.collection('live_profiles').where('_fromApp', '==', appId).get()
+              .then(snap => {
+                if (!snap.empty) {
+                  return Promise.all(snap.docs.map(d => d.ref.update(liveUpdates)));
+                }
+              })
+          );
+        }
+
+        Promise.all(writes)
+          .then(() => {
+            btn.disabled = false; btn.textContent = '💾 Save Changes';
+            const msg = document.getElementById('edit-saved-' + appId);
+            if (msg) { msg.style.display = 'inline'; setTimeout(() => msg.style.display = 'none', 3000); }
+            showToast('✅ Profile updated successfully.');
+          })
+          .catch(err => {
+            console.error('Edit save failed:', err);
+            btn.disabled = false; btn.textContent = '💾 Save Changes';
+            showToast('Could not save changes. Please try again.');
+          });
+      }
+
+      if (photoFile) {
+        if (photoFile.size > 5 * 1024 * 1024) {
+          showToast('Photo exceeds 5 MB. Please choose a smaller image.');
+          btn.disabled = false; btn.textContent = '💾 Save Changes';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 400;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+              else       { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            doSave(canvas.toDataURL('image/jpeg', 0.82));
+          };
+          img.onerror = () => doSave(undefined);
+          img.src = ev.target.result;
+        };
+        reader.onerror = () => doSave(undefined);
+        reader.readAsDataURL(photoFile);
+      } else {
+        doSave(undefined);
+      }
+    });
+  });
   document.querySelectorAll('.admin-delete-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (!confirm('Move this record to Trash? If it has a live profile, that will come off the site too. Trashed records are kept for 24 hours and can be restored, or permanently deleted from the Trash tab.')) return;
