@@ -7,13 +7,7 @@
 function dec(arr) { return arr.map(c => String.fromCharCode(c)).join(''); }
 
 const CONTACT = {
-  'rob-lester':  {
-    p: [43,54,49,52,49,50,32,48,48,54,32,49,57,57],
-    e: [114,111,98,101,114,116,95,115,97,109,115,117,110,103,64,104,111,116,109,97,105,108,46,99,111,109],
-    svc: 'service_qmll1g9', tpl: 'template_v9nyycm',
-    w3f: '2c2335a7-edb1-4673-b7d7-6971217f4d96',
-    unavailable: false
-  },
+ 
   'john-stevens': {
     p: [43,54,51,57,51,54,49,52,49,49,52,57,54],
     e: [109,97,114,121,106,111,121,46,112,97,100,105,122,49,64,103,109,97,105,108,46,99,111,109],
@@ -167,109 +161,7 @@ function buildExpertiseCheckboxes() {
    expertiseIds: reference IDs from EXPERTISE_CATEGORIES above.
    Labels are resolved automatically — never store raw text here.
    ============================================= */
-const INSTRUCTORS = [
-  {
-    id: 'rob-lester',
-    initials: 'RL',
-    name: 'Rob Lester',
-    title: 'Professional Driving Instructor',
-    baseSuburb: 'Vermont',
-    baseLat: -37.8483, baseLng: 145.1813,
-    serviceRadius: 15,
-    travelBonus: true,
-    travelFee: false,
-    location: 'Vermont &amp; surrounding suburbs',
-    experience: '20+ years',
-    customQS: true,
-    lessonFees: [
-      { duration: '60 min', price: '$135' },
-      { duration: '90 min', price: '$180' },
-    ],
-    vehicles: [
-      { type: 'Auto',   car: 'Toyota Corolla Cross' },
-      { type: 'Manual', car: 'Toyota Corolla' },
-    ],
-    availability: 'Weekdays',
-    expertiseIds: [
-      'learner-drivers',
-      'nervous-drivers',
-      'vicroads-test',
-      'defensive-driving',
-      'adult-learners',
-      'overseas-licence',
-      'manual-instruction',
-      'advanced-confidence',
-      'highway-driving',
-      'refresher-lessons',
-      'logbook-hours',
-      'ndis-supported',
-    ],
-    seniorBadge: true,
-    photo: 'rob-lester.jpg',
-    credentials: { dia: true, wwcc: true },
-    bio: "Rob is a professional driving instructor based in Melbourne's Eastern Suburbs with over 20 years of experience helping learner drivers build confidence and pass their driving tests safely and efficiently. He is also a qualified commercial pilot and flight instructor, bringing an aviation-based approach to training that focuses on calm decision-making, structure, and safety. His calm, structured approach helps students become safe, independent drivers.",
-  },
-  {
-    id: 'john-stevens',
-    initials: 'JS',
-    name: 'John Stevens',
-    title: 'Professional Driving Instructor',
-    baseSuburb: 'Box Hill',
-    baseLat: -37.8198, baseLng: 145.1245,
-    serviceRadius: 10,
-    travelBonus: false,
-    travelFee: false,
-    location: 'Melbourne East',
-    transmission: 'Manual & Automatic',
-    experience: '12+ years',
-    fee: 'From $90–$120/hr',
-    availability: 'Weekdays / Weekends',
-    seniorBadge: true,
-    photo: 'john-stevens.jpg',
-    credentials: { dia: true, wwcc: true },
-    bio: "John is a professional driving instructor based in Melbourne's east with over 12 years of experience helping learner drivers build confidence and pass their driving test safely and efficiently. His calm, structured approach has helped hundreds of students become safe, independent drivers.",
-  },
-  {
-    id: 'lisa-wong',
-    initials: 'LW',
-    name: 'Lisa Wong',
-    title: 'Professional Driving Instructor',
-    baseSuburb: 'Melbourne CBD',
-    baseLat: -37.8136, baseLng: 144.9631,
-    serviceRadius: 10,
-    travelBonus: false,
-    travelFee: false,
-    location: 'Melbourne CBD',
-    transmission: 'Automatic',
-    experience: '8+ years',
-    fee: 'From $95–$115/hr',
-    availability: 'Weekdays / Saturdays',
-    seniorBadge: false,
-    photo: 'lisa-wong.jpg',
-    credentials: { dia: true, wwcc: false },
-    bio: "Lisa is an experienced automatic driving instructor operating in Melbourne's CBD and inner suburbs. With 8 years of experience, she specialises in building confidence in busy urban environments, helping students master parallel parking, roundabouts, and city traffic with ease.",
-  },
-  {
-    id: 'mark-harris',
-    initials: 'MH',
-    name: 'Mark Harris',
-    title: 'Professional Driving Instructor',
-    baseSuburb: 'Footscray',
-    baseLat: -37.8002, baseLng: 144.8996,
-    serviceRadius: 15,
-    travelBonus: true,
-    travelFee: true,
-    location: 'Melbourne West',
-    transmission: 'Manual & Automatic',
-    experience: '15+ years',
-    fee: 'From $95–$125/hr',
-    availability: 'Weekdays / Weekends',
-    seniorBadge: true,
-    photo: 'mark-harris.jpg',
-    credentials: { dia: true, wwcc: true },
-    bio: "Mark brings over 15 years of driving instruction experience to Melbourne's western suburbs. Known for his patient, structured teaching style, Mark has helped learners of all ages — from nervous first-timers to experienced drivers seeking to improve — become safe, confident road users.",
-  }
-];
+const INSTRUCTORS = [];
 
 /* =============================================
    SHARED TRACKER CONSTANTS
