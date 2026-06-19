@@ -1378,6 +1378,81 @@ function getPageContent(page, extra) {
 // plus Firestore Security Rules — see firestore.rules.txt. There is no
 // password stored in this file anymore.
 
+/* Build a live_profiles document from an application record.
+   Shared by the "Approve & Publish Live" action and by "Restore from
+   Trash" (when restoring a record that was approved before it was
+   trashed), so both produce an identical live profile. */
+function buildLiveProfileFromApp(app, appId) {
+  const expYears    = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
+  const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
+  const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
+  const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
+  if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
+  const vehiclesArr = [];
+  if (app.vAuto)    vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
+  if (app.vManual)  vehiclesArr.push({ type: 'Manual', car: app.vManual });
+
+  const liveProfile = {
+    id:           idSlug,
+    initials,
+    name:         app.name,
+    title:        'Professional Driving Instructor',
+    baseSuburb:   app.suburb,
+    state:        app.state || '',
+    baseLat:      null,
+    baseLng:      null,
+    serviceRadius: parseInt(app.radius) || 10,
+    travelBonus:  false,
+    travelFee:    false,
+    location:     app.suburb + (app.state ? ', ' + app.state : '') + ' &amp; Surrounding Suburbs',
+    experience:   expLabel,
+    customQS:     true,
+    lessonFees:   feesArr,
+    vehicles:     vehiclesArr,
+    availability: availLabel,
+    teachingApproachIds: app.teachingApproachIds || [],
+    expertiseIds: app.expertiseIds || [],
+    credentials:  { dia: !!(app.dia), wwcc: !!(app.wwcc) },
+    seniorBadge:  expYears >= 10,
+    photo:        null,
+    photoDataUrl: app.photoDataUrl || null,
+    bio:          app.bio || '',
+    languages:    app.languages || [],
+    _fromApp:     appId,
+  };
+  return { idSlug, liveProfile };
+}
+
+/* Trash retention window — records in Trash older than this are
+   permanently purged automatically (see purgeExpiredTrash). */
+const TRASH_RETENTION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/* Sweep the in-memory applications list for trashed records whose 24h
+   window has elapsed, permanently delete them (and any orphaned live
+   profile) from Firestore, and return the list with them removed.
+   Called every time the admin page loads applications, so the purge
+   happens automatically without needing a server-side cron job. */
+function purgeExpiredTrash(apps) {
+  const now = Date.now();
+  const expired = apps.filter(a => {
+    if (a.status !== 'trashed' || !a.trashedAt) return false;
+    const trashedDate = a.trashedAt.toDate ? a.trashedAt.toDate() : new Date(a.trashedAt);
+    return (now - trashedDate.getTime()) > TRASH_RETENTION_MS;
+  });
+  if (!expired.length) return Promise.resolve(apps);
+
+  return Promise.all(expired.map(a =>
+    Promise.all([
+      db.collection('applications').doc(a.id).delete(),
+      db.collection('live_profiles').where('_fromApp', '==', a.id).get()
+        .then(snap => Promise.all(snap.docs.map(d => d.ref.delete())))
+    ])
+  )).then(() => apps.filter(a => !expired.includes(a)))
+    .catch(err => { console.error('Trash auto-purge failed:', err); return apps; });
+}
+
 function renderAdminPage(extra, apps) {
   // Not signed in → show login form instead of a password box
   if (!auth.currentUser) {
@@ -1404,6 +1479,7 @@ function renderAdminPage(extra, apps) {
   const pending  = apps.filter(a => a.status === 'pending');
   const approved = apps.filter(a => a.status === 'approved');
   const rejected = apps.filter(a => a.status === 'rejected');
+  const trashed  = apps.filter(a => a.status === 'trashed');
 
   function appCard(app) {
     const initials   = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -1419,7 +1495,23 @@ function renderAdminPage(extra, apps) {
       ? `<span class="admin-status-badge admin-badge-approved">✓ Approved</span>`
       : app.status === 'rejected'
       ? `<span class="admin-status-badge admin-badge-rejected">✕ Rejected</span>`
+      : app.status === 'trashed'
+      ? `<span class="admin-status-badge admin-badge-trashed">🗑 Trashed</span>`
       : `<span class="admin-status-badge admin-badge-pending">Pending Review</span>`;
+
+    // Countdown for trashed records — auto-purges 24h after trashedAt
+    let trashCountdown = '';
+    if (app.status === 'trashed' && app.trashedAt) {
+      const trashedDate = app.trashedAt.toDate ? app.trashedAt.toDate() : new Date(app.trashedAt);
+      const msLeft = TRASH_RETENTION_MS - (Date.now() - trashedDate.getTime());
+      if (msLeft > 0) {
+        const hrsLeft  = Math.floor(msLeft / 3600000);
+        const minsLeft = Math.floor((msLeft % 3600000) / 60000);
+        trashCountdown = `Permanently deletes in ${hrsLeft}h ${minsLeft}m unless restored.`;
+      } else {
+        trashCountdown = `Pending automatic permanent deletion…`;
+      }
+    }
 
     // Build the code block that gets copied on approve
     const idSlug     = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
@@ -1524,16 +1616,21 @@ ${expertiseIdStr}
         <div class="admin-app-actions">
           <button class="btn btn-navy admin-approve-btn" data-appid="${app.id}">✓ Approve &amp; Publish Live</button>
           <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}">✕ Reject</button>
-          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete</button>
+          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Move to Trash</button>
         </div>` : app.status === 'approved' ? `
         <div class="admin-app-actions">
           <button class="btn btn-outline admin-view-live-btn" data-slug="${app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')}">👁 View Live Profile</button>
           <button class="btn btn-outline admin-reject-btn" data-appid="${app.id}" style="color:#c0392b;border-color:#c0392b">✕ Remove from Site</button>
-          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete Record</button>
-        </div>` : `
+          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Move to Trash</button>
+        </div>` : app.status === 'rejected' ? `
         <div class="admin-app-actions">
           <button class="btn btn-outline admin-restore-btn" data-appid="${app.id}">↩ Restore to Pending</button>
-          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Delete Record</button>
+          <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Move to Trash</button>
+        </div>` : `
+        <div class="admin-trash-note">🗑 ${trashCountdown}</div>
+        <div class="admin-app-actions">
+          <button class="btn btn-navy admin-trash-restore-btn" data-appid="${app.id}">↩ Restore</button>
+          <button class="btn btn-outline admin-trash-purge-btn" data-appid="${app.id}" style="color:#c0392b;border-color:#c0392b">🗑 Delete Permanently</button>
         </div>`}
       </div>`;
   }
@@ -1552,6 +1649,7 @@ ${expertiseIdStr}
         <button class="admin-tab active" data-tab="pending">Pending <span class="admin-tab-count">${pending.length}</span></button>
         <button class="admin-tab" data-tab="approved">Approved <span class="admin-tab-count">${approved.length}</span></button>
         <button class="admin-tab" data-tab="rejected">Rejected <span class="admin-tab-count">${rejected.length}</span></button>
+        <button class="admin-tab" data-tab="trash">🗑 Trash <span class="admin-tab-count">${trashed.length}</span></button>
       </div>
 
       <div class="admin-tab-panel" id="admin-panel-pending">
@@ -1563,9 +1661,13 @@ ${expertiseIdStr}
       <div class="admin-tab-panel" id="admin-panel-rejected" style="display:none">
         ${rejected.length ? rejected.map(appCard).join('') : noneMsg}
       </div>
+      <div class="admin-tab-panel" id="admin-panel-trash" style="display:none">
+        ${trashed.length ? trashed.map(appCard).join('') : `<div class="admin-empty">Trash is empty. Deleted records appear here for 24 hours before being permanently removed.</div>`}
+      </div>
 
       <div class="admin-footer-note">
         <p>💡 <strong>How it works:</strong> Click <em>Approve &amp; Publish Live</em> to instantly publish an instructor's profile on the live website — no manual copy-paste needed. Applications and live profiles are stored in a shared cloud database, so this admin panel works the same from any device once you're signed in.</p>
+        <p>🗑 <strong>Trash:</strong> "Move to Trash" takes a record (and its live profile, if any) off the site but keeps it recoverable for 24 hours. Restore it any time within that window, or delete it permanently from the Trash tab. Anything left in Trash past 24 hours is removed automatically.</p>
       </div>
     </div>`;
 }
@@ -1696,46 +1798,7 @@ function bindAdminEvents() {
       db.collection('applications').doc(appId).get().then(doc => {
         if (!doc.exists) return;
         const app = doc.data();
-
-        const expYears    = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
-        const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
-        const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-        const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
-        const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
-        if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
-        const vehiclesArr = [];
-        if (app.vAuto)    vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
-        if (app.vManual)  vehiclesArr.push({ type: 'Manual', car: app.vManual });
-
-        const liveProfile = {
-          id:           idSlug,
-          initials,
-          name:         app.name,
-          title:        'Professional Driving Instructor',
-          baseSuburb:   app.suburb,
-          state:        app.state || '',
-          baseLat:      null,
-          baseLng:      null,
-          serviceRadius: parseInt(app.radius) || 10,
-          travelBonus:  false,
-          travelFee:    false,
-          location:     app.suburb + (app.state ? ', ' + app.state : '') + ' &amp; Surrounding Suburbs',
-          experience:   expLabel,
-          customQS:     true,
-          lessonFees:   feesArr,
-          vehicles:     vehiclesArr,
-          availability: availLabel,
-          teachingApproachIds: app.teachingApproachIds || [],
-          expertiseIds: app.expertiseIds || [],
-          credentials:  { dia: !!(app.dia), wwcc: !!(app.wwcc) },  // true if value was provided
-          seniorBadge:  expYears >= 10,
-          photo:        null,
-          photoDataUrl: app.photoDataUrl || null,
-          bio:          app.bio || '',
-          languages:    app.languages || [],
-          _fromApp:     appId,
-        };
+        const { idSlug, liveProfile } = buildLiveProfileFromApp(app, appId);
 
         return Promise.all([
           db.collection('applications').doc(appId).update({ status: 'approved' }),
@@ -1780,15 +1843,68 @@ function bindAdminEvents() {
     });
   });
 
-  // Delete
+  // Move to Trash (soft delete — recoverable for 24h)
   document.querySelectorAll('.admin-delete-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (!confirm('Permanently delete this application record?')) return;
+      if (!confirm('Move this record to Trash? If it has a live profile, that will come off the site too. Trashed records are kept for 24 hours and can be restored, or permanently deleted from the Trash tab.')) return;
       const appId = btn.dataset.appid;
       btn.disabled = true;
-      db.collection('applications').doc(appId).delete()
-        .then(() => navigate('admin'))
-        .catch(err => { console.error('Delete failed:', err); showToast('Could not delete this record.'); btn.disabled = false; });
+      db.collection('applications').doc(appId).get().then(doc => {
+        if (!doc.exists) return;
+        const prevStatus = doc.data().status;
+        return db.collection('applications').doc(appId).update({
+          status: 'trashed',
+          prevStatus: prevStatus,
+          trashedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          // Take any associated live profile off the site while trashed
+          return db.collection('live_profiles').where('_fromApp', '==', appId).get();
+        }).then(snap => Promise.all(snap.docs.map(d => d.ref.delete())));
+      })
+      .then(() => navigate('admin'))
+      .catch(err => { console.error('Move to trash failed:', err); showToast('Could not move this record to trash.'); btn.disabled = false; });
+    });
+  });
+
+  // Restore from Trash — back to its previous status, re-publishing the
+  // live profile too if it was approved before being trashed
+  document.querySelectorAll('.admin-trash-restore-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const appId = btn.dataset.appid;
+      btn.disabled = true;
+      db.collection('applications').doc(appId).get().then(doc => {
+        if (!doc.exists) return;
+        const app = doc.data();
+        const restoredStatus = app.prevStatus || 'pending';
+        const updatePromise = db.collection('applications').doc(appId).update({
+          status: restoredStatus,
+          prevStatus: firebase.firestore.FieldValue.delete(),
+          trashedAt: firebase.firestore.FieldValue.delete()
+        });
+        if (restoredStatus === 'approved') {
+          const { idSlug, liveProfile } = buildLiveProfileFromApp(app, appId);
+          return Promise.all([updatePromise, db.collection('live_profiles').doc(idSlug).set(liveProfile)]);
+        }
+        return updatePromise;
+      })
+      .then(() => { showToast('↩ Restored from trash.'); navigate('admin'); })
+      .catch(err => { console.error('Restore from trash failed:', err); showToast('Could not restore this record.'); btn.disabled = false; });
+    });
+  });
+
+  // Permanently delete from Trash
+  document.querySelectorAll('.admin-trash-purge-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm('Permanently delete this record? This cannot be undone.')) return;
+      const appId = btn.dataset.appid;
+      btn.disabled = true;
+      Promise.all([
+        db.collection('applications').doc(appId).delete(),
+        db.collection('live_profiles').where('_fromApp', '==', appId).get()
+          .then(snap => Promise.all(snap.docs.map(d => d.ref.delete())))
+      ])
+      .then(() => navigate('admin'))
+      .catch(err => { console.error('Permanent delete failed:', err); showToast('Could not permanently delete this record.'); btn.disabled = false; });
     });
   });
 }
@@ -1991,6 +2107,9 @@ function navigate(page, extra, pushState = true) {
     db.collection('applications').orderBy('submittedAt', 'desc').get()
       .then(snap => {
         const apps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        return purgeExpiredTrash(apps);
+      })
+      .then(apps => {
         const appEl = document.getElementById('app');
         if (appEl) appEl.innerHTML = renderAdminPage(extra, apps);
         bindPageEvents();
