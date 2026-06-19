@@ -2460,6 +2460,18 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   padding: 20px 24px; border-top: 1px solid var(--border); background: var(--off-white);
 }
 
+/* Web3Forms access key box */
+.admin-w3f-box {
+  padding: 18px 24px; border-top: 1px solid var(--border);
+  background: var(--off-white);
+}
+.admin-w3f-row { display: flex; gap: 10px; align-items: stretch; margin-top: 6px; }
+.admin-w3f-row .form-input { flex: 1; }
+.admin-w3f-row .btn { flex-shrink: 0; white-space: nowrap; }
+@media (max-width: 560px) {
+  .admin-w3f-row { flex-direction: column; }
+}
+
 /* Code blocks */
 .admin-code-wrap    { padding: 20px 24px; border-top: 1px solid var(--border); }
 .admin-code-label   { font-size: 13px; color: var(--text-body); margin-bottom: 8px; }
