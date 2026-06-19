@@ -2571,23 +2571,19 @@ function bindPageEvents() {
           showFormError('join-form-box', 'Your application is taking too long to send. Please check your internet connection and try again — do not refresh the page yet.');
         }, 12000);
 
+        // Note: .add() only resolves once the write is acknowledged by the
+        // server (it does not resolve early from local cache), so there is
+        // no need to re-fetch the document to "confirm" it landed. The
+        // previous re-fetch step caused this exact bug: the "applications"
+        // collection is read-protected (admin-only) by the Firestore rules,
+        // so that read-back was always rejected with a permission error —
+        // even though the write itself had already succeeded.
         db.collection('applications').add(application)
-          .then(docRef => {
-            // .add() can resolve from local cache before the write is
-            // actually acknowledged by the server. Re-fetch with
-            // { source: 'server' } to confirm it really landed.
-            return db.collection('applications').doc(docRef.id)
-              .get({ source: 'server' });
-          })
-          .then(snap => {
+          .then(() => {
             if (settled) return;
             settled = true;
             clearTimeout(timeoutId);
-            if (snap.exists) {
-              showSuccess(name);
-            } else {
-              throw new Error('Document not found on server after write.');
-            }
+            showSuccess(name);
           })
           .catch(err => {
             if (settled) return;
