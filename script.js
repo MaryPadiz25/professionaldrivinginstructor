@@ -1004,70 +1004,42 @@ function enquiryModalHTML(inst) {
         <div class="enquiry-title">Send Enquiry to ${inst.name}</div>
         <div class="enquiry-subtitle">Your details go directly to the instructor — no middleman.</div>
       </div>
-      <div class="join-progress-wrap" id="eq-progress-wrap">
-        <div class="join-progress-bar"><div class="join-progress-fill" id="eq-progress-fill"></div></div>
-        <div class="join-progress-label" id="eq-progress-label">Step 1 of 3</div>
-      </div>
       <div id="enquiry-form-body">
-
-        <!-- ── STEP 1: Your Details ── -->
-        <div class="eq-step" id="eq-step-1">
-          <div class="enquiry-section-label">Your Details</div>
-          <div class="form-group"><label class="form-label">Full Name <span>*</span></label><input type="text" class="form-input" id="eq-name" placeholder="Your full name" /></div>
-          <div class="form-group"><label class="form-label">Mobile Number <span>*</span></label><input type="tel" class="form-input" id="eq-mobile" placeholder="e.g. 0400 123 456" /></div>
-          <div class="form-group"><label class="form-label">Email Address <span>*</span></label><input type="email" class="form-input" id="eq-email" placeholder="your@email.com" /></div>
-          <div class="join-step-nav">
-            <span></span>
-            <button class="btn btn-navy join-next-btn" id="eq-next-1" data-next="2">Next: Lesson Details →</button>
+        <div class="enquiry-section-label">Your Details</div>
+        <div class="form-group"><label class="form-label">Full Name <span>*</span></label><input type="text" class="form-input" id="eq-name" placeholder="Your full name" /></div>
+        <div class="form-group"><label class="form-label">Mobile Number <span>*</span></label><input type="tel" class="form-input" id="eq-mobile" placeholder="e.g. 0400 123 456" /></div>
+        <div class="form-group"><label class="form-label">Email Address <span>*</span></label><input type="email" class="form-input" id="eq-email" placeholder="your@email.com" /></div>
+        <div class="enquiry-section-label">Lesson Details</div>
+        <div class="form-group"><label class="form-label">Suburb / Area <span>*</span></label><input type="text" class="form-input" id="eq-suburb" placeholder="e.g. Box Hill" /></div>
+        <div class="form-group">
+          <label class="form-label">Licence Stage <span>*</span></label>
+          <select class="form-input" id="eq-licence">
+            <option value="" disabled selected>Select licence stage…</option>
+            <option>Learner (new)</option><option>Learner (some experience)</option>
+            <option>Preparing for Drive Test</option><option>Overseas Licence Conversion</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Transmission Preference <span>*</span></label>
+          <select class="form-input" id="eq-transmission">
+            <option value="" disabled selected>Select preference…</option>
+            <option>Auto</option><option>Manual</option><option>No Preference</option>
+          </select>
+        </div>
+        <div class="enquiry-section-label">Availability</div>
+        <div class="form-group">
+          <label class="form-label">Preferred Days</label>
+          <div class="eq-checkboxes">
+            <label class="eq-check"><input type="checkbox" value="Weekdays" /> Weekdays</label>
+            <label class="eq-check"><input type="checkbox" value="Weekends" /> Weekends</label>
+            <label class="eq-check"><input type="checkbox" value="Evenings" /> Evenings</label>
           </div>
         </div>
-
-        <!-- ── STEP 2: Lesson Details ── -->
-        <div class="eq-step" id="eq-step-2" style="display:none">
-          <div class="enquiry-section-label">Lesson Details</div>
-          <div class="form-group"><label class="form-label">Suburb / Area <span>*</span></label><input type="text" class="form-input" id="eq-suburb" placeholder="e.g. Box Hill" /></div>
-          <div class="form-group">
-            <label class="form-label">Licence Stage <span>*</span></label>
-            <select class="form-input" id="eq-licence">
-              <option value="" disabled selected>Select licence stage…</option>
-              <option>Learner (new)</option><option>Learner (some experience)</option>
-              <option>Preparing for Drive Test</option><option>Overseas Licence Conversion</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Transmission Preference <span>*</span></label>
-            <select class="form-input" id="eq-transmission">
-              <option value="" disabled selected>Select preference…</option>
-              <option>Auto</option><option>Manual</option><option>No Preference</option>
-            </select>
-          </div>
-          <div class="join-step-nav">
-            <button class="btn btn-outline join-back-btn" id="eq-back-2" data-back="1">← Back</button>
-            <button class="btn btn-navy join-next-btn" id="eq-next-2" data-next="3">Next: Availability &amp; Message →</button>
-          </div>
-        </div>
-
-        <!-- ── STEP 3: Availability & Message ── -->
-        <div class="eq-step" id="eq-step-3" style="display:none">
-          <div class="enquiry-section-label">Availability</div>
-          <div class="form-group">
-            <label class="form-label">Preferred Days</label>
-            <div class="eq-checkboxes">
-              <label class="eq-check"><input type="checkbox" value="Weekdays" /> Weekdays</label>
-              <label class="eq-check"><input type="checkbox" value="Weekends" /> Weekends</label>
-              <label class="eq-check"><input type="checkbox" value="Evenings" /> Evenings</label>
-            </div>
-          </div>
-          <div class="form-group"><label class="form-label">Preferred Start Time <span class="form-label-optional">(optional)</span></label><input type="text" class="form-input" id="eq-starttime" placeholder="e.g. mornings / flexible" /></div>
-          <div class="enquiry-section-label">Message</div>
-          <div class="form-group"><label class="form-label">Additional Information <span class="form-label-optional">(optional)</span></label><textarea class="form-input" id="eq-message" placeholder="e.g. Test booked, nervous driver, looking for weekly lessons…"></textarea></div>
-          <div class="join-step-nav">
-            <button class="btn btn-outline join-back-btn" id="eq-back-3" data-back="2">← Back</button>
-          </div>
-          <button class="btn btn-gold btn-full btn-lg" id="eq-submit" style="margin-top:14px">${ICONS.mail} Send Enquiry</button>
-          <p class="eq-note">For urgent bookings, call the instructor directly.</p>
-        </div>
-
+        <div class="form-group"><label class="form-label">Preferred Start Time <span class="form-label-optional">(optional)</span></label><input type="text" class="form-input" id="eq-starttime" placeholder="e.g. mornings / flexible" /></div>
+        <div class="enquiry-section-label">Message</div>
+        <div class="form-group"><label class="form-label">Additional Information <span class="form-label-optional">(optional)</span></label><textarea class="form-input" id="eq-message" placeholder="e.g. Test booked, nervous driver, looking for weekly lessons…"></textarea></div>
+        <button class="btn btn-gold btn-full btn-lg" id="eq-submit">${ICONS.mail} Send Enquiry</button>
+        <p class="eq-note">For urgent bookings, call the instructor directly.</p>
       </div>
     </div>
   </div>`;
@@ -1092,100 +1064,6 @@ function openEnquiryModal(inst) {
     if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', onEsc); }
   });
 
-  /* ── Step wizard: Your Details → Lesson Details → Availability & Message ── */
-  const EQ_TOTAL_STEPS = 3;
-
-  function eqUpdateProgress(step) {
-    const fill  = document.getElementById('eq-progress-fill');
-    const label = document.getElementById('eq-progress-label');
-    if (fill)  fill.style.width  = Math.round((step / EQ_TOTAL_STEPS) * 100) + '%';
-    if (label) label.textContent = `Step ${step} of ${EQ_TOTAL_STEPS}`;
-  }
-
-  function eqGoToStep(step) {
-    for (let i = 1; i <= EQ_TOTAL_STEPS; i++) {
-      const el = document.getElementById(`eq-step-${i}`);
-      if (el) el.style.display = (i === step) ? 'block' : 'none';
-    }
-    clearEnquiryError();
-    eqUpdateProgress(step);
-    const modal = document.getElementById('enquiry-modal');
-    if (modal) modal.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function eqMarkInvalid(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('eq-invalid');
-    el.addEventListener('input', () => el.classList.remove('eq-invalid'), { once: true });
-    el.addEventListener('change', () => el.classList.remove('eq-invalid'), { once: true });
-  }
-
-  function eqValidateStep1() {
-    const name   = document.getElementById('eq-name').value.trim();
-    const mobile = document.getElementById('eq-mobile').value.trim();
-    const email  = document.getElementById('eq-email').value.trim();
-    const fieldMap = [
-      ['eq-name', name, 'Full Name'],
-      ['eq-mobile', mobile, 'Mobile Number'],
-      ['eq-email', email, 'Email Address'],
-    ];
-    const missing = fieldMap.filter(([, val]) => !val);
-    ['eq-name', 'eq-mobile', 'eq-email'].forEach(id => document.getElementById(id).classList.remove('eq-invalid'));
-    if (missing.length) {
-      missing.forEach(([id]) => eqMarkInvalid(id));
-      const names = missing.map(([, , label]) => label);
-      const list = names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
-      showEnquiryError(`Please fill in: ${list}.`);
-      document.getElementById(missing[0][0]).focus();
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      eqMarkInvalid('eq-email');
-      showEnquiryError('Please enter a valid email address.');
-      document.getElementById('eq-email').focus();
-      return false;
-    }
-    clearEnquiryError();
-    return true;
-  }
-
-  function eqValidateStep2() {
-    const suburb       = document.getElementById('eq-suburb').value.trim();
-    const licence      = document.getElementById('eq-licence').value;
-    const transmission = document.getElementById('eq-transmission').value;
-    const fieldMap = [
-      ['eq-suburb', suburb, 'Suburb / Area'],
-      ['eq-licence', licence, 'Licence Stage'],
-      ['eq-transmission', transmission, 'Transmission Preference'],
-    ];
-    const missing = fieldMap.filter(([, val]) => !val);
-    ['eq-suburb', 'eq-licence', 'eq-transmission'].forEach(id => document.getElementById(id).classList.remove('eq-invalid'));
-    if (missing.length) {
-      missing.forEach(([id]) => eqMarkInvalid(id));
-      const names = missing.map(([, , label]) => label);
-      const list = names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
-      showEnquiryError(`Please fill in: ${list}.`);
-      document.getElementById(missing[0][0]).focus();
-      return false;
-    }
-    clearEnquiryError();
-    return true;
-  }
-
-  document.getElementById('eq-next-1').addEventListener('click', () => {
-    if (!eqValidateStep1()) return;
-    eqGoToStep(2);
-  });
-  document.getElementById('eq-next-2').addEventListener('click', () => {
-    if (!eqValidateStep2()) return;
-    eqGoToStep(3);
-  });
-  document.getElementById('eq-back-2').addEventListener('click', () => eqGoToStep(1));
-  document.getElementById('eq-back-3').addEventListener('click', () => eqGoToStep(2));
-
-  eqUpdateProgress(1);
-
   document.getElementById('eq-submit').addEventListener('click', () => {
     const name         = document.getElementById('eq-name').value.trim();
     const mobile       = document.getElementById('eq-mobile').value.trim();
@@ -1197,17 +1075,36 @@ function openEnquiryModal(inst) {
     const message      = document.getElementById('eq-message').value.trim();
     const days         = [...document.querySelectorAll('.eq-checkboxes input:checked')].map(c => c.value);
 
-    // Final safety-net check — steps 1 & 2 are already validated when advancing,
-    // but re-check here in case fields were cleared (e.g. browser autofill quirks).
-    if (!name || !mobile || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      eqGoToStep(1);
-      eqValidateStep1();
+    const fieldMap = [
+      ['eq-name', name, 'Full Name'],
+      ['eq-mobile', mobile, 'Mobile Number'],
+      ['eq-email', email, 'Email Address'],
+      ['eq-suburb', suburb, 'Suburb / Area'],
+      ['eq-licence', licence, 'Licence Stage'],
+      ['eq-transmission', transmission, 'Transmission Preference'],
+    ];
+    const missing = fieldMap.filter(([, val]) => !val);
+
+    fieldMap.forEach(([id]) => document.getElementById(id).classList.remove('eq-invalid'));
+
+    if (missing.length) {
+      missing.forEach(([id]) => {
+        const el = document.getElementById(id);
+        el.classList.add('eq-invalid');
+        el.addEventListener('input', () => el.classList.remove('eq-invalid'), { once: true });
+        el.addEventListener('change', () => el.classList.remove('eq-invalid'), { once: true });
+      });
+      const names = missing.map(([, , label]) => label);
+      const list = names.length === 1
+        ? names[0]
+        : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+      showEnquiryError(`Please fill in: ${list}.`);
+      missing[0][0] && document.getElementById(missing[0][0]).focus();
       return;
     }
-    if (!suburb || !licence || !transmission) {
-      eqGoToStep(2);
-      eqValidateStep2();
-      return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('eq-email').classList.add('eq-invalid');
+      showEnquiryError('Please enter a valid email address.'); return;
     }
     clearEnquiryError();
     setEnquiryButtonLoading(true);
@@ -1248,8 +1145,6 @@ function openEnquiryModal(inst) {
     .then(data => {
       if (data.success) {
         trackEnquiry(inst.id, inst.name, { name, mobile, email, suburb, licence, transmission, days: days.join(', '), starttime, message });
-        const progressWrap = document.getElementById('eq-progress-wrap');
-        if (progressWrap) progressWrap.style.display = 'none';
         document.getElementById('enquiry-form-body').innerHTML = `
           <div class="success-box">
             <div class="success-icon">${ICONS.check}</div>
@@ -1271,23 +1166,7 @@ function openEnquiryModal(inst) {
 
 function showEnquiryError(msg) {
   let el = document.getElementById('eq-error');
-  if (!el) {
-    el = document.createElement('p');
-    el.id = 'eq-error';
-    el.className = 'eq-error-msg';
-    const body = document.getElementById('enquiry-form-body');
-    const visibleStep = body
-      ? [...body.querySelectorAll('.eq-step')].find(step => step.style.display !== 'none')
-      : null;
-    if (visibleStep) {
-      // Insert before the step-nav row if present, otherwise append to the step
-      const nav = visibleStep.querySelector('.join-step-nav');
-      if (nav) nav.before(el); else visibleStep.appendChild(el);
-    } else {
-      const btn = document.getElementById('eq-submit');
-      if (btn) btn.before(el);
-    }
-  }
+  if (!el) { el = document.createElement('p'); el.id = 'eq-error'; el.className = 'eq-error-msg'; const btn = document.getElementById('eq-submit'); if (btn) btn.before(el); }
   el.textContent = msg;
 }
 function clearEnquiryError() { const el = document.getElementById('eq-error'); if (el) el.remove(); }
