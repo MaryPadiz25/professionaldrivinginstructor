@@ -1075,10 +1075,35 @@ function openEnquiryModal(inst) {
     const message      = document.getElementById('eq-message').value.trim();
     const days         = [...document.querySelectorAll('.eq-checkboxes input:checked')].map(c => c.value);
 
-    if (!name || !mobile || !email || !suburb || !licence || !transmission) {
-      showEnquiryError('Please fill in all required fields marked with *'); return;
+    const fieldMap = [
+      ['eq-name', name, 'Full Name'],
+      ['eq-mobile', mobile, 'Mobile Number'],
+      ['eq-email', email, 'Email Address'],
+      ['eq-suburb', suburb, 'Suburb / Area'],
+      ['eq-licence', licence, 'Licence Stage'],
+      ['eq-transmission', transmission, 'Transmission Preference'],
+    ];
+    const missing = fieldMap.filter(([, val]) => !val);
+
+    fieldMap.forEach(([id]) => document.getElementById(id).classList.remove('eq-invalid'));
+
+    if (missing.length) {
+      missing.forEach(([id]) => {
+        const el = document.getElementById(id);
+        el.classList.add('eq-invalid');
+        el.addEventListener('input', () => el.classList.remove('eq-invalid'), { once: true });
+        el.addEventListener('change', () => el.classList.remove('eq-invalid'), { once: true });
+      });
+      const names = missing.map(([, , label]) => label);
+      const list = names.length === 1
+        ? names[0]
+        : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+      showEnquiryError(`Please fill in: ${list}.`);
+      missing[0][0] && document.getElementById(missing[0][0]).focus();
+      return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('eq-email').classList.add('eq-invalid');
       showEnquiryError('Please enter a valid email address.'); return;
     }
     clearEnquiryError();
