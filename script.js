@@ -1109,53 +1109,45 @@ function openEnquiryModal(inst) {
     clearEnquiryError();
     setEnquiryButtonLoading(true);
 
-    const ct = CONTACT[inst.id] || {};
-    // Prefer the w3fKey stored on the live profile in Firestore (set via
-    // the admin Edit Profile panel), then fall back to the static CONTACT map
-    const w3fKey = inst.w3fKey || ct.w3f || null;
-    const isUnavailable = inst.contactUnavailable || ct.unavailable || false;
+    // Enquiries are no longer sent directly to a per-instructor Web3Forms
+    // key from the browser. Instead the enquiry is written to Firestore;
+    // a Cloud Function picks it up, looks up the instructor's real email
+    // (kept private, never shipped to the browser), and forwards it —
+    // with Reply-To set to the student's email so the instructor can just
+    // hit "reply". A single shared Web3Forms key is also pinged by that
+    // same Cloud Function as a backup/record copy for the admin inbox.
+    const isUnavailable = inst.contactUnavailable || false;
 
-    if (!w3fKey) {
+    if (isUnavailable) {
       showEnquiryError('Online enquiry is not yet available for this instructor. Please call them directly.');
       setEnquiryButtonLoading(false);
       return;
     }
 
-    fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        access_key:      w3fKey,
-        subject:         'New Lesson Enquiry from ' + name + ' — Professional Driving Instructors Network',
-        from_name:       'Professional Driving Instructors Network',
-        Instructor:      inst.name,
-        Student_Name:    name,
-        Student_Mobile:  mobile,
-        Student_Email:   email,
-        Suburb:          suburb,
-        Licence_Stage:   licence,
-        Transmission:    transmission,
-        Preferred_Days:  days.length ? days.join(', ') : 'Not specified',
-        Preferred_Time:  starttime || 'Not specified',
-        Message:         message || '(No message)',
-        replyto:         email,
-      })
+    db.collection('enquiries').add({
+      instructorId:   inst.id,
+      instructorName: inst.name,
+      studentName:    name,
+      studentMobile:  mobile,
+      studentEmail:   email,
+      suburb,
+      licenceStage:   licence,
+      transmission,
+      preferredDays:  days.length ? days.join(', ') : 'Not specified',
+      preferredTime:  starttime || 'Not specified',
+      message:        message || '(No message)',
+      status:         'pending',
+      createdAt:      firebase.firestore.FieldValue.serverTimestamp(),
     })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        trackEnquiry(inst.id, inst.name, { name, mobile, email, suburb, licence, transmission, days: days.join(', '), starttime, message });
-        document.getElementById('enquiry-form-body').innerHTML = `
-          <div class="success-box">
-            <div class="success-icon">${ICONS.check}</div>
-            <h3>Enquiry Sent!</h3>
-            <p>Your enquiry has been sent directly to <strong>${inst.name}</strong>. They'll be in touch soon.</p>
-            <p style="margin-top:12px;font-size:13.5px;color:var(--text-light)">For urgent bookings, call the instructor directly using the button on their profile.</p>
-          </div>`;
-      } else {
-        setEnquiryButtonLoading(false);
-        showEnquiryError('Sorry, there was a problem sending your enquiry. Please try again or call the instructor directly.');
-      }
+    .then(() => {
+      trackEnquiry(inst.id, inst.name, { name, mobile, email, suburb, licence, transmission, days: days.join(', '), starttime, message });
+      document.getElementById('enquiry-form-body').innerHTML = `
+        <div class="success-box">
+          <div class="success-icon">${ICONS.check}</div>
+          <h3>Enquiry Sent!</h3>
+          <p>Your enquiry has been sent directly to <strong>${inst.name}</strong>. They'll be in touch soon.</p>
+          <p style="margin-top:12px;font-size:13.5px;color:var(--text-light)">For urgent bookings, call the instructor directly using the button on their profile.</p>
+        </div>`;
     })
     .catch(() => {
       setEnquiryButtonLoading(false);
@@ -1460,11 +1452,8 @@ ${expertiseIdStr}
   },`;
 
     const contactBlock = `  '${idSlug}': {
-    p: [],   // TODO: add phone as char-code array, e.g. using dec() helper
-    e: [],   // TODO: add email as char-code array
-    svc: null, tpl: null,
-    w3f: '',  // TODO: add Web3Forms key for this instructor
-    unavailable: true,
+    email: '',  // TODO: instructor's email — enquiries auto-forward here via Cloud Function
+    phone: [],  // TODO: phone as char-code array, e.g. using dec() helper
   },`;
 
     return `
@@ -1588,10 +1577,7 @@ ${expertiseIdStr}
             <div class="admin-edit-section">
               <div class="admin-edit-section-head">Contact / Enquiry</div>
               <div class="admin-edit-row">
-                <label>Web3Forms Access Key
-                  <span class="admin-edit-hint">Paste the instructor's Web3Forms key here so student enquiries land directly in their inbox. Get a key at <a href="https://web3forms.com" target="_blank">web3forms.com</a> (free).</span>
-                </label>
-                <input class="form-input" id="ep-w3f-${app.id}" value="${escHtml(app.w3fKey||'')}" placeholder="e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                <span class="admin-edit-hint" style="display:block;margin-bottom:6px">Student enquiries are forwarded automatically to the <strong>Email</strong> entered above in Personal Details — no per-instructor key needed.</span>
               </div>
               <div class="admin-edit-row admin-edit-row-check">
                 <label><input type="checkbox" id="ep-unavailable-${app.id}" ${app.contactUnavailable?'checked':''} /> Mark enquiry as unavailable (hides Send Enquiry button on profile)</label>
@@ -1842,7 +1828,13 @@ function bindAdminEvents() {
 
         return Promise.all([
           db.collection('applications').doc(appId).update({ status: 'approved' }),
-          db.collection('live_profiles').doc(idSlug).set(liveProfile)
+          db.collection('live_profiles').doc(idSlug).set(liveProfile),
+          // Private — never publicly readable. This is what the Cloud
+          // Function reads to forward enquiries to the right inbox.
+          db.collection('instructor_contacts').doc(idSlug).set({
+            email: app.email || '',
+            phone: app.phone || '',
+          })
         ]).then(() => {
           showToast('✅ ' + app.name + ' is now live on the website!');
           setTimeout(() => navigate('admin'), 400);
@@ -1932,7 +1924,6 @@ function bindAdminEvents() {
       const wwcc     = v(`ep-wwcc-${appId}`);
       const credDia  = cb(`ep-cred-dia-${appId}`);
       const credWwcc = cb(`ep-cred-wwcc-${appId}`);
-      const w3fKey   = v(`ep-w3f-${appId}`);
       const unavail  = cb(`ep-unavailable-${appId}`);
       const bio      = (document.getElementById(`ep-bio-${appId}`)?.value || '').trim();
       const availNote= v(`ep-availnote-${appId}`);
@@ -1949,7 +1940,7 @@ function bindAdminEvents() {
         name, email, phone, suburb, state, radius,
         fee60, fee90, vAuto, vManual, dia, wwcc,
         credentials: { dia: credStatus(credDia, dia), wwcc: credStatus(credWwcc, wwcc) },
-        w3fKey, contactUnavailable: unavail,
+        contactUnavailable: unavail,
         bio, availDays, availTimes, availSpecific: availNote,
         teachingApproachIds, expertiseIds, languages,
       };
@@ -1974,6 +1965,12 @@ function bindAdminEvents() {
 
         const writes = [db.collection('applications').doc(appId).update(updates)];
 
+        // Keep the private instructor_contacts record in sync whenever the
+        // email/phone is edited — this is what the Cloud Function reads
+        // to forward enquiries, regardless of approval status, so it's
+        // ready the moment the profile goes live.
+        writes.push(db.collection('instructor_contacts').doc(idSlug).set({ email, phone }, { merge: true }));
+
         // If approved, also update the live_profiles document in Firestore
         if (status === 'approved') {
           const liveUpdates = {
@@ -1988,7 +1985,7 @@ function bindAdminEvents() {
             vehicles: vehiclesArr,
             bio, teachingApproachIds, expertiseIds, languages,
             credentials: { dia: credStatus(credDia, dia), wwcc: credStatus(credWwcc, wwcc) },
-            w3fKey, contactUnavailable: unavail,
+            contactUnavailable: unavail,
           };
           if (photoDataUrl !== undefined) liveUpdates.photoDataUrl = photoDataUrl;
 
