@@ -7,28 +7,6 @@
 function dec(arr) { return arr.map(c => String.fromCharCode(c)).join(''); }
 
 const CONTACT = {
- 
-  'john-stevens': {
-    p: [43,54,51,57,51,54,49,52,49,49,52,57,54],
-    e: [109,97,114,121,106,111,121,46,112,97,100,105,122,49,64,103,109,97,105,108,46,99,111,109],
-    svc: 'maryjoy.padiz1@gmail.com', tpl: 'template_v9nyycm',
-    w3f: '1119cfb7-b03e-4f5d-ae4f-b8e3a077bac7',
-    unavailable: false
-  },
-  'lisa-wong': {
-    p: [43,54,49,52,49,51,32,52,53,54,32,55,56,57],
-    e: [109,97,114,105,97,102,114,101,121,112,97,100,105,122,64,103,109,97,105,108,46,99,111,109],
-    svc: null, tpl: null,   // EmailJS not yet configured — enquiry button hidden
-    unavailable: true,
-    joinUnavailable: true
-  },
-  'mark-harris': {
-    p: [43,54,49,52,49,52,32,53,54,55,32,56,57,48],
-    e: [109,97,114,121,106,111,121,46,112,97,100,105,122,64,111,117,116,108,111,111,107,46,99,111,109],
-    svc: 'mariafreypadiz@gmail.com', tpl: 'template_vpug1fw',
-    unavailable: false,
-    joinUnavailable: true
-  },
 };
 
 /* =============================================
@@ -1314,6 +1292,7 @@ function buildLiveProfileFromApp(app, appId) {
     photoDataUrl: app.photoDataUrl || null,
     bio:          app.bio || '',
     languages:    app.languages || [],
+    phone:        app.phone || '',
     _fromApp:     appId,
   };
   return { idSlug, liveProfile };
@@ -2413,14 +2392,34 @@ function bindPageEvents() {
     callBtn.addEventListener('click', () => {
       const ct   = CONTACT[callBtn.dataset.id];
       const inst = getAllInstructors().find(i => i.id === callBtn.dataset.id);
+
+      // Hardcoded instructors store their number (already +61, char-code
+      // obfuscated) in CONTACT. Live/approved profiles (from Firestore)
+      // don't have a CONTACT entry — their number lives on the profile
+      // itself instead, in local 04xx xxx xxx format from the join form.
+      let rawNumber = null;
       if (ct && ct.p) {
+        rawNumber = dec(ct.p);
+      } else if (inst && inst.phone) {
+        rawNumber = inst.phone;
+      }
+
+      if (rawNumber) {
+        // Normalize to +61 international format for the tel: link.
+        let digits = rawNumber.replace(/[^\d+]/g, '');
+        if (digits.startsWith('0')) digits = '+61' + digits.slice(1);
+        else if (digits.startsWith('61')) digits = '+' + digits;
+        else if (!digits.startsWith('+')) digits = '+61' + digits;
+
         trackCall(callBtn.dataset.id, inst ? inst.name : callBtn.dataset.id);
         const a = document.createElement('a');
-        a.href = 'tel:' + dec(ct.p).replace(/\s/g, '');
+        a.href = 'tel:' + digits;
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+      } else {
+        showToast('This instructor\'s phone number is not available yet.');
       }
     });
   }
