@@ -336,7 +336,7 @@ function instructorCardHTML(inst, distKm) {
   }
 
   const locationLabel = inst.state
-    ? `${inst.baseSuburb}, ${inst.state}<br><span class="card-loc-suburbs">Surrounding Suburbs</span>`
+    ? `<span class="card-loc-stack">${inst.baseSuburb}, ${inst.state}<br><span class="card-loc-suburbs">Surrounding Suburbs</span></span>`
     : inst.location;
 
   const distLabel = distKm !== undefined
@@ -553,7 +553,7 @@ function renderProfile(id) {
       </div>
       <div class="qs-col-right">
         <div class="qs-block"><div class="qs-item-label">Vehicles</div>${vehiclesHTML}</div>
-        <div class="qs-block"><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div>${(inst.availabilityTimes||[]).map(t=>`<div class="qs-item-value qs-avail-time">${t}</div>`).join('')}${inst.availabilityNote ? `<div class="qs-item-value qs-travel-note">${inst.availabilityNote}</div>` : ''}</div>
+        <div class="qs-block"><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div>${(inst.availabilityTimes||[]).length ? `<div class="qs-avail-times">${inst.availabilityTimes.map(t=>`<div class="qs-avail-time">${t}</div>`).join('')}</div>` : ''}${inst.availabilityNote ? `<div class="qs-item-value qs-travel-note">${inst.availabilityNote}</div>` : ''}</div>
         ${languagesBlock}
         <div class="qs-block"><div class="qs-item-label">Lesson Fees</div>${feesHTML}</div>
         ${serviceAreaBlock}
@@ -574,7 +574,7 @@ function renderProfile(id) {
       </div>
       <div><div class="qs-item-label">Lesson Fee</div><div class="qs-item-value">${inst.fee}</div></div>
       <div><div class="qs-item-label">Transmission</div><div class="qs-item-value">${inst.transmission}</div></div>
-      <div><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div>${(inst.availabilityTimes||[]).map(t=>`<div class="qs-item-value qs-avail-time">${t}</div>`).join('')}${inst.availabilityNote ? `<div class="qs-item-value qs-travel-note">${inst.availabilityNote}</div>` : ''}</div>
+      <div><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div>${(inst.availabilityTimes||[]).length ? `<div class="qs-avail-times">${inst.availabilityTimes.map(t=>`<div class="qs-avail-time">${t}</div>`).join('')}</div>` : ''}${inst.availabilityNote ? `<div class="qs-item-value qs-travel-note">${inst.availabilityNote}</div>` : ''}</div>
       ${(inst.languages && inst.languages.length) ? `<div><div class="qs-item-label">Languages Spoken</div><div class="qs-item-value">${inst.languages.join(', ')}</div></div>` : ''}
       ${serviceAreaBlock}`;
   }
@@ -1305,7 +1305,7 @@ function buildLiveProfileFromApp(app, appId) {
     serviceRadius: parseInt(app.radius) || 10,
     travelBonus:  false,
     travelFee:    false,
-    location:     app.suburb + (app.state ? ', ' + app.state : '') + '<br><span class="profile-loc-suburbs">Surrounding Suburbs</span>',
+    location:     '<span class="profile-loc-stack">' + app.suburb + (app.state ? ', ' + app.state : '') + '<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span>',
     experience:   expLabel,
     customQS:     true,
     lessonFees:   feesArr,
@@ -1436,7 +1436,7 @@ function renderAdminPage(extra, apps) {
     serviceRadius: ${app.radius || 10},
     travelBonus: false,
     travelFee: false,
-    location: '${app.suburb}${app.state ? ', ' + app.state : ''}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span>',
+    location: '<span class="profile-loc-stack">${app.suburb}${app.state ? ', ' + app.state : ''}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span>',
     transmission: '${transmission}',
     experience: '${expLabel}',
     lessonFees: [
@@ -1730,7 +1730,7 @@ function renderPendingProfile(app) {
         <div>
           <div class="profile-name" style="font-size:22px">${app.name}${expYears >= 10 ? '<span class="senior-badge" title="10+ Years Experience">⭐</span>' : ''}</div>
           <div class="profile-title">Professional Driving Instructor</div>
-          <div class="profile-location">${ICONS.pin} ${app.suburb}${app.state ? ', ' + app.state : ''}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></div>
+          <div class="profile-location">${ICONS.pin} <span class="profile-loc-stack">${app.suburb}${app.state ? ', ' + app.state : ''}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span></div>
         </div>
       </div>
       <div class="quick-summary" style="margin-top:20px">
@@ -1740,7 +1740,7 @@ function renderPendingProfile(app) {
           <div class="qs-item"><div class="qs-item-label">Travel Radius</div><div class="qs-item-value">Up to ${app.radius} km<div class="qs-travel-note">Travel outside service area may be available by arrangement (additional fee may apply).</div></div></div>
           <div class="qs-item"><div class="qs-item-label">Transmission</div><div class="qs-item-value">${transmission}</div></div>
           <div class="qs-item"><div class="qs-item-label">Experience</div><div class="qs-item-value">${expLabel}</div></div>
-          <div class="qs-item"><div class="qs-item-label">Availability</div><div class="qs-item-value">${avail}</div>${(app.availTimes||[]).map(t=>`<div class="qs-item-value qs-avail-time">${t}</div>`).join('')}${app.availSpecific ? `<div class="qs-item-value qs-travel-note">${app.availSpecific}</div>` : ''}</div>
+          <div class="qs-item"><div class="qs-item-label">Availability</div><div class="qs-item-value">${avail}</div>${(app.availTimes||[]).length ? `<div class="qs-avail-times">${app.availTimes.map(t=>`<div class="qs-avail-time">${t}</div>`).join('')}</div>` : ''}${app.availSpecific ? `<div class="qs-item-value qs-travel-note">${app.availSpecific}</div>` : ''}</div>
           <div class="qs-item">
             <div class="qs-item-label">Credentials</div>
             <div class="cred-row"><span class="cred-label">DIA</span>${(() => { const s = app.credentials?.dia || credStatus(false, app.dia); return s==='verified'?'<span class="cred-tag cred-verified">Verified</span>':s==='provided'?'<span class="cred-tag cred-provided">Provided</span>':'<span class="cred-tag cred-not-provided">Not provided</span>'; })()}</div>
@@ -1980,7 +1980,7 @@ function bindAdminEvents() {
             name, initials,
             baseSuburb: suburb, state,
             serviceRadius: radius,
-            location: suburb + (state ? ', ' + state : '') + '<br><span class="profile-loc-suburbs">Surrounding Suburbs</span>',
+            location: '<span class="profile-loc-stack">' + suburb + (state ? ', ' + state : '') + '<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span>',
             availability: availLabel,
             availabilityTimes: availTimes,
             availabilityNote: availNote,
