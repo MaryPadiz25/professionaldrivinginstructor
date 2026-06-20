@@ -33,17 +33,17 @@ const EXPERTISE_CATEGORIES = [
     group: 'Test Preparation',
     items: [
       { id: 'vicroads-test',        label: 'VicRoads Drive Test Preparation' },
-      { id: 'logbook-hours',        label: 'Logbook Hours & Lesson Structure' },
+      { id: 'logbook-hours',        label: 'Building Logbook Hours' },
       { id: 'refresher-lessons',    label: 'Refresher Lessons (Returning Drivers)' },
     ]
   },
   {
-    group: 'Driving Confidence & Road Skills',
+    group: 'Confidence & Advanced Driving Skills',
     items: [
       { id: 'defensive-driving',    label: 'Defensive Driving Techniques' },
-      { id: 'highway-driving',      label: 'Highway & Long Distance Driving' },
-      { id: 'city-driving',         label: 'City Driving & Complex Traffic Conditions' },
-      { id: 'advanced-confidence',  label: 'Decision Making & Hazard Awareness' },
+      { id: 'city-driving',         label: 'City Driving & Complex Traffic Environments' },
+      { id: 'highway-driving',      label: 'Highway & Long-Distance Driving' },
+      { id: 'advanced-confidence',  label: 'Hazard Perception & Decision-Making' },
     ]
   },
   {
@@ -66,6 +66,16 @@ function resolveExpertise(ids = []) {
   return ids.map(id => lookup[id] || id);
 }
 
+/* Helper: render a credential (DIA/WWCC) status tag.
+   "Verified" is never shown to the public for legal reasons — admin
+   marking something as verified internally still just displays as
+   "Provided" here. Only two visible states: Provided / Not Provided. */
+function credTagHTML(status) {
+  return (status === 'verified' || status === 'provided')
+    ? `<span class="cred-tag cred-provided">Provided</span>`
+    : `<span class="cred-tag cred-not-provided">Not Provided</span>`;
+}
+
 /* =============================================
    TEACHING APPROACH TAGS — SINGLE SOURCE OF TRUTH
    ============================================= */
@@ -83,21 +93,6 @@ const TEACHING_APPROACH_CATEGORIES = [
       { id: 'motivational',       label: 'Motivational' },
       { id: 'strict-but-fair',    label: 'Strict but fair' },
       { id: 'no-nonsense',        label: 'No-nonsense' },
-    ]
-  },
-  {
-    group: 'Lesson Style',
-    items: [
-      { id: 'structured',              label: 'Structured' },
-      { id: 'step-by-step',            label: 'Step-by-step' },
-      { id: 'flexible',                label: 'Flexible' },
-      { id: 'confidence-building',     label: 'Confidence-building' },
-      { id: 'real-world-focused',      label: 'Real-world focused' },
-      { id: 'test-focused',            label: 'Test-focused' },
-      { id: 'defensive-driving-focus', label: 'Defensive driving focused' },
-      { id: 'hazard-awareness-focus',  label: 'Hazard awareness focused' },
-      { id: 'highway-driving-focus',   label: 'Highway driving focus' },
-      { id: 'city-driving-focus',      label: 'City driving focus' },
     ]
   },
 ];
@@ -529,17 +524,12 @@ function renderProfile(id) {
     const teachingHTML = teachingLabels.map(a => `<li>${a}</li>`).join('');
     const feesHTML      = inst.lessonFees.map(f => `<div class="qs-item-value">${f.duration} — ${f.price}</div>`).join('');
     const vehiclesHTML  = inst.vehicles.map(v => `<div class="qs-item-value">${v.type} — ${v.car}</div>`).join('');
-    const credTag = (status) => status === 'verified'
-      ? `<span class="cred-tag cred-verified">Verified</span>`
-      : status === 'provided'
-        ? `<span class="cred-tag cred-provided">Provided</span>`
-        : `<span class="cred-tag cred-not-provided">Not provided</span>`;
     const creds = inst.credentials || {};
     const credentialsBlock = `
       <div class="qs-block">
         <div class="qs-item-label">Credentials</div>
-        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTag(creds.dia)}</div>
-        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTag(creds.wwcc)}</div>
+        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTagHTML(creds.dia)}</div>
+        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTagHTML(creds.wwcc)}</div>
       </div>`;
     const languagesBlock = (inst.languages && inst.languages.length)
       ? `<div class="qs-block"><div class="qs-item-label">Languages Spoken</div><div class="qs-item-value">${inst.languages.join(', ')}</div></div>`
@@ -559,18 +549,13 @@ function renderProfile(id) {
         ${serviceAreaBlock}
       </div>`;
   } else {
-    const credTag = (status) => status === 'verified'
-      ? `<span class="cred-tag cred-verified">Verified</span>`
-      : status === 'provided'
-        ? `<span class="cred-tag cred-provided">Provided</span>`
-        : `<span class="cred-tag cred-not-provided">Not provided</span>`;
     const creds = inst.credentials || {};
     qsRows = `
       <div><div class="qs-item-label">Experience</div><div class="qs-item-value">${inst.experience}</div></div>
       <div>
         <div class="qs-item-label">Credentials</div>
-        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTag(creds.dia)}</div>
-        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTag(creds.wwcc)}</div>
+        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTagHTML(creds.dia)}</div>
+        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTagHTML(creds.wwcc)}</div>
       </div>
       <div><div class="qs-item-label">Lesson Fee</div><div class="qs-item-value">${inst.fee}</div></div>
       <div><div class="qs-item-label">Transmission</div><div class="qs-item-value">${inst.transmission}</div></div>
@@ -741,15 +726,15 @@ function renderJoin() {
           </div>
           <div class="join-step-nav">
             <button class="btn btn-outline join-back-btn" data-back="3">← Back</button>
-            <button class="btn btn-navy join-next-btn" data-next="5">Next: Lesson Locations →</button>
+            <button class="btn btn-navy join-next-btn" data-next="5">Next: Your Location →</button>
           </div>
         </div>
 
-        <!-- ── STEP 5: Lesson Locations ── -->
+        <!-- ── STEP 5: Your Location ── -->
         <div class="join-step" id="join-step-5" style="display:none">
-          <div class="form-section-head join-step-head"><span class="join-step-num">5</span> Lesson Locations</div>
+          <div class="form-section-head join-step-head"><span class="join-step-num">5</span> Your Location</div>
           <div class="form-group">
-            <label class="form-label">Primary Suburb / Local Area <span>*</span></label>
+            <label class="form-label">Your Suburb / Local Area <span>*</span></label>
             <input type="text" class="form-input" placeholder="e.g. Burwood, Doncaster, Geelong" id="join-suburb" list="join-suburb-list" autocomplete="off" />
             <datalist id="join-suburb-list">
               <option value="Burwood"></option>
@@ -1729,8 +1714,8 @@ function renderPendingProfile(app) {
           <div class="qs-item"><div class="qs-item-label">Availability</div><div class="qs-item-value">${avail}</div>${(app.availTimes||[]).length ? `<div class="qs-avail-times">${app.availTimes.map(t=>`<div class="qs-avail-time">${t}</div>`).join('')}</div>` : ''}${app.availSpecific ? `<div class="qs-item-value qs-travel-note">${app.availSpecific}</div>` : ''}</div>
           <div class="qs-item">
             <div class="qs-item-label">Credentials</div>
-            <div class="cred-row"><span class="cred-label">DIA</span>${(() => { const s = app.credentials?.dia || credStatus(false, app.dia); return s==='verified'?'<span class="cred-tag cred-verified">Verified</span>':s==='provided'?'<span class="cred-tag cred-provided">Provided</span>':'<span class="cred-tag cred-not-provided">Not provided</span>'; })()}</div>
-            <div class="cred-row"><span class="cred-label">WWCC</span>${(() => { const s = app.credentials?.wwcc || credStatus(false, app.wwcc); return s==='verified'?'<span class="cred-tag cred-verified">Verified</span>':s==='provided'?'<span class="cred-tag cred-provided">Provided</span>':'<span class="cred-tag cred-not-provided">Not provided</span>'; })()}</div>
+            <div class="cred-row"><span class="cred-label">DIA</span>${credTagHTML(app.credentials?.dia || credStatus(false, app.dia))}</div>
+            <div class="cred-row"><span class="cred-label">WWCC</span>${credTagHTML(app.credentials?.wwcc || credStatus(false, app.wwcc))}</div>
           </div>
           ${feesHTML}
           ${vehiclesHTML}
@@ -1955,6 +1940,7 @@ function bindAdminEvents() {
       const vehiclesArr = [];
       if (vAuto)   vehiclesArr.push({ type: 'Auto',   car: vAuto });
       if (vManual) vehiclesArr.push({ type: 'Manual', car: vManual });
+      const transmission = [vAuto ? 'Automatic' : '', vManual ? 'Manual' : ''].filter(Boolean).join(' & ') || 'Automatic';
 
       // Handle photo replacement
       const photoInput = document.getElementById(`ep-photo-${appId}`);
@@ -1983,6 +1969,7 @@ function bindAdminEvents() {
             availabilityNote: availNote,
             lessonFees: feesArr,
             vehicles: vehiclesArr,
+            transmission,
             bio, teachingApproachIds, expertiseIds, languages,
             credentials: { dia: credStatus(credDia, dia), wwcc: credStatus(credWwcc, wwcc) },
             contactUnavailable: unavail,
