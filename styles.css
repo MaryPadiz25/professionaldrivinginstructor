@@ -1891,6 +1891,15 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   flex: 1;
   min-width: 0;
 }
+/* Hide the up/down spinner arrows on lesson fee inputs */
+.fee-input::-webkit-outer-spin-button,
+.fee-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.fee-input[type=number] {
+  -moz-appearance: textfield;
+}
 
 /* =============================================
    APPROVAL NOTICE (join form)
@@ -2549,17 +2558,16 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   flex-shrink: 0;
 }
 .cred-provided {
-  background: #f0f4f0;
-  color: #4a6741;
+  background: #e3e3e3;
+  color: #4d4d4d;
 }
 .cred-verified {
-  background: #e6f4ea;
-  color: #1e7a34;
-  font-weight: 600;
+  background: #e3e3e3;
+  color: #4d4d4d;
 }
 .cred-not-provided {
   background: #f5f5f5;
-  color: #999;
+  color: #aaa;
 }
 /* ── Admin Edit Panel ── */
 .admin-edit-panel {
