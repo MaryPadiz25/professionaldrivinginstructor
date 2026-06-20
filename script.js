@@ -336,12 +336,12 @@ function instructorCardHTML(inst, distKm) {
   }
 
   const locationLabel = inst.state
-    ? `${inst.baseSuburb}, ${inst.state} &amp; Surrounding Suburbs`
+    ? `${inst.baseSuburb}, ${inst.state}<br><span class="card-loc-suburbs">Surrounding Suburbs</span>`
     : inst.location;
 
   const distLabel = distKm !== undefined
     ? `<div class="card-dist-row">${ICONS.mapPin} ${inst.baseSuburb} &bull; <strong>${distKm.toFixed(1)} km away</strong></div>`
-    : `<div class="card-meta-row">${ICONS.pin} ${locationLabel}</div>`;
+    : `<div class="card-meta-row card-meta-location">${ICONS.pin} ${locationLabel}</div>`;
 
   // Tagline: prefer Teaching Approach tags submitted via the join form; fall back to a sensible default
   const teachingLabels = (inst.teachingApproachIds && inst.teachingApproachIds.length)
@@ -553,7 +553,7 @@ function renderProfile(id) {
       </div>
       <div class="qs-col-right">
         <div class="qs-block"><div class="qs-item-label">Vehicles</div>${vehiclesHTML}</div>
-        <div class="qs-block"><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div>${inst.availabilityNote ? `<div class="qs-item-value qs-travel-note">${inst.availabilityNote}</div>` : ''}</div>
+        <div class="qs-block"><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div>${(inst.availabilityTimes||[]).map(t=>`<div class="qs-item-value qs-avail-time">${t}</div>`).join('')}${inst.availabilityNote ? `<div class="qs-item-value qs-travel-note">${inst.availabilityNote}</div>` : ''}</div>
         ${languagesBlock}
         <div class="qs-block"><div class="qs-item-label">Lesson Fees</div>${feesHTML}</div>
         ${serviceAreaBlock}
@@ -574,7 +574,7 @@ function renderProfile(id) {
       </div>
       <div><div class="qs-item-label">Lesson Fee</div><div class="qs-item-value">${inst.fee}</div></div>
       <div><div class="qs-item-label">Transmission</div><div class="qs-item-value">${inst.transmission}</div></div>
-      <div><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div>${inst.availabilityNote ? `<div class="qs-item-value qs-travel-note">${inst.availabilityNote}</div>` : ''}</div>
+      <div><div class="qs-item-label">Availability</div><div class="qs-item-value">${inst.availability}</div>${(inst.availabilityTimes||[]).map(t=>`<div class="qs-item-value qs-avail-time">${t}</div>`).join('')}${inst.availabilityNote ? `<div class="qs-item-value qs-travel-note">${inst.availabilityNote}</div>` : ''}</div>
       ${(inst.languages && inst.languages.length) ? `<div><div class="qs-item-label">Languages Spoken</div><div class="qs-item-value">${inst.languages.join(', ')}</div></div>` : ''}
       ${serviceAreaBlock}`;
   }
@@ -1286,7 +1286,7 @@ function buildLiveProfileFromApp(app, appId) {
   const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
   const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
   const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const availLabel  = [(app.availDays||[]).join(' / '), (app.availTimes||[]).join(' / ')].filter(Boolean).join(' — ') || 'Contact instructor';
+  const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
   const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
   if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
   const vehiclesArr = [];
@@ -1311,6 +1311,7 @@ function buildLiveProfileFromApp(app, appId) {
     lessonFees:   feesArr,
     vehicles:     vehiclesArr,
     availability: availLabel,
+    availabilityTimes: app.availTimes || [],
     availabilityNote: app.availSpecific || '',
     teachingApproachIds: app.teachingApproachIds || [],
     expertiseIds: app.expertiseIds || [],
@@ -1419,7 +1420,8 @@ function renderAdminPage(extra, apps) {
     const transmission = [app.vAuto ? 'Automatic' : '', app.vManual ? 'Manual' : ''].filter(Boolean).join(' & ') || 'Automatic';
     const feesArr    = [`{ duration: '60 min', price: '$${app.fee60}' }`, ...(app.fee90 ? [`{ duration: '90 min', price: '$${app.fee90}' }`] : [])];
     const vehiclesArr = [...(app.vAuto ? [`{ type: 'Auto',   car: '${app.vAuto}' }`] : []), ...(app.vManual ? [`{ type: 'Manual', car: '${app.vManual}' }`] : [])];
-    const availLabel = [(app.availDays||[]).join(' / '), (app.availTimes||[]).join(' / ')].filter(Boolean).join(' — ') || 'Weekdays';
+    const availLabel = (app.availDays||[]).join(' / ') || 'Weekdays';
+    const availTimesArr = (app.availTimes||[]).map(t => `'${t.replace(/'/g,"\\'")}'`);
     const expertiseIdStr = (app.expertiseIds||[]).map(id => `      '${id}',`).join('\n');
     const teachingIdStr  = (app.teachingApproachIds||[]).map(id => `      '${id}',`).join('\n');
 
@@ -1444,6 +1446,7 @@ function renderAdminPage(extra, apps) {
       ${vehiclesArr.join(',\n      ')},
     ],` : ''}
     availability: '${availLabel}',
+    availabilityTimes: [${availTimesArr.join(', ')}],
     availabilityNote: '${(app.availSpecific||'').replace(/'/g,"\\'")}',
     teachingApproachIds: [
 ${teachingIdStr}
@@ -1705,7 +1708,7 @@ function renderPendingProfile(app) {
   const expertise  = resolveExpertise(app.expertiseIds || []);
   const teachingApproach = resolveTeachingApproach(app.teachingApproachIds || []);
   const transmission = [app.vAuto ? 'Automatic' : '', app.vManual ? 'Manual' : ''].filter(Boolean).join(' & ') || 'Automatic';
-  const avail      = [(app.availDays||[]).join(' / '), (app.availTimes||[]).join(' / ')].filter(Boolean).join(' — ') || '(not specified)';
+  const avail      = (app.availDays||[]).join(' / ') || '(not specified)';
 
   const feesHTML = [
     `<div class="qs-item"><div class="qs-item-label">60 min lesson</div><div class="qs-item-value">$${app.fee60}</div></div>`,
@@ -1737,7 +1740,7 @@ function renderPendingProfile(app) {
           <div class="qs-item"><div class="qs-item-label">Travel Radius</div><div class="qs-item-value">Up to ${app.radius} km<div class="qs-travel-note">Travel outside service area may be available by arrangement (additional fee may apply).</div></div></div>
           <div class="qs-item"><div class="qs-item-label">Transmission</div><div class="qs-item-value">${transmission}</div></div>
           <div class="qs-item"><div class="qs-item-label">Experience</div><div class="qs-item-value">${expLabel}</div></div>
-          <div class="qs-item"><div class="qs-item-label">Availability</div><div class="qs-item-value">${avail}</div>${app.availSpecific ? `<div class="qs-item-value qs-travel-note">${app.availSpecific}</div>` : ''}</div>
+          <div class="qs-item"><div class="qs-item-label">Availability</div><div class="qs-item-value">${avail}</div>${(app.availTimes||[]).map(t=>`<div class="qs-item-value qs-avail-time">${t}</div>`).join('')}${app.availSpecific ? `<div class="qs-item-value qs-travel-note">${app.availSpecific}</div>` : ''}</div>
           <div class="qs-item">
             <div class="qs-item-label">Credentials</div>
             <div class="cred-row"><span class="cred-label">DIA</span>${(() => { const s = app.credentials?.dia || credStatus(false, app.dia); return s==='verified'?'<span class="cred-tag cred-verified">Verified</span>':s==='provided'?'<span class="cred-tag cred-provided">Provided</span>':'<span class="cred-tag cred-not-provided">Not provided</span>'; })()}</div>
@@ -1955,7 +1958,7 @@ function bindAdminEvents() {
       const expYears   = updates.exp ? (new Date().getFullYear() - parseInt(updates.exp)) : 0;
       const idSlug     = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
       const initials   = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const availLabel = [availDays.join(' / '), availTimes.join(' / ')].filter(Boolean).join(' — ') || 'Contact instructor';
+      const availLabel = availDays.join(' / ') || 'Contact instructor';
       const feesArr    = [{ duration: '60 min', price: '$' + fee60 }];
       if (fee90) feesArr.push({ duration: '90 min', price: '$' + fee90 });
       const vehiclesArr = [];
@@ -1979,6 +1982,7 @@ function bindAdminEvents() {
             serviceRadius: radius,
             location: suburb + (state ? ', ' + state : '') + '<br><span class="profile-loc-suburbs">Surrounding Suburbs</span>',
             availability: availLabel,
+            availabilityTimes: availTimes,
             availabilityNote: availNote,
             lessonFees: feesArr,
             vehicles: vehiclesArr,
