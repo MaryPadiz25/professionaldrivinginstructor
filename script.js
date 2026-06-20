@@ -170,7 +170,7 @@ function trackEnquiry(instructorId, instructorName, leadData) {
     const now    = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },   // avoids CORS preflight that Apps Script can't handle
       body: JSON.stringify({
         event:          'enquiry',
         instructorId,
@@ -215,7 +215,7 @@ function trackCall(instructorId, instructorName) {
     const now     = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },   // avoids CORS preflight that Apps Script can't handle
       body: JSON.stringify({
         event:          'call',
         instructorId,
