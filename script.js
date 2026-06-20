@@ -344,8 +344,13 @@ function instructorCardHTML(inst, distKm) {
     : null;
   const tagline = teachingLabels ? teachingLabels.join(', ') : 'Patient, calm and supportive';
 
+  // Vehicle types actually entered — never assume both Manual & Auto
+  const vehicleTypesLabel = (inst.vehicles && inst.vehicles.length)
+    ? inst.vehicles.map(v => v.type).join(' & ')
+    : (inst.transmission || 'Contact instructor');
+
   let metaRows = inst.customQS
-    ? `${distLabel}<div class="card-meta-row">${ICONS.car} Manual &amp; Auto</div><div class="card-meta-row card-tagline">${ICONS.user} ${tagline}</div><div class="card-meta-row">${ICONS.clock} ${inst.experience} experience</div>`
+    ? `${distLabel}<div class="card-meta-row">${ICONS.car} ${vehicleTypesLabel}</div><div class="card-meta-row card-tagline">${ICONS.user} ${tagline}</div><div class="card-meta-row">${ICONS.clock} ${inst.experience} experience</div>`
     : `${distLabel}<div class="card-meta-row">${ICONS.car} ${inst.transmission}</div><div class="card-meta-row">${ICONS.clock} ${inst.experience} experience</div>`;
 
   return `
