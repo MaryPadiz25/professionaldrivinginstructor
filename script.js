@@ -170,6 +170,7 @@ function trackEnquiry(instructorId, instructorName, leadData) {
     const now    = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
       method:  'POST',
+      mode:    'no-cors',                          // Apps Script 302-redirects every request; without this the browser silently turns the POST into a bodyless GET on redirect
       headers: { 'Content-Type': 'text/plain' },   // avoids CORS preflight that Apps Script can't handle
       body: JSON.stringify({
         event:          'enquiry',
@@ -215,6 +216,7 @@ function trackCall(instructorId, instructorName) {
     const now     = new Date();
     fetch(SHEETS_CALL_LOG_URL, {
       method:  'POST',
+      mode:    'no-cors',                          // Apps Script 302-redirects every request; without this the browser silently turns the POST into a bodyless GET on redirect
       headers: { 'Content-Type': 'text/plain' },   // avoids CORS preflight that Apps Script can't handle
       body: JSON.stringify({
         event:          'call',
