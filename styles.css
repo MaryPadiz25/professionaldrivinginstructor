@@ -1021,6 +1021,10 @@ body.modal-open { overflow: hidden; }
   margin-top: 12px;
   line-height: 1.5;
 }
+.form-input.eq-invalid {
+  border-color: #c53030;
+  background: #fff5f5;
+}
 .eq-error-msg {
   font-size: 13.5px;
   color: #c53030;
