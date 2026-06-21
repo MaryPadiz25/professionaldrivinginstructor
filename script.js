@@ -1263,9 +1263,24 @@ function getPageContent(page, extra) {
    Shared by the "Approve & Publish Live" action and by "Restore from
    Trash" (when restoring a record that was approved before it was
    trashed), so both produce an identical live profile. */
+/* Experience label rule (trust-ladder display):
+   0–19 years  -> exact number, e.g. "14 years experience"
+   20–29 years -> "20+ years experience"
+   30–39 years -> "30+ years experience"
+   40–49 years -> "40+ years experience"
+   50+  years -> "50+ years experience"
+   (the " experience" suffix is added by the calling templates, not here) */
+function formatExperienceLabel(expYears) {
+  if (expYears < 1)  return 'Under 1 year';
+  if (expYears === 1) return '1 year';
+  if (expYears < 20) return expYears + ' years';
+  const tierFloor = Math.floor(expYears / 10) * 10; // 20,30,40,50...
+  return tierFloor + '+ years';
+}
+
 function buildLiveProfileFromApp(app, appId) {
   const expYears    = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
-  const expLabel    = expYears >= 10 ? expYears + '+ years' : expYears >= 1 ? expYears + ' years' : 'Under 1 year';
+  const expLabel    = formatExperienceLabel(expYears);
   const idSlug      = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
   const initials    = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
@@ -1368,7 +1383,7 @@ function renderAdminPage(extra, apps) {
   function appCard(app) {
     const initials   = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const expYears   = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
-    const expLabel   = expYears >= 1 ? expYears + '+ years' : 'Under 1 year';
+    const expLabel   = formatExperienceLabel(expYears);
     const vehicles   = [app.vAuto ? 'Auto: ' + app.vAuto : '', app.vManual ? 'Manual: ' + app.vManual : ''].filter(Boolean).join(' · ') || '(none listed)';
     const avail      = [...(app.availDays||[]), ...(app.availTimes||[])].join(', ') || '(not specified)';
     const expertise  = resolveExpertise(app.expertiseIds || []);
@@ -1680,7 +1695,7 @@ ${expertiseIdStr}
 function renderPendingProfile(app) {
   const initials   = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const expYears   = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
-  const expLabel   = expYears >= 1 ? expYears + '+ years' : 'Under 1 year';
+  const expLabel   = formatExperienceLabel(expYears);
   const expertise  = resolveExpertise(app.expertiseIds || []);
   const teachingApproach = resolveTeachingApproach(app.teachingApproachIds || []);
   const transmission = [app.vAuto ? 'Automatic' : '', app.vManual ? 'Manual' : ''].filter(Boolean).join(' & ') || 'Automatic';
