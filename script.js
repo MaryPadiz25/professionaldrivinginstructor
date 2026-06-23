@@ -2822,7 +2822,7 @@ function bindPageEvents() {
       // John: maryjoy.padiz1@gmail.com → key 1119cfb7-b03e-4f5d-ae4f-b8e3a077bac7
       // Default admin key for others
       const emailLower = email.toLowerCase();
-      let w3fKey = 'b9dcce58-e3f6-444a-b788-e5424d3edf9d'; // admin fallback
+      let w3fKey = 'd7c943d4-eb3e-4af9-8aa8-2ce901e063e2'; // apply to join key
       if (emailLower === dec([114,111,98,101,114,116,95,115,97,109,115,117,110,103,64,104,111,116,109,97,105,108,46,99,111,109])) {
         w3fKey = '2c2335a7-edb1-4673-b7d7-6971217f4d96'; // Rob
       } else if (emailLower === dec([109,97,114,121,106,111,121,46,112,97,100,105,122,49,64,103,109,97,105,108,46,99,111,109])) {
@@ -2986,7 +2986,7 @@ function bindPageEvents() {
         method: 'POST',
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          access_key: 'b9dcce58-e3f6-444a-b788-e5424d3edf9d',
+          access_key: '2c2335a7-edb1-4673-b7d7-6971217f4d96',
           subject: subject || 'New Contact Form Message — ' + name,
           from_name: 'Professional Driving Instructors Network',
           Name: name, Email: email, Subject: subject || '(none)', Message: msg
