@@ -890,7 +890,7 @@ function renderJoin() {
           </div>
           <button class="btn btn-navy btn-full btn-lg" id="join-submit" style="margin-top:24px">Apply to Join</button>
           <div class="join-approval-notice">
-            <p>Once your instructor profile has been approved, you will receive a confirmation email. Your profile, including your photo and submitted details, will then be visible to users, allowing them to view your information and contact you directly. If you need to edit or update your profile at any time, or if you have any questions or require assistance, please contact our team at <a href="mailto:support@professionaldrivinginstructorsnetwork.com">support@professionaldrivinginstructorsnetwork.com</a>.</p>
+            <p>Once your instructor profile has been approved, you will receive a confirmation email. Your profile, including your photo and submitted details, will then be visible to users, allowing them to view your information and contact you directly. If you need to edit or update your profile at any time, or if you have any questions or require assistance, please contact our team at <a href="mailto:support@pdin.au">support@pdin.au</a>.</p>
           </div>
           <p class="join-reserve-note">Professional Driving Instructors Network reserves the right to verify credentials before approval.</p>
         </div>
@@ -967,7 +967,7 @@ function renderContact() {
           <div class="contact-info">
             <h2>Get in Touch</h2>
             <p>Whether you're a learner or an instructor interested in joining, reach out and we'll get back to you promptly.</p>
-            <div class="contact-detail">${ICONS.mail}<span>support@professionaldrivinginstructorsnetwork.com</span></div>
+            <div class="contact-detail">${ICONS.mail}<span>support@pdin.au</span></div>
             <div class="contact-detail">${ICONS.pin}<span>Melbourne, Victoria, Australia</span></div>
           </div>
           <div id="contact-form-wrap">
