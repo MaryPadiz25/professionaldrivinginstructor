@@ -2817,17 +2817,8 @@ function bindPageEvents() {
       }
       const expertise = resolveExpertise(expertiseIds);
 
-      // Determine which web3forms key to use based on email match
-      // Rob: robert_samsung@hotmail.com → key 2c2335a7-edb1-4673-b7d7-6971217f4d96
-      // John: maryjoy.padiz1@gmail.com → key 1119cfb7-b03e-4f5d-ae4f-b8e3a077bac7
-      // Default admin key for others
-      const emailLower = email.toLowerCase();
-      let w3fKey = 'd7c943d4-eb3e-4af9-8aa8-2ce901e063e2'; // apply to join key
-      if (emailLower === dec([114,111,98,101,114,116,95,115,97,109,115,117,110,103,64,104,111,116,109,97,105,108,46,99,111,109])) {
-        w3fKey = '2c2335a7-edb1-4673-b7d7-6971217f4d96'; // Rob
-      } else if (emailLower === dec([109,97,114,121,106,111,121,46,112,97,100,105,122,49,64,103,109,97,105,108,46,99,111,109])) {
-        w3fKey = '1119cfb7-b03e-4f5d-ae4f-b8e3a077bac7'; // John
-      }
+      // All applications go to the single Apply to Join key
+      const w3fKey = 'd7c943d4-eb3e-4af9-8aa8-2ce901e063e2';
 
       setButtonLoading('join-submit', true, 'Apply to Join');
 
