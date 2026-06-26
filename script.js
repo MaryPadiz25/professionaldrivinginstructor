@@ -184,7 +184,8 @@ function trackCall(instructorId, instructorName, suburb, licenceStage) {
     db.collection('call_logs')
       .doc(safeName)
       .collection('logs')
-      .add({
+      .doc('call-' + Date.now())
+      .set({
         instructorId,
         instructorName,
         suburb:       suburb       || '',
@@ -1080,7 +1081,8 @@ function openEnquiryModal(inst) {
       return;
     }
 
-    db.collection('enquiries').add({
+    const enquiryDocId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
+    db.collection('enquiries').doc(enquiryDocId).set({
       instructorId:   inst.id,
       instructorName: inst.name,
       studentName:    name,
@@ -2842,7 +2844,8 @@ function bindPageEvents() {
         // collection is read-protected (admin-only) by the Firestore rules,
         // so that read-back was always rejected with a permission error —
         // even though the write itself had already succeeded.
-        db.collection('applications').add(application)
+        const appDocId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
+        db.collection('applications').doc(appDocId).set(application)
           .then(() => {
             if (settled) return;
             settled = true;
@@ -2900,7 +2903,8 @@ function bindPageEvents() {
         return;
       }
       setButtonLoading('contact-submit', true, 'Send Message');
-      db.collection('contact_form').add({
+      const contactDocId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
+      db.collection('contact_form').doc(contactDocId).set({
         name, email,
         subject: subject || '(none)',
         message: msg,
