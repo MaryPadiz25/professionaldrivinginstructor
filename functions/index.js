@@ -40,38 +40,68 @@ const SUPPORT_EMAIL = 'support@pdin.au';
    row automatically if it doesn't exist yet.
    ------------------------------------------------------------- */
 async function appendToSheet(sheetsClient, spreadsheetId, tabName, headers, row) {
-  // Check if the tab already exists
-  const meta = await sheetsClient.spreadsheets.get({ spreadsheetId });
-  const exists = meta.data.sheets.some(
-    s => s.properties.title === tabName
-  );
+  try {
+    // Check if the tab already exists
+    const meta = await sheetsClient.spreadsheets.get({ spreadsheetId });
+    const existingSheet = meta.data.sheets.find(
+      s => s.properties.title === tabName
+    );
 
-  if (!exists) {
-    // Create the tab
-    await sheetsClient.spreadsheets.batchUpdate({
-      spreadsheetId,
-      requestBody: {
-        requests: [{
-          addSheet: { properties: { title: tabName } }
-        }]
-      }
-    });
-    // Write header row
-    await sheetsClient.spreadsheets.values.append({
-      spreadsheetId,
-      range: `'${tabName}'!A1`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [headers] }
-    });
+    if (!existingSheet) {
+      // Create the tab
+      await sheetsClient.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            addSheet: { properties: { title: tabName } }
+          }]
+        }
+      });
+      // Write header row first
+      await sheetsClient.spreadsheets.values.update({
+        spreadsheetId,
+        range: `'${tabName}'!A1`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [headers] }
+      });
+      // Insert data at row 2
+      await sheetsClient.spreadsheets.values.update({
+        spreadsheetId,
+        range: `'${tabName}'!A2`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [row] }
+      });
+    } else {
+      // Tab exists — insert a new row at position 2 (just after header)
+      // so the most recent entry is always at the top
+      const sheetId = existingSheet.properties.sheetId;
+      await sheetsClient.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            insertDimension: {
+              range: {
+                sheetId,
+                dimension: 'ROWS',
+                startIndex: 1, // after header row
+                endIndex: 2,
+              },
+              inheritFromBefore: false,
+            }
+          }]
+        }
+      });
+      await sheetsClient.spreadsheets.values.update({
+        spreadsheetId,
+        range: `'${tabName}'!A2`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [row] }
+      });
+    }
+  } catch (err) {
+    logger.error(`appendToSheet error for tab "${tabName}":`, err.message || err);
+    throw err;
   }
-
-  // Append the data row
-  await sheetsClient.spreadsheets.values.append({
-    spreadsheetId,
-    range: `'${tabName}'!A1`,
-    valueInputOption: 'RAW',
-    requestBody: { values: [row] }
-  });
 }
 
 /* Build an authorised Sheets client from the service account secret */
@@ -129,11 +159,13 @@ exports.forwardEnquiry = onDocumentCreated(
     try {
       const safeName = (instructorName || instructorId).replace(/[\/\\]/g, '-');
       const now = new Date();
+      const enquiryDocId = (studentName || 'enquiry').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
       await db
         .collection('instructor_enquiries')
         .doc(safeName)
         .collection('enquiries')
-        .add({
+        .doc(enquiryDocId)
+        .set({
           instructorName,
           studentName:    studentName    || '',
           studentEmail:   studentEmail   || '',
@@ -266,7 +298,8 @@ exports.onNewApplication = onDocumentCreated(
 
     // ── Save copy to Instructors Profile Details ──
     try {
-      await db.collection('instructor_profile_details').doc(appId).set({
+      const profileDocId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + appId.slice(-6);
+      await db.collection('instructor_profile_details').doc(profileDocId).set({
         ...app,
         savedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
