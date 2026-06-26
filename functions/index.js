@@ -128,35 +128,59 @@ exports.forwardEnquiry = onDocumentCreated(
     // ── Save to instructor-named Firestore subcollection ──
     try {
       const safeName = (instructorName || instructorId).replace(/[\/\\]/g, '-');
+      const now = new Date();
       await db
         .collection('instructor_enquiries')
         .doc(safeName)
         .collection('enquiries')
         .add({
-          ...enquiry,
+          instructorName,
+          studentName:    studentName    || '',
+          studentEmail:   studentEmail   || '',
+          studentMobile:  studentMobile  || '',
+          suburb:         suburb         || '',
+          licenceStage:   licenceStage   || '',
+          transmission:   transmission   || '',
+          preferredDays:  preferredDays  || '',
+          preferredTime:  preferredTime  || '',
+          message:        message        || '',
+          date: now.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: '2-digit', month: 'short', year: 'numeric' }),
+          time: now.toLocaleTimeString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', hour12: true }),
           receivedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
     } catch (err) {
       logger.error('Failed to save to instructor_enquiries:', err);
     }
 
-    // ── Append to Google Sheets — instructor's tab ──
+    // ── Append to Google Sheets — instructor enquiries tab ──
     try {
       const sheets        = getSheetsClient(GOOGLE_SERVICE_ACCOUNT_JSON.value());
       const spreadsheetId = SHEETS_ID.value();
-      const tabName       = instructorName || instructorId;
+      const tabName       = (instructorName || instructorId) + ' - Enquiries';
       const headers = [
-        'Date/Time', 'Type', 'Student Name', 'Student Email',
-        'Student Mobile', 'Suburb', 'Licence Stage', 'Transmission',
+        'Date', 'Time', 'Type', 'Instructor',
+        'Student Name', 'Student Email', 'Student Mobile',
+        'Suburb', 'Licence Stage', 'Transmission',
         'Preferred Days', 'Preferred Time', 'Message'
       ];
+      const now = new Date();
       const row = [
-        auNow(), 'Enquiry',
-        studentName || '', studentEmail || '', studentMobile || '',
-        suburb || '', licenceStage || '', transmission || '',
-        preferredDays || '', preferredTime || '', message || ''
+        now.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: '2-digit', month: 'short', year: 'numeric' }),
+        now.toLocaleTimeString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', hour12: true }),
+        'Enquiry',
+        instructorName || '',
+        studentName    || '',
+        studentEmail   || '',
+        studentMobile  || '',
+        suburb         || '',
+        licenceStage   || '',
+        transmission   || '',
+        preferredDays  || '',
+        preferredTime  || '',
+        message        || '',
       ];
       await appendToSheet(sheets, spreadsheetId, tabName, headers, row);
+      logger.info(`Enquiry appended to Sheets tab "${tabName}"`);
     } catch (err) {
       logger.error('Failed to append enquiry to Sheets:', err);
     }
@@ -413,18 +437,22 @@ exports.onCallLog = onDocumentCreated(
       const sheets        = getSheetsClient(GOOGLE_SERVICE_ACCOUNT_JSON.value());
       const spreadsheetId = SHEETS_ID.value();
       const headers = [
-        'Date/Time', 'Type', 'Student Name', 'Student Email',
-        'Student Mobile', 'Suburb', 'Licence Stage', 'Transmission',
-        'Preferred Days', 'Preferred Time', 'Message'
+        'Date', 'Time', 'Type', 'Instructor',
+        'Suburb', 'Licence Stage'
       ];
+      const dateTime = log.date && log.time
+        ? { date: log.date, time: log.time }
+        : { date: auNow(), time: '' };
       const row = [
-        auNow(), 'Call',
-        '', '', '', // no student details captured on a call tap
+        dateTime.date,
+        dateTime.time,
+        'Call',
+        instructorName,
         log.suburb       || '',
         log.licenceStage || '',
-        '', '', '', ''
       ];
-      await appendToSheet(sheets, spreadsheetId, instructorName, headers, row);
+      await appendToSheet(sheets, spreadsheetId, instructorName + ' - Calls', headers, row);
+      logger.info(`Call log appended to Sheets tab "${instructorName}"`);
     } catch (err) {
       logger.error('Failed to append call log to Sheets:', err);
     }
