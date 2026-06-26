@@ -1,0 +1,94 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ---------- live_profiles ---------- */
+    /* Public instructor directory. Visitors' browsers read this
+       directly (no login) so the homepage/profile pages work.
+       Only the signed-in admin can write. */
+    match /live_profiles/{profileId} {
+      allow read:  if true;
+      allow write: if request.auth != null;
+    }
+
+    /* ---------- applications ---------- */
+    /* Raw join-form submissions. Anyone can create one (that's
+       the point of the form). Only the admin can read, edit,
+       or delete records. The Cloud Function that emails support
+       uses the Admin SDK and bypasses these rules entirely. */
+    match /applications/{appId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    /* ---------- Instructors Profile Details ---------- */
+    /* A copy of each approved application written by the Cloud
+       Function (Admin SDK) for record-keeping. Never readable
+       or writable from the browser — admin only. */
+    match /instructor_profile_details/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    /* ---------- instructor_contacts ---------- */
+    /* Private: real email/phone per instructor. Used ONLY by the
+       Cloud Function (Admin SDK) to forward enquiries — never
+       readable from the browser, not even by the admin page,
+       to prevent instructor emails being scraped. */
+    match /instructor_contacts/{instructorId} {
+      allow read, write: if request.auth != null;
+    }
+
+    /* ---------- enquiries ---------- */
+    /* Student Send Enquiry submissions. Anyone can create one.
+       Cloud Function (Admin SDK) reads and updates each doc to
+       forward it and mark delivery status — bypasses these rules.
+       Admin can read/delete from the admin page. */
+    match /enquiries/{enquiryId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    /* ---------- instructor_enquiries ---------- */
+    /* Server-side copy of each enquiry stored under the
+       instructor's name, written only by the Cloud Function
+       (Admin SDK). Never readable or writable from the browser
+       — not even the admin page needs to read this directly,
+       since the admin page reads the flat /enquiries collection.
+       Locked down entirely at the client level. */
+    match /instructor_enquiries/{instructorName}/enquiries/{docId} {
+      allow read, write: if false;
+    }
+
+    /* ---------- Contact Form ---------- */
+    /* Contact form submissions written by the browser (anyone
+       can submit). Cloud Function (Admin SDK) reads each new
+       doc to send the support email and log to Sheets. Nobody
+       can read submissions back from the browser — not even the
+       admin page (use Firestore console or Sheets for that). */
+    match /contact_form/{docId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    /* ---------- call_logs ---------- */
+    /* Call-button taps written by the browser when a visitor
+       taps Call Instructor. Stored under the instructor's name
+       as a subcollection. Cloud Function (Admin SDK) reads each
+       new log to append a row to Google Sheets. Visitors can
+       only create their own tap record — nobody can read them
+       back from the browser. */
+    match /call_logs/{instructorName}/logs/{logId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    /* ---------- everything else ---------- */
+    /* Deny by default. Any new collection added in future must
+       have an explicit rule above — never rely on this fallback
+       to accidentally allow access. */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
