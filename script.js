@@ -180,6 +180,7 @@ function trackCall(instructorId, instructorName, suburb, licenceStage) {
   // Save to Firestore — Cloud Function picks this up and logs to Sheets
   try {
     const safeName = instructorName.replace(/[\/\\]/g, '-');
+    const now = new Date();
     db.collection('call_logs')
       .doc(safeName)
       .collection('logs')
@@ -188,6 +189,8 @@ function trackCall(instructorId, instructorName, suburb, licenceStage) {
         instructorName,
         suburb:       suburb       || '',
         licenceStage: licenceStage || '',
+        date: now.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: '2-digit', month: 'short', year: 'numeric' }),
+        time: now.toLocaleTimeString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', hour12: true }),
         calledAt: firebase.firestore.FieldValue.serverTimestamp(),
       }).catch(() => { /* silent — localStorage already saved */ });
   } catch(e) { /* silent */ }
