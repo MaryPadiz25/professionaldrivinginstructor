@@ -300,11 +300,11 @@ function instructorCardHTML(inst, distKm) {
   }
 
   const locationLabel = inst.state
-    ? `<span class="card-loc-stack">${inst.baseSuburb}, ${inst.state}<br><span class="card-loc-suburbs">Surrounding Suburbs</span></span>`
+    ? `<span class="card-loc-stack">${cleanSuburb(inst.baseSuburb)}, ${inst.state}<br><span class="card-loc-suburbs">Surrounding Suburbs</span></span>`
     : inst.location;
 
   const distLabel = distKm !== undefined
-    ? `<div class="card-dist-row">${ICONS.mapPin} ${inst.baseSuburb} &bull; <strong>${distKm.toFixed(1)} km away</strong></div>`
+    ? `<div class="card-dist-row">${ICONS.mapPin} ${cleanSuburb(inst.baseSuburb)} &bull; <strong>${distKm.toFixed(1)} km away</strong></div>`
     : `<div class="card-meta-row card-meta-location">${ICONS.pin} ${locationLabel}</div>`;
 
   // Tagline: prefer Teaching Approach tags submitted via the join form; fall back to a sensible default
@@ -483,7 +483,7 @@ function renderProfile(id) {
   const serviceAreaBlock = `
     <div class="qs-block">
       <div class="qs-item-label">Service Area</div>
-      <div class="qs-item-value">Based in ${inst.baseSuburb}${inst.state ? ', ' + inst.state : ''}</div>
+      <div class="qs-item-value">Based in ${cleanSuburb(inst.baseSuburb)}${inst.state ? ', ' + inst.state : ''}</div>
       <div class="qs-item-value">Travel Range: ${inst.serviceRadius} km</div>
       <div class="qs-item-value qs-travel-note">Travel outside service area may be available by arrangement (additional fee may apply).</div>
       ${inst.travelFee   ? `<div class="qs-item-value qs-travel-note">May charge travel fee for outer areas</div>` : ''}
@@ -1267,14 +1267,14 @@ function buildLiveProfileFromApp(app, appId) {
     initials,
     name:         app.name,
     title:        'Professional Driving Instructor',
-    baseSuburb:   app.suburb,
+    baseSuburb:   cleanSuburb(app.suburb),
     state:        app.state || '',
     baseLat:      null,
     baseLng:      null,
     serviceRadius: parseInt(app.radius) || 10,
     travelBonus:  false,
     travelFee:    false,
-    location:     '<span class="profile-loc-stack">' + app.suburb + (app.state ? ', ' + app.state : '') + '<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span>',
+    location:     '<span class="profile-loc-stack">' + cleanSuburb(app.suburb) + (app.state ? ', ' + app.state : '') + '<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span>',
     experience:   expLabel,
     customQS:     true,
     lessonFees:   feesArr,
@@ -1366,13 +1366,13 @@ function renderAdminPage(extra, apps) {
     initials: '${initials}',
     name: '${app.name}',
     title: 'Professional Driving Instructor',
-    baseSuburb: '${app.suburb}',
+    baseSuburb: '${cleanSuburb(app.suburb)}',
     state: '${app.state || ''}',
-    baseLat: -37.8136, baseLng: 144.9631,  // TODO: update with real coords for ${app.suburb}
+    baseLat: -37.8136, baseLng: 144.9631,  // TODO: update with real coords for ${cleanSuburb(app.suburb)}
     serviceRadius: ${app.radius || 10},
     travelBonus: false,
     travelFee: false,
-    location: '<span class="profile-loc-stack">${app.suburb}${app.state ? ', ' + app.state : ''}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span>',
+    location: '<span class="profile-loc-stack">${cleanSuburb(app.suburb)}${app.state ? ', ' + app.state : ''}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span>',
     transmission: '${transmission}',
     experience: '${expLabel}',
     lessonFees: [
@@ -1667,13 +1667,13 @@ function renderPendingProfile(app) {
         <div>
           <div class="profile-name" style="font-size:22px">${app.name}${expYears >= 10 ? '<span class="senior-badge" title="10+ Years Experience">⭐</span>' : ''}</div>
           <div class="profile-title">Professional Driving Instructor</div>
-          <div class="profile-location">${ICONS.pin} <span class="profile-loc-stack">${app.suburb}${app.state ? ', ' + app.state : ''}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span></div>
+          <div class="profile-location">${ICONS.pin} <span class="profile-loc-stack">${cleanSuburb(app.suburb)}${app.state ? ', ' + app.state : ''}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span></div>
         </div>
       </div>
       <div class="quick-summary" style="margin-top:20px">
         <div class="qs-title">Instructor Profile</div>
         <div class="qs-grid">
-          <div class="qs-item"><div class="qs-item-label">Service Area</div><div class="qs-item-value">Based in ${app.suburb}${app.state ? ', ' + app.state : ''}</div></div>
+          <div class="qs-item"><div class="qs-item-label">Service Area</div><div class="qs-item-value">Based in ${cleanSuburb(app.suburb)}${app.state ? ', ' + app.state : ''}</div></div>
           <div class="qs-item"><div class="qs-item-label">Travel Radius</div><div class="qs-item-value">Up to ${app.radius} km<div class="qs-travel-note">Travel outside service area may be available by arrangement (additional fee may apply).</div></div></div>
           <div class="qs-item"><div class="qs-item-label">Transmission</div><div class="qs-item-value">${transmission}</div></div>
           <div class="qs-item"><div class="qs-item-label">Experience</div><div class="qs-item-value">${expLabel}</div></div>
@@ -1711,6 +1711,17 @@ function credStatus(adminProvided, value) {
 /* HTML-escape helper for code blocks */
 function escHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* Strip a trailing postcode from a suburb string so only the suburb name is ever
+   shown publicly (e.g. "Horsham-3400", "Horsham 3400", "Horsham, 3400" → "Horsham").
+   Some instructors type their postcode into the suburb field; this normalises
+   display everywhere without requiring a data fix in Firestore. */
+function cleanSuburb(str) {
+  if (!str) return str;
+  return String(str)
+    .replace(/[\s,-]*\b\d{4}\b\s*$/, '')   // trailing 4-digit AU postcode, with optional separator
+    .trim();
 }
 
 /* Admin page event bindings */
@@ -1863,7 +1874,7 @@ function bindAdminEvents() {
       const name     = v(`ep-name-${appId}`);
       const email    = v(`ep-email-${appId}`);
       const phone    = v(`ep-phone-${appId}`);
-      const suburb   = v(`ep-suburb-${appId}`);
+      const suburb   = cleanSuburb(v(`ep-suburb-${appId}`));
       const state    = v(`ep-state-${appId}`);
       const radius   = parseInt(v(`ep-radius-${appId}`)) || 10;
       const fee60    = v(`ep-fee60-${appId}`);
@@ -2211,8 +2222,8 @@ function updatePageMeta(page, extra) {
     const inst = getAllInstructors().find(i => i.id === extra);
     if (inst) {
       meta = {
-        title: `${inst.name} — Driving Instructor in ${inst.baseSuburb}, Melbourne | PDIN`,
-        desc:  inst.bio ? inst.bio.slice(0, 155) + '…' : `${inst.name} is a professional driving instructor based in ${inst.baseSuburb}, Melbourne. View profile, lesson fees, and contact details.`,
+        title: `${inst.name} — Driving Instructor in ${cleanSuburb(inst.baseSuburb)}, Melbourne | PDIN`,
+        desc:  inst.bio ? inst.bio.slice(0, 155) + '…' : `${inst.name} is a professional driving instructor based in ${cleanSuburb(inst.baseSuburb)}, Melbourne. View profile, lesson fees, and contact details.`,
       };
     }
   }
@@ -2686,7 +2697,7 @@ function bindPageEvents() {
       const name   = document.getElementById('join-name').value.trim();
       const email  = document.getElementById('join-email').value.trim();
       const dia    = (document.getElementById('join-dia') || {}).value?.trim() || '';
-      const suburb = (document.getElementById('join-suburb') || {}).value?.trim() || '';
+      const suburb = cleanSuburb((document.getElementById('join-suburb') || {}).value?.trim() || '');
       const state  = (document.getElementById('join-state')  || {}).value || '';
       const decl1  = document.getElementById('join-decl-1')?.checked || false;
 
