@@ -1292,32 +1292,10 @@ function buildLiveProfileFromApp(app, appId) {
   return { idSlug, liveProfile };
 }
 
-/* Trash retention window — records in Trash older than this are
-   permanently purged automatically (see purgeExpiredTrash). */
-const TRASH_RETENTION_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-/* Sweep the in-memory applications list for trashed records whose 24h
-   window has elapsed, permanently delete them (and any orphaned live
-   profile) from Firestore, and return the list with them removed.
-   Called every time the admin page loads applications, so the purge
-   happens automatically without needing a server-side cron job. */
+/* Trash keeps records indefinitely — nothing is auto-purged.
+   Records stay in Trash until manually deleted from the Trash tab. */
 function purgeExpiredTrash(apps) {
-  const now = Date.now();
-  const expired = apps.filter(a => {
-    if (a.status !== 'trashed' || !a.trashedAt) return false;
-    const trashedDate = a.trashedAt.toDate ? a.trashedAt.toDate() : new Date(a.trashedAt);
-    return (now - trashedDate.getTime()) > TRASH_RETENTION_MS;
-  });
-  if (!expired.length) return Promise.resolve(apps);
-
-  return Promise.all(expired.map(a =>
-    Promise.all([
-      db.collection('applications').doc(a.id).delete(),
-      db.collection('live_profiles').where('_fromApp', '==', a.id).get()
-        .then(snap => Promise.all(snap.docs.map(d => d.ref.delete())))
-    ])
-  )).then(() => apps.filter(a => !expired.includes(a)))
-    .catch(err => { console.error('Trash auto-purge failed:', err); return apps; });
+  return Promise.resolve(apps);
 }
 
 function renderAdminPage(extra, apps) {
@@ -1366,19 +1344,8 @@ function renderAdminPage(extra, apps) {
       ? `<span class="admin-status-badge admin-badge-trashed">🗑 Trashed</span>`
       : `<span class="admin-status-badge admin-badge-pending">Pending Review</span>`;
 
-    // Countdown for trashed records — auto-purges 24h after trashedAt
-    let trashCountdown = '';
-    if (app.status === 'trashed' && app.trashedAt) {
-      const trashedDate = app.trashedAt.toDate ? app.trashedAt.toDate() : new Date(app.trashedAt);
-      const msLeft = TRASH_RETENTION_MS - (Date.now() - trashedDate.getTime());
-      if (msLeft > 0) {
-        const hrsLeft  = Math.floor(msLeft / 3600000);
-        const minsLeft = Math.floor((msLeft % 3600000) / 60000);
-        trashCountdown = `Permanently deletes in ${hrsLeft}h ${minsLeft}m unless restored.`;
-      } else {
-        trashCountdown = `Pending automatic permanent deletion…`;
-      }
-    }
+    // Trashed records stay until manually deleted
+    let trashNote = 'This record has been moved to Trash. Restore it or delete it permanently.';
 
     // Build the code block that gets copied on approve
     const idSlug     = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
@@ -1432,11 +1399,16 @@ ${expertiseIdStr}
     return `
       <div class="admin-app-card" id="admin-card-${app.id}">
         <div class="admin-app-header">
-          <div class="admin-app-avatar">${initials}</div>
+          ${app.photoDataUrl
+            ? `<img src="${app.photoDataUrl}" alt="${app.name}" class="admin-app-avatar-photo" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
+            : `<div class="admin-app-avatar">${initials}</div>`
+          }
           <div class="admin-app-meta">
             <div class="admin-app-name">${app.name} ${statusBadge}</div>
-            <div class="admin-app-sub">${app.email} · ${app.phone}</div>
-            <div class="admin-app-sub">DIA: ${app.dia} · Submitted: ${submitted}</div>
+            <div class="admin-app-sub">${app.email}</div>
+            <div class="admin-app-sub">${app.phone}</div>
+            <div class="admin-app-sub">DIA: ${app.dia}</div>
+            <div class="admin-app-sub">Submitted: ${submitted}</div>
           </div>
         </div>
 
@@ -1497,7 +1469,7 @@ ${expertiseIdStr}
           <button class="btn btn-outline admin-edit-btn" data-appid="${app.id}">✏️ Edit Profile</button>
           <button class="btn btn-outline admin-delete-btn" data-appid="${app.id}">🗑 Move to Trash</button>
         </div>` : `
-        <div class="admin-trash-note">🗑 ${trashCountdown}</div>
+        <div class="admin-trash-note">🗑 ${trashNote}</div>
         <div class="admin-app-actions">
           <button class="btn btn-navy admin-trash-restore-btn" data-appid="${app.id}">↩ Restore</button>
           <button class="btn btn-outline admin-trash-purge-btn" data-appid="${app.id}" style="color:#c0392b;border-color:#c0392b">🗑 Delete Permanently</button>
@@ -1542,9 +1514,9 @@ ${expertiseIdStr}
               <div class="admin-edit-row"><label>DIA Number</label><input class="form-input" id="ep-dia-${app.id}" value="${escHtml(app.dia||'')}" /></div>
               <div class="admin-edit-row"><label>WWCC Number <span style="font-weight:400;color:var(--text-light)">(optional)</span></label><input class="form-input" id="ep-wwcc-${app.id}" value="${escHtml(app.wwcc||'')}" /></div>
               <div class="admin-edit-row admin-edit-row-check">
-                <label><input type="checkbox" id="ep-cred-dia-${app.id}" ${app.credentials?.dia==='verified'?'checked':''} /> Mark DIA as Verified</label>
-                <label><input type="checkbox" id="ep-cred-wwcc-${app.id}" ${app.credentials?.wwcc==='verified'?'checked':''} /> Mark WWCC as Verified</label>
-                <small class="form-hint">If left unticked, the profile will show "Provided" when a number is entered above, or "Not provided" if left blank.</small>
+                <label><input type="checkbox" id="ep-cred-dia-${app.id}" ${app.credentials?.dia==='provided'||app.credentials?.dia==='verified'?'checked':''} /> Mark DIA as Provided</label>
+                <label><input type="checkbox" id="ep-cred-wwcc-${app.id}" ${app.credentials?.wwcc==='provided'||app.credentials?.wwcc==='verified'?'checked':''} /> Mark WWCC as Provided</label>
+                <small class="form-hint">Ticked = shows "Provided" on live profile. Unticked = shows "Not Provided".</small>
               </div>
             </div>
             <div class="admin-edit-section">
@@ -1622,7 +1594,9 @@ ${expertiseIdStr}
       </div>`;
   }
 
-  const noneMsg = `<div class="admin-empty">No applications yet. They'll appear here when instructors submit the join form.</div>`;
+  const noneMsg      = `<div class="admin-empty">No applications yet. They'll appear here when instructors submit the join form.</div>`;
+  const noneRejected = `<div class="admin-empty">Rejected applications will appear here.</div>`;
+  const noneTrash    = `<div class="admin-empty">Trash is empty. Deleted records appear here and stay until permanently removed.</div>`;
 
   return `
     <div class="admin-page">
@@ -1646,15 +1620,15 @@ ${expertiseIdStr}
         ${approved.length ? approved.map(appCard).join('') : noneMsg}
       </div>
       <div class="admin-tab-panel" id="admin-panel-rejected" style="display:none">
-        ${rejected.length ? rejected.map(appCard).join('') : noneMsg}
+        ${rejected.length ? rejected.map(appCard).join('') : noneRejected}
       </div>
       <div class="admin-tab-panel" id="admin-panel-trash" style="display:none">
-        ${trashed.length ? trashed.map(appCard).join('') : `<div class="admin-empty">Trash is empty. Deleted records appear here for 24 hours before being permanently removed.</div>`}
+        ${trashed.length ? trashed.map(appCard).join('') : noneTrash}
       </div>
 
       <div class="admin-footer-note">
         <p>💡 <strong>How it works:</strong> Click <em>Approve &amp; Publish Live</em> to instantly publish an instructor's profile on the live website — no manual copy-paste needed. Applications and live profiles are stored in a shared cloud database, so this admin panel works the same from any device once you're signed in.</p>
-        <p>🗑 <strong>Trash:</strong> "Move to Trash" takes a record (and its live profile, if any) off the site but keeps it recoverable for 24 hours. Restore it any time within that window, or delete it permanently from the Trash tab. Anything left in Trash past 24 hours is removed automatically.</p>
+        <p>🗑 <strong>Trash:</strong> "Move to Trash" takes a record (and its live profile, if any) off the site but keeps it recoverable. Restore it any time, or delete it permanently from the Trash tab. Records stay in Trash indefinitely until you remove them.</p>
       </div>
     </div>`;
 }
@@ -1725,9 +1699,8 @@ function renderPendingProfile(app) {
 }
 
 /* Credential status: admin-verified takes priority, then instructor-provided, else not provided */
-function credStatus(adminVerified, value) {
-  if (adminVerified) return 'verified';
-  if (value) return 'provided';
+function credStatus(adminProvided, value) {
+  if (adminProvided) return 'provided';
   return 'not_provided';
 }
 
