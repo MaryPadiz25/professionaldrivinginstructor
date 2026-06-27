@@ -1633,6 +1633,11 @@ ${expertiseIdStr}
       <div class="admin-footer-note">
         <p>💡 <strong>How it works:</strong> Click <em>Approve &amp; Publish Live</em> to instantly publish an instructor's profile on the live website — no manual copy-paste needed. Applications and live profiles are stored in a shared cloud database, so this admin panel works the same from any device once you're signed in.</p>
         <p>🗑 <strong>Trash:</strong> "Move to Trash" takes a record (and its live profile, if any) off the site but keeps it recoverable. Restore it any time, or delete it permanently from the Trash tab. Records stay in Trash indefinitely until you remove them.</p>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e2e8f0">
+          <p style="margin-bottom:8px">📍 <strong>Search distance not working?</strong> Use this to geocode all live profiles that are missing coordinates.</p>
+          <button class="btn btn-navy" id="admin-geocode-all-btn" style="font-size:0.85rem;padding:8px 16px">Fix Search Coordinates for All Profiles</button>
+          <span id="admin-geocode-status" style="margin-left:12px;font-size:0.85rem;color:#4a5568"></span>
+        </div>
       </div>
     </div>`;
 }
@@ -1782,10 +1787,16 @@ function bindAdminEvents() {
       const appId = btn.dataset.appid;
       btn.disabled = true; btn.textContent = 'Publishing…';
 
-      db.collection('applications').doc(appId).get().then(doc => {
+      db.collection('applications').doc(appId).get().then(async doc => {
         if (!doc.exists) return;
         const app = doc.data();
         const { idSlug, liveProfile } = buildLiveProfileFromApp(app, appId);
+
+        // Geocode the instructor's suburb so distance search works correctly
+        try {
+          const geo = await geocodeSuburb(app.suburb || '');
+          if (geo) { liveProfile.baseLat = geo.lat; liveProfile.baseLng = geo.lng; }
+        } catch(e) { /* proceed without coords — better than blocking the publish */ }
 
         return Promise.all([
           db.collection('applications').doc(appId).update({ status: 'approved' }),
@@ -1922,7 +1933,7 @@ function bindAdminEvents() {
       const photoInput = document.getElementById(`ep-photo-${appId}`);
       const photoFile  = photoInput?.files?.[0] || null;
 
-      function doSave(photoDataUrl) {
+      async function doSave(photoDataUrl) {
         if (photoDataUrl !== undefined) updates.photoDataUrl = photoDataUrl;
 
         const writes = [db.collection('applications').doc(appId).update(updates)];
@@ -1951,6 +1962,12 @@ function bindAdminEvents() {
             contactUnavailable: unavail,
           };
           if (photoDataUrl !== undefined) liveUpdates.photoDataUrl = photoDataUrl;
+
+          // Geocode the (possibly updated) suburb so distance search stays accurate
+          try {
+            const geo = await geocodeSuburb(suburb || '');
+            if (geo) { liveUpdates.baseLat = geo.lat; liveUpdates.baseLng = geo.lng; }
+          } catch(e) { /* proceed without coords */ }
 
           writes.push(
             db.collection('live_profiles').where('_fromApp', '==', appId).get()
@@ -2035,7 +2052,7 @@ function bindAdminEvents() {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
       btn.disabled = true;
-      db.collection('applications').doc(appId).get().then(doc => {
+      db.collection('applications').doc(appId).get().then(async doc => {
         if (!doc.exists) return;
         const app = doc.data();
         const restoredStatus = app.prevStatus || 'pending';
@@ -2046,6 +2063,11 @@ function bindAdminEvents() {
         });
         if (restoredStatus === 'approved') {
           const { idSlug, liveProfile } = buildLiveProfileFromApp(app, appId);
+          // Geocode so restored profile works in distance search
+          try {
+            const geo = await geocodeSuburb(app.suburb || '');
+            if (geo) { liveProfile.baseLat = geo.lat; liveProfile.baseLng = geo.lng; }
+          } catch(e) { /* proceed without coords */ }
           return Promise.all([updatePromise, db.collection('live_profiles').doc(idSlug).set(liveProfile)]);
         }
         return updatePromise;
@@ -2070,6 +2092,51 @@ function bindAdminEvents() {
       .catch(err => { console.error('Permanent delete failed:', err); showToast('Could not permanently delete this record.'); btn.disabled = false; });
     });
   });
+
+  // Fix Search Coordinates — geocodes every live profile that has null/missing coords
+  const geocodeAllBtn = document.getElementById('admin-geocode-all-btn');
+  if (geocodeAllBtn) {
+    geocodeAllBtn.addEventListener('click', async () => {
+      geocodeAllBtn.disabled = true;
+      const statusEl = document.getElementById('admin-geocode-status');
+      statusEl.textContent = 'Loading profiles…';
+      try {
+        const snap = await db.collection('live_profiles').get();
+        const docs = snap.docs;
+        const missing = docs.filter(d => { const v = d.data(); return !v.baseLat || !v.baseLng; });
+        if (!missing.length) {
+          statusEl.textContent = '✅ All profiles already have coordinates!';
+          geocodeAllBtn.disabled = false;
+          return;
+        }
+        statusEl.textContent = `Found ${missing.length} profile(s) without coordinates. Geocoding…`;
+        let done = 0, failed = 0;
+        for (const docSnap of missing) {
+          const data = docSnap.data();
+          const suburb = data.baseSuburb || '';
+          try {
+            // Nominatim rate-limit: 1 request/second
+            await new Promise(r => setTimeout(r, 1100));
+            const geo = await geocodeSuburb(suburb);
+            if (geo) {
+              await docSnap.ref.update({ baseLat: geo.lat, baseLng: geo.lng });
+              done++;
+            } else {
+              failed++;
+            }
+          } catch(e) {
+            failed++;
+          }
+          statusEl.textContent = `Geocoding… ${done + failed} / ${missing.length} done`;
+        }
+        statusEl.textContent = `✅ Done! ${done} fixed, ${failed} could not be geocoded.`;
+      } catch(e) {
+        console.error('Geocode-all failed:', e);
+        statusEl.textContent = '❌ Error — check the console.';
+      }
+      geocodeAllBtn.disabled = false;
+    });
+  }
 }
 
 /* =============================================
