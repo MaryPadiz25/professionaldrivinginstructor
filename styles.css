@@ -388,7 +388,6 @@ main { flex: 1; }
   min-width: 16px;
   display: block;
 }
-.card-meta-location { align-items: flex-start; }
 .card-loc-suburbs {
   display: block;
   font-size: 12.5px;
@@ -682,10 +681,13 @@ main { flex: 1; }
 .profile-title  { font-size: 15px; color: var(--text-light); margin-bottom: 6px; }
 .profile-location {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 5px;
   font-size: 14.5px;
   color: var(--text-body);
+}
+.profile-location svg {
+  flex-shrink: 0;
 }
 .profile-loc-suburbs {
   display: block;
