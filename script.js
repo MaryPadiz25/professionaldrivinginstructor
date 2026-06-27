@@ -263,22 +263,13 @@ const EMAILJS_PUBLIC_KEY = '6h-VvWML9Chj5QA2a';
    SUBURB GEOCODING (OpenStreetMap Nominatim)
    ============================================= */
 async function geocodeSuburb(query) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=au&limit=1&q=${encodeURIComponent(query + ', VIC, Australia')}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=au&limit=1&addressdetails=1&q=${encodeURIComponent(query + ', Australia')}`;
   const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
   const data = await res.json();
   if (!data.length) return null;
-  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name.split(',')[0] };
-}
-
-/* After geocoding a suburb we do a reverse-geocode to get the AU postcode.
-   Nominatim returns it in address.postcode for Australian results. */
-async function lookupPostcode(lat, lng) {
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
-    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-    const data = await res.json();
-    return (data.address && data.address.postcode) ? data.address.postcode : null;
-  } catch(e) { return null; }
+  const r   = data[0];
+  const pc  = (r.address && r.address.postcode) ? r.address.postcode.split(';')[0].trim() : null;
+  return { lat: parseFloat(r.lat), lng: parseFloat(r.lon), display: r.display_name.split(',')[0], postcode: pc };
 }
 
 function sortInstructorsByDistance(lat, lng, instructorList) {
@@ -1820,8 +1811,7 @@ function bindAdminEvents() {
           if (geo) {
             liveProfile.baseLat = geo.lat;
             liveProfile.baseLng = geo.lng;
-            const pc = await lookupPostcode(geo.lat, geo.lng);
-            if (pc) liveProfile.basePostcode = pc;
+            if (geo.postcode) liveProfile.basePostcode = geo.postcode;
           }
         } catch(e) { /* proceed without coords — better than blocking the publish */ }
 
@@ -1996,8 +1986,7 @@ function bindAdminEvents() {
             if (geo) {
               liveUpdates.baseLat = geo.lat;
               liveUpdates.baseLng = geo.lng;
-              const pc = await lookupPostcode(geo.lat, geo.lng);
-              if (pc) liveUpdates.basePostcode = pc;
+              if (geo.postcode) liveUpdates.basePostcode = geo.postcode;
             }
           } catch(e) { /* proceed without coords */ }
 
@@ -2101,8 +2090,7 @@ function bindAdminEvents() {
             if (geo) {
               liveProfile.baseLat = geo.lat;
               liveProfile.baseLng = geo.lng;
-              const pc = await lookupPostcode(geo.lat, geo.lng);
-              if (pc) liveProfile.basePostcode = pc;
+              if (geo.postcode) liveProfile.basePostcode = geo.postcode;
             }
           } catch(e) { /* proceed without coords */ }
           return Promise.all([updatePromise, db.collection('live_profiles').doc(idSlug).set(liveProfile)]);
@@ -2157,8 +2145,7 @@ function bindAdminEvents() {
             const geo = await geocodeSuburb(suburb);
             if (geo) {
               const update = { baseLat: geo.lat, baseLng: geo.lng };
-              const pc = await lookupPostcode(geo.lat, geo.lng);
-              if (pc) update.basePostcode = pc;
+              if (geo.postcode) update.basePostcode = geo.postcode;
               await docSnap.ref.update(update);
               done++;
             } else {
