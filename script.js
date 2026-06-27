@@ -749,7 +749,11 @@ function renderJoin() {
               <option value="15">15 km</option>
               <option value="20">20 km</option>
               <option value="30">30 km</option>
+              <option value="40">40 km</option>
               <option value="50">50 km</option>
+              <option value="60">60 km</option>
+              <option value="80">80 km</option>
+              <option value="100">100 km</option>
             </select>
           </div>
           <div class="join-step-nav">
@@ -1495,7 +1499,7 @@ ${expertiseIdStr}
               </div>
               <div class="admin-edit-row"><label>Travel Radius (km)</label>
                 <select class="form-input" id="ep-radius-${app.id}">
-                  ${[10,15,20,30,50].map(r=>`<option value="${r}" ${parseInt(app.radius)===r?'selected':''}>${r} km</option>`).join('')}
+                  ${[10,15,20,30,40,50,60,80,100].map(r=>`<option value="${r}" ${parseInt(app.radius)===r?'selected':''}>${r} km</option>`).join('')}
                 </select>
               </div>
             </div>
