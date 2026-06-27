@@ -270,6 +270,17 @@ async function geocodeSuburb(query) {
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name.split(',')[0] };
 }
 
+/* After geocoding a suburb we do a reverse-geocode to get the AU postcode.
+   Nominatim returns it in address.postcode for Australian results. */
+async function lookupPostcode(lat, lng) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`;
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const data = await res.json();
+    return (data.address && data.address.postcode) ? data.address.postcode : null;
+  } catch(e) { return null; }
+}
+
 function sortInstructorsByDistance(lat, lng, instructorList) {
   const list = instructorList || getAllInstructors();
   return list
@@ -299,13 +310,13 @@ function instructorCardHTML(inst, distKm) {
     else if (inst.travelBonus && distKm <= inst.serviceRadius + 8) badge = `<span class="card-badge badge-travel">Travels for Longer Lessons</span>`;
   }
 
-  const locationLabel = inst.state
-    ? `<span class="card-loc-stack">${cleanSuburb(inst.baseSuburb)}, ${inst.state}<br><span class="card-loc-suburbs">Surrounding Suburbs</span></span>`
+  const cardLocHTML = inst.state
+    ? `<span class="card-loc-stack">${locationLabel(inst)}<br><span class="card-loc-suburbs">Surrounding Suburbs</span></span>`
     : inst.location;
 
   const distLabel = distKm !== undefined
     ? `<div class="card-dist-row">${ICONS.mapPin} ${cleanSuburb(inst.baseSuburb)} &bull; <strong>${distKm.toFixed(1)} km away</strong></div>`
-    : `<div class="card-meta-row card-meta-location">${ICONS.pin} ${locationLabel}</div>`;
+    : `<div class="card-meta-row card-meta-location">${ICONS.pin} ${cardLocHTML}</div>`;
 
   // Tagline: prefer Teaching Approach tags submitted via the join form; fall back to a sensible default
   const teachingLabels = (inst.teachingApproachIds && inst.teachingApproachIds.length)
@@ -483,7 +494,7 @@ function renderProfile(id) {
   const serviceAreaBlock = `
     <div class="qs-block">
       <div class="qs-item-label">Service Area</div>
-      <div class="qs-item-value">Based in ${cleanSuburb(inst.baseSuburb)}${inst.state ? ', ' + inst.state : ''}</div>
+      <div class="qs-item-value">Based in ${locationLabel(inst)}</div>
       <div class="qs-item-value">Travel Range: ${inst.serviceRadius} km</div>
       <div class="qs-item-value qs-travel-note">Travel outside service area may be available by arrangement (additional fee may apply).</div>
       ${inst.travelFee   ? `<div class="qs-item-value qs-travel-note">May charge travel fee for outer areas</div>` : ''}
@@ -548,7 +559,7 @@ function renderProfile(id) {
           <div>
             <div class="profile-name">${inst.name}${inst.seniorBadge ? '<span class="senior-badge" title="10+ Years Experience — Premium Badge">⭐</span>' : ''}</div>
             <div class="profile-title">${inst.title}</div>
-            <div class="profile-location">${ICONS.pin} ${inst.location}</div>
+            <div class="profile-location">${ICONS.pin} <span class="profile-loc-stack">${locationLabel(inst)}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span></div>
           </div>
         </div>
         <div class="quick-summary">
@@ -1729,6 +1740,17 @@ function cleanSuburb(str) {
     .trim();
 }
 
+/* Build a full location label: "Suburb, VIC 3400" */
+function locationLabel(inst) {
+  const suburb = cleanSuburb(inst.baseSuburb || inst.suburb || '');
+  const state  = inst.state || '';
+  const pc     = inst.basePostcode || '';
+  let label = suburb;
+  if (state) label += ', ' + state;
+  if (pc)    label += ' ' + pc;
+  return label;
+}
+
 /* Admin page event bindings */
 function bindAdminEvents() {
   // Firebase Auth sign-in
@@ -1795,7 +1817,12 @@ function bindAdminEvents() {
         // Geocode the instructor's suburb so distance search works correctly
         try {
           const geo = await geocodeSuburb(app.suburb || '');
-          if (geo) { liveProfile.baseLat = geo.lat; liveProfile.baseLng = geo.lng; }
+          if (geo) {
+            liveProfile.baseLat = geo.lat;
+            liveProfile.baseLng = geo.lng;
+            const pc = await lookupPostcode(geo.lat, geo.lng);
+            if (pc) liveProfile.basePostcode = pc;
+          }
         } catch(e) { /* proceed without coords — better than blocking the publish */ }
 
         return Promise.all([
@@ -1966,7 +1993,12 @@ function bindAdminEvents() {
           // Geocode the (possibly updated) suburb so distance search stays accurate
           try {
             const geo = await geocodeSuburb(suburb || '');
-            if (geo) { liveUpdates.baseLat = geo.lat; liveUpdates.baseLng = geo.lng; }
+            if (geo) {
+              liveUpdates.baseLat = geo.lat;
+              liveUpdates.baseLng = geo.lng;
+              const pc = await lookupPostcode(geo.lat, geo.lng);
+              if (pc) liveUpdates.basePostcode = pc;
+            }
           } catch(e) { /* proceed without coords */ }
 
           writes.push(
@@ -2066,7 +2098,12 @@ function bindAdminEvents() {
           // Geocode so restored profile works in distance search
           try {
             const geo = await geocodeSuburb(app.suburb || '');
-            if (geo) { liveProfile.baseLat = geo.lat; liveProfile.baseLng = geo.lng; }
+            if (geo) {
+              liveProfile.baseLat = geo.lat;
+              liveProfile.baseLng = geo.lng;
+              const pc = await lookupPostcode(geo.lat, geo.lng);
+              if (pc) liveProfile.basePostcode = pc;
+            }
           } catch(e) { /* proceed without coords */ }
           return Promise.all([updatePromise, db.collection('live_profiles').doc(idSlug).set(liveProfile)]);
         }
@@ -2103,7 +2140,7 @@ function bindAdminEvents() {
       try {
         const snap = await db.collection('live_profiles').get();
         const docs = snap.docs;
-        const missing = docs.filter(d => { const v = d.data(); return !v.baseLat || !v.baseLng; });
+        const missing = docs.filter(d => { const v = d.data(); return !v.baseLat || !v.baseLng || !v.basePostcode; });
         if (!missing.length) {
           statusEl.textContent = '✅ All profiles already have coordinates!';
           geocodeAllBtn.disabled = false;
@@ -2119,7 +2156,10 @@ function bindAdminEvents() {
             await new Promise(r => setTimeout(r, 1100));
             const geo = await geocodeSuburb(suburb);
             if (geo) {
-              await docSnap.ref.update({ baseLat: geo.lat, baseLng: geo.lng });
+              const update = { baseLat: geo.lat, baseLng: geo.lng };
+              const pc = await lookupPostcode(geo.lat, geo.lng);
+              if (pc) update.basePostcode = pc;
+              await docSnap.ref.update(update);
               done++;
             } else {
               failed++;
