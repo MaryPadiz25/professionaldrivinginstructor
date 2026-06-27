@@ -390,10 +390,11 @@ main { flex: 1; }
 }
 /* When location has two lines (suburb + "Surrounding Suburbs"), align icon to top */
 .card-meta-location {
-  align-items: flex-start;
+  align-items: baseline;
 }
 .card-meta-location svg {
-  margin-top: 2px;
+  position: relative;
+  top: 2px;
 }
 .card-loc-suburbs {
   display: block;
@@ -688,14 +689,15 @@ main { flex: 1; }
 .profile-title  { font-size: 15px; color: var(--text-light); margin-bottom: 6px; }
 .profile-location {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 5px;
   font-size: 14.5px;
   color: var(--text-body);
 }
 .profile-location svg {
   flex-shrink: 0;
-  margin-top: 2px;
+  position: relative;
+  top: 2px;
 }
 .profile-loc-suburbs {
   display: block;
