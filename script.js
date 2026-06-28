@@ -2315,6 +2315,11 @@ function bindAdminEvents() {
               }).catch(e => console.warn('Update email failed:', e));
             }
 
+            // Always reset the checkbox to unticked after every save,
+            // so the next save never accidentally re-sends the email.
+            const emailCb = document.getElementById(`ep-send-email-${appId}`);
+            if (emailCb) emailCb.checked = false;
+
             showToast('✅ Profile updated successfully.' + (sendUpdateEmail ? ' Notification email sent.' : ''));
           })
           .catch(err => {
