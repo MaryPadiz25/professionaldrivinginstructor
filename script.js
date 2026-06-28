@@ -2164,6 +2164,8 @@ function bindAdminEvents() {
 
   // ── Edit Profile: toggle panel open/closed ──
   document.querySelectorAll('.admin-edit-btn').forEach(btn => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
       const panel = document.getElementById('edit-panel-' + appId);
@@ -2177,6 +2179,8 @@ function bindAdminEvents() {
 
   // ── Edit Profile: cancel ──
   document.querySelectorAll('.admin-edit-cancel-btn').forEach(btn => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
       const panel = document.getElementById('edit-panel-' + appId);
@@ -2188,6 +2192,8 @@ function bindAdminEvents() {
 
   // ── Edit Profile: save ──
   document.querySelectorAll('.admin-edit-save-btn').forEach(btn => {
+    if (btn.dataset.bound === '1') return;   // already bound — skip to avoid duplicate listeners
+    btn.dataset.bound = '1';
     btn.addEventListener('click', () => {
       const appId  = btn.dataset.appid;
       const status = btn.dataset.status;
