@@ -2040,6 +2040,10 @@ function locationLabel(inst) {
   return label;
 }
 
+/* Tracks which admin save buttons have already had a listener attached.
+   A module-level Set survives innerHTML re-renders; a data- attribute does not. */
+const _adminBoundIds = new Set();
+
 /* Admin page event bindings */
 function bindAdminEvents() {
   // Firebase Auth sign-in
@@ -2164,8 +2168,6 @@ function bindAdminEvents() {
 
   // ── Edit Profile: toggle panel open/closed ──
   document.querySelectorAll('.admin-edit-btn').forEach(btn => {
-    if (btn.dataset.bound === '1') return;
-    btn.dataset.bound = '1';
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
       const panel = document.getElementById('edit-panel-' + appId);
@@ -2179,8 +2181,6 @@ function bindAdminEvents() {
 
   // ── Edit Profile: cancel ──
   document.querySelectorAll('.admin-edit-cancel-btn').forEach(btn => {
-    if (btn.dataset.bound === '1') return;
-    btn.dataset.bound = '1';
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
       const panel = document.getElementById('edit-panel-' + appId);
@@ -2192,8 +2192,9 @@ function bindAdminEvents() {
 
   // ── Edit Profile: save ──
   document.querySelectorAll('.admin-edit-save-btn').forEach(btn => {
-    if (btn.dataset.bound === '1') return;   // already bound — skip to avoid duplicate listeners
-    btn.dataset.bound = '1';
+    const appId = btn.dataset.appid;
+    if (_adminBoundIds.has(appId)) return;   // listener already attached for this profile
+    _adminBoundIds.add(appId);
     btn.addEventListener('click', () => {
       const appId  = btn.dataset.appid;
       const status = btn.dataset.status;
@@ -2689,7 +2690,10 @@ function navigate(page, extra, pushState = true) {
       })
       .then(apps => {
         const appEl = document.getElementById('app');
-        if (appEl) appEl.innerHTML = renderAdminPage(extra, apps);
+        if (appEl) {
+          _adminBoundIds.clear();   // DOM is being replaced — reset so new buttons get bound
+          appEl.innerHTML = renderAdminPage(extra, apps);
+        }
         bindPageEvents();
       })
       .catch(err => {
