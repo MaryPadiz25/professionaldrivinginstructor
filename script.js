@@ -280,11 +280,120 @@ async function geocodeSuburb(query) {
 let _acTimer = null;
 let _acCache = {};
 
+/* ── Local AU suburb list for instant prefix matching ──
+   Covers the major suburbs across all states. Nominatim is still used
+   to resolve lat/lng when the user selects a suggestion. */
+const AU_SUBURBS = [
+  // VIC
+  'Abbotsford, VIC 3067','Albert Park, VIC 3206','Alphington, VIC 3078','Altona, VIC 3018','Armadale, VIC 3143',
+  'Ascot Vale, VIC 3032','Ashburton, VIC 3147','Ashwood, VIC 3147','Aspendale, VIC 3195','Avondale Heights, VIC 3034',
+  'Balaclava, VIC 3183','Balwyn, VIC 3103','Balwyn North, VIC 3104','Berwick, VIC 3806','BlackBurn, VIC 3130',
+  'Blackburn North, VIC 3130','Blackburn South, VIC 3130','Box Hill, VIC 3128','Box Hill North, VIC 3129','Box Hill South, VIC 3128',
+  'Brighton, VIC 3186','Brighton East, VIC 3187','Broadmeadows, VIC 3047','Brunswick, VIC 3056','Brunswick East, VIC 3057',
+  'Brunswick West, VIC 3055','Bulleen, VIC 3105','Bundoora, VIC 3083','Burwood, VIC 3125','Burwood East, VIC 3151',
+  'Camberwell, VIC 3124','Canterbury, VIC 3126','Carlton, VIC 3053','Carlton North, VIC 3054','Carnegie, VIC 3163',
+  'Carrum, VIC 3197','Carrum Downs, VIC 3201','Caulfield, VIC 3162','Caulfield North, VIC 3161','Caulfield South, VIC 3162',
+  'Cheltenham, VIC 3192','Chelsea, VIC 3196','Chirnside Park, VIC 3116','Clarinda, VIC 3169','Clayton, VIC 3168',
+  'Clayton South, VIC 3169','Clifton Hill, VIC 3068','Coburg, VIC 3058','Coburg North, VIC 3058','Collingwood, VIC 3066',
+  'Craigieburn, VIC 3064','Cranbourne, VIC 3977','Croydon, VIC 3136','Doncaster, VIC 3108','Doncaster East, VIC 3109',
+  'Donvale, VIC 3111','Doveton, VIC 3177','Eaglemont, VIC 3084','East Melbourne, VIC 3002','Eltham, VIC 3095',
+  'Elsternwick, VIC 3185','Elwood, VIC 3184','Endeavour Hills, VIC 3802','Essendon, VIC 3040','Essendon North, VIC 3041',
+  'Essendon West, VIC 3040','Fairfield, VIC 3078','Fitzroy, VIC 3065','Fitzroy North, VIC 3068','Footscray, VIC 3011',
+  'Forest Hill, VIC 3131','Frankston, VIC 3199','Frankston North, VIC 3200','Frankston South, VIC 3199',
+  'Gardenvale, VIC 3185','Glen Iris, VIC 3146','Glen Waverley, VIC 3150','Glenroy, VIC 3046','Greensborough, VIC 3088',
+  'Hawthorn, VIC 3122','Hawthorn East, VIC 3123','Heidelberg, VIC 3084','Heidelberg West, VIC 3081',
+  'Highett, VIC 3190','Hoppers Crossing, VIC 3029','Hughesdale, VIC 3166','Ivanhoe, VIC 3079','Ivanhoe East, VIC 3079',
+  'Kensington, VIC 3031','Keysborough, VIC 3173','Kilsyth, VIC 3137','Knoxfield, VIC 3180','Kooyong, VIC 3144',
+  'Lalor, VIC 3075','Laverton, VIC 3028','Lower Plenty, VIC 3093','Macleod, VIC 3085','Malvern, VIC 3144',
+  'Malvern East, VIC 3145','McKinnon, VIC 3204','Melbourne, VIC 3000','Melbourne CBD, VIC 3000','Melton, VIC 3337',
+  'Mentone, VIC 3194','Mernda, VIC 3754','Middle Park, VIC 3206','Mill Park, VIC 3082','Mitcham, VIC 3132',
+  'Moonee Ponds, VIC 3039','Moorabbin, VIC 3189','Mooroolbark, VIC 3138','Mount Waverley, VIC 3149',
+  'Mulgrave, VIC 3170','Murrumbeena, VIC 3163','Niddrie, VIC 3042','Noble Park, VIC 3174','North Melbourne, VIC 3051',
+  'Northcote, VIC 3070','Nunawading, VIC 3131','Oakleigh, VIC 3166','Oakleigh East, VIC 3166','Oakleigh South, VIC 3167',
+  'Ormond, VIC 3204','Pakenham, VIC 3810','Pascoe Vale, VIC 3044','Point Cook, VIC 3030','Port Melbourne, VIC 3207',
+  'Prahran, VIC 3181','Preston, VIC 3072','Richmond, VIC 3121','Ringwood, VIC 3134','Ringwood East, VIC 3135',
+  'Ringwood North, VIC 3134','Rosanna, VIC 3084','Rowville, VIC 3178','Roxburgh Park, VIC 3064',
+  'Saint Albans, VIC 3021','Saint Kilda, VIC 3182','Saint Kilda East, VIC 3183','Saint Kilda West, VIC 3182',
+  'Sandringham, VIC 3191','Scoresby, VIC 3179','Seaford, VIC 3198','Seddon, VIC 3011','Sorrento, VIC 3943',
+  'South Melbourne, VIC 3205','South Yarra, VIC 3141','Southbank, VIC 3006','Spotswood, VIC 3015',
+  'Springvale, VIC 3171','Springvale South, VIC 3172','St Albans, VIC 3021','St Kilda, VIC 3182',
+  'Strathmore, VIC 3041','Sunshine, VIC 3020','Sunshine North, VIC 3020','Sunshine West, VIC 3020',
+  'Surrey Hills, VIC 3127','Templestowe, VIC 3106','Templestowe Lower, VIC 3107','Thornbury, VIC 3071',
+  'Toorak, VIC 3142','Tullamarine, VIC 3043','Vermont, VIC 3133','Vermont South, VIC 3133',
+  'Viewbank, VIC 3084','Wantirna, VIC 3152','Wantirna South, VIC 3152','Warrandyte, VIC 3113',
+  'Werribee, VIC 3030','West Footscray, VIC 3012','West Melbourne, VIC 3003','Wheelers Hill, VIC 3150',
+  'Williamstown, VIC 3016','Woodleigh, VIC 3945','Wyndham Vale, VIC 3024','Yarraville, VIC 3013',
+  // NSW
+  'Ashfield, NSW 2131','Auburn, NSW 2144','Balmain, NSW 2041','Bankstown, NSW 2200','Bondi, NSW 2026',
+  'Bondi Beach, NSW 2026','Bondi Junction, NSW 2022','Botany, NSW 2019','Burwood, NSW 2134',
+  'Cabramatta, NSW 2166','Campsie, NSW 2194','Canterbury, NSW 2193','Castle Hill, NSW 2154',
+  'Chatswood, NSW 2067','Concord, NSW 2137','Cronulla, NSW 2230','Dee Why, NSW 2099','Eastwood, NSW 2122',
+  'Epping, NSW 2121','Fairfield, NSW 2165','Five Dock, NSW 2046','Glebe, NSW 2037','Gordon, NSW 2072',
+  'Granville, NSW 2142','Homebush, NSW 2140','Hornsby, NSW 2077','Hurstville, NSW 2220',
+  'Kogarah, NSW 2217','Lane Cove, NSW 2066','Leichhardt, NSW 2040','Liverpool, NSW 2170',
+  'Manly, NSW 2095','Marrickville, NSW 2204','Mascot, NSW 2020','Miranda, NSW 2228',
+  'Mosman, NSW 2088','Mount Druitt, NSW 2770','Newtown, NSW 2042','North Sydney, NSW 2060',
+  'Parramatta, NSW 2150','Penrith, NSW 2750','Randwick, NSW 2031','Redfern, NSW 2016',
+  'Rockdale, NSW 2216','Ryde, NSW 2112','Strathfield, NSW 2135','Summer Hill, NSW 2130',
+  'Surry Hills, NSW 2010','Sydney, NSW 2000','Sydney CBD, NSW 2000','Ultimo, NSW 2007',
+  'Waterloo, NSW 2017','Westmead, NSW 2145','Woollahra, NSW 2025','Woolloomooloo, NSW 2011',
+  // QLD
+  'Ascot, QLD 4007','Aspley, QLD 4034','Bowen Hills, QLD 4006','Brisbane, QLD 4000','Brisbane CBD, QLD 4000',
+  'Bulimba, QLD 4171','Buranda, QLD 4102','Caboolture, QLD 4510','Carindale, QLD 4152',
+  'Chermside, QLD 4032','Eight Mile Plains, QLD 4113','Fortitude Valley, QLD 4006',
+  'Garden City, QLD 4034','Gold Coast, QLD 4217','Hamilton, QLD 4007','Inala, QLD 4077',
+  'Indooroopilly, QLD 4068','Ipswich, QLD 4305','Jindalee, QLD 4074','Kangaroo Point, QLD 4169',
+  'Kelvin Grove, QLD 4059','Logan, QLD 4114','Lutwyche, QLD 4030','Mackay, QLD 4740',
+  'Milton, QLD 4064','Mount Gravatt, QLD 4122','Nundah, QLD 4012','Paddington, QLD 4064',
+  'Redcliffe, QLD 4020','Rockhampton, QLD 4700','Sandgate, QLD 4017','Sherwood, QLD 4075',
+  'Southport, QLD 4215','Spring Hill, QLD 4000','Sunnybank, QLD 4109','Sunshine Coast, QLD 4557',
+  'Surfers Paradise, QLD 4217','Taringa, QLD 4068','Toowong, QLD 4066','Toowoomba, QLD 4350',
+  'Townsville, QLD 4810','West End, QLD 4101','Woolloongabba, QLD 4102',
+  // SA
+  'Adelaide, SA 5000','Adelaide CBD, SA 5000','Blackwood, SA 5051','Campbelltown, SA 5074',
+  'Christies Beach, SA 5165','Elizabeth, SA 5112','Glenelg, SA 5045','Hackney, SA 5069',
+  'Henley Beach, SA 5022','Marden, SA 5070','Marion, SA 5043','Norwood, SA 5067',
+  'Salisbury, SA 5108','Tea Tree Gully, SA 5091','Unley, SA 5061','Victor Harbor, SA 5211',
+  // WA
+  'Balga, WA 6061','Belmont, WA 6104','Bentley, WA 6102','Canning Vale, WA 6155',
+  'Cottesloe, WA 6011','Fremantle, WA 6160','Gosnells, WA 6110','Innaloo, WA 6018',
+  'Joondalup, WA 6027','Karrinyup, WA 6018','Leederville, WA 6007','Mandurah, WA 6210',
+  'Midland, WA 6056','Morley, WA 6062','Mount Lawley, WA 6050','Nedlands, WA 6009',
+  'Perth, WA 6000','Perth CBD, WA 6000','Rockingham, WA 6168','Scarborough, WA 6019',
+  'Stirling, WA 6021','Subiaco, WA 6008','Wanneroo, WA 6065',
+  // ACT
+  'Belconnen, ACT 2617','Bruce, ACT 2617','Canberra, ACT 2600','Canberra CBD, ACT 2601',
+  'Civic, ACT 2601','Gungahlin, ACT 2912','Tuggeranong, ACT 2900','Woden, ACT 2606',
+  // TAS
+  'Hobart, TAS 7000','Launceston, TAS 7250','Sandy Bay, TAS 7005',
+  // NT
+  'Darwin, NT 0800','Palmerston, NT 0830',
+];
+
+function searchLocalSuburbs(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  const results = [];
+  for (const entry of AU_SUBURBS) {
+    const namePart = entry.split(',')[0].toLowerCase();
+    if (namePart.startsWith(q) || namePart.includes(q)) {
+      results.push(entry);
+      if (results.length >= 8) break;
+    }
+  }
+  // starts-with first, then contains
+  results.sort((a, b) => {
+    const an = a.split(',')[0].toLowerCase();
+    const bn = b.split(',')[0].toLowerCase();
+    return (an.startsWith(q) ? 0 : 1) - (bn.startsWith(q) ? 0 : 1) || an.localeCompare(bn);
+  });
+  return results;
+}
+
 async function fetchSuburbSuggestions(query) {
   const key = query.toLowerCase();
   if (_acCache[key]) return _acCache[key];
-  // Use structured search: suburb field only, all of Australia
-  const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=au&limit=20&addressdetails=1&q=${encodeURIComponent(query)}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=au&limit=20&addressdetails=1&q=${encodeURIComponent(query + ', Australia')}`;
   try {
     const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
     const data = await res.json();
@@ -295,11 +404,9 @@ async function fetchSuburbSuggestions(query) {
       const addr  = r.address || {};
       const name  = addr.suburb || addr.town || addr.village || addr.city_district || addr.municipality || addr.city || '';
       if (!name) continue;
-      // Only include if the suburb name actually starts with or contains the query
       if (!name.toLowerCase().startsWith(key) && !name.toLowerCase().includes(key)) continue;
       const state = STATE_MAP[addr.state] || addr.state || '';
       const pc    = addr.postcode ? addr.postcode.split(';')[0].trim() : '';
-      // Format: "Vermont, VIC 3133" (postcode no comma)
       const label = name + (state ? ', ' + state : '') + (pc ? ' ' + pc : '');
       if (!seen.has(label)) {
         seen.add(label);
@@ -307,7 +414,6 @@ async function fetchSuburbSuggestions(query) {
       }
       if (results.length >= 8) break;
     }
-    // Sort: exact starts-with matches first
     results.sort((a, b) => {
       const aStarts = a.name.toLowerCase().startsWith(key) ? 0 : 1;
       const bStarts = b.name.toLowerCase().startsWith(key) ? 0 : 1;
@@ -352,7 +458,17 @@ function attachSuburbAutocomplete(inputId, onSelect) {
         e.preventDefault();
         input.value = r.label;
         closeDropdown();
-        if (onSelect) onSelect(r);
+        if (onSelect) {
+          if (r.lat) {
+            onSelect(r);
+          } else {
+            // Local-only result — resolve coords via Nominatim then call onSelect
+            geocodeSuburb(r.name || r.label).then(geo => {
+              if (geo) onSelect({ ...r, lat: geo.lat, lng: geo.lng, postcode: geo.postcode || r.postcode });
+              else onSelect(r);
+            });
+          }
+        }
       });
       dropdown.appendChild(item);
     });
@@ -362,11 +478,24 @@ function attachSuburbAutocomplete(inputId, onSelect) {
   input.addEventListener('input', () => {
     const q = input.value.trim();
     if (q.length < 1) { closeDropdown(); return; }
+
+    // Show local suburb list instantly on every keystroke
+    const localResults = searchLocalSuburbs(q);
+    if (localResults.length) {
+      showSuggestions(localResults.map(label => {
+        const parts = label.match(/^(.+),\s*(\w+)\s+(\d+)$/) || label.match(/^(.+),\s*(\w+)$/);
+        const name  = parts ? parts[1] : label;
+        const pc    = parts && parts[3] ? parts[3] : '';
+        return { label, name, postcode: pc, lat: null, lng: null };
+      }));
+    }
+
+    // Fetch real coords from Nominatim in the background (debounced)
     clearTimeout(_acTimer);
     _acTimer = setTimeout(async () => {
       const results = await fetchSuburbSuggestions(q);
-      showSuggestions(results);
-    }, 120);
+      if (results.length) showSuggestions(results);
+    }, 350);
   });
 
   input.addEventListener('keydown', e => {
