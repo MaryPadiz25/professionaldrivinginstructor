@@ -1,493 +1,247 @@
-/* =============================================================
+/* =============================================
    PDIN — Cloud Functions
-   =============================================================
-   Functions:
-     1. forwardEnquiry     — student enquiry → instructor email
-                             + Firestore instructor_enquiries
-                             + Google Sheets instructor tab
-     2. onNewApplication   — new join application → support email
-                             + Firestore Instructors Profile Details
-                             + Google Sheets Application Form tab
-     3. onContactForm      — contact message → support email
-                             + Google Sheets Contact Form tab
-     4. onCallLog          — call tap → Google Sheets instructor tab
+   1. sendWelcomeEmail      — fires when application status → "approved"
+   2. sendProfileUpdatedEmail — fires when a live_profile is updated
+   ============================================= */
 
-   Secrets required (set via firebase functions:secrets:set):
-     RESEND_API_KEY              — from resend.com
-     GOOGLE_SERVICE_ACCOUNT_JSON — downloaded JSON from GCP service account
-     SHEETS_ID                   — Google Sheet ID from the URL
-   ============================================================= */
-
-const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { defineSecret }      = require('firebase-functions/params');
-const { logger }            = require('firebase-functions');
-const admin                 = require('firebase-admin');
-const { google }            = require('googleapis');
+const { initializeApp }     = require('firebase-admin/app');
+const { getFirestore }      = require('firebase-admin/firestore');
+const nodemailer            = require('nodemailer');
 
-admin.initializeApp();
-const db = admin.firestore();
+initializeApp();
 
-const RESEND_API_KEY              = defineSecret('RESEND_API_KEY');
-const GOOGLE_SERVICE_ACCOUNT_JSON = defineSecret('GOOGLE_SERVICE_ACCOUNT_JSON');
-const SHEETS_ID                   = defineSecret('SHEETS_ID');
+/* ── Secrets ── */
+const GMAIL_USER = defineSecret('GMAIL_USER');
+const GMAIL_PASS = defineSecret('GMAIL_PASS');
 
-const FROM_EMAIL    = 'PDIN Enquiries <enquiries@pdin.au>';
-const SUPPORT_EMAIL = 'support@pdin.au';
-
-/* -------------------------------------------------------------
-   SHEETS HELPER
-   Appends a row to a named tab. Creates the tab with a header
-   row automatically if it doesn't exist yet.
-   ------------------------------------------------------------- */
-async function appendToSheet(sheetsClient, spreadsheetId, tabName, headers, row) {
-  try {
-    // Check if the tab already exists
-    const meta = await sheetsClient.spreadsheets.get({ spreadsheetId });
-    const existingSheet = meta.data.sheets.find(
-      s => s.properties.title === tabName
-    );
-
-    if (!existingSheet) {
-      // Create the tab
-      await sheetsClient.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{
-            addSheet: { properties: { title: tabName } }
-          }]
-        }
-      });
-      // Write header row first
-      await sheetsClient.spreadsheets.values.update({
-        spreadsheetId,
-        range: `'${tabName}'!A1`,
-        valueInputOption: 'RAW',
-        requestBody: { values: [headers] }
-      });
-      // Insert data at row 2
-      await sheetsClient.spreadsheets.values.update({
-        spreadsheetId,
-        range: `'${tabName}'!A2`,
-        valueInputOption: 'RAW',
-        requestBody: { values: [row] }
-      });
-    } else {
-      // Tab exists — insert a new row at position 2 (just after header)
-      // so the most recent entry is always at the top
-      const sheetId = existingSheet.properties.sheetId;
-      await sheetsClient.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{
-            insertDimension: {
-              range: {
-                sheetId,
-                dimension: 'ROWS',
-                startIndex: 1, // after header row
-                endIndex: 2,
-              },
-              inheritFromBefore: false,
-            }
-          }]
-        }
-      });
-      await sheetsClient.spreadsheets.values.update({
-        spreadsheetId,
-        range: `'${tabName}'!A2`,
-        valueInputOption: 'RAW',
-        requestBody: { values: [row] }
-      });
-    }
-  } catch (err) {
-    logger.error(`appendToSheet error for tab "${tabName}":`, err.message || err);
-    throw err;
-  }
-}
-
-/* Build an authorised Sheets client from the service account secret */
-function getSheetsClient(serviceAccountJson) {
-  const credentials = JSON.parse(serviceAccountJson);
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-  return google.sheets({ version: 'v4', auth });
-}
-
-/* Shared date/time stamp in AU format */
-function auNow() {
-  const now = new Date();
-  return now.toLocaleString('en-AU', {
-    timeZone: 'Australia/Sydney',
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', hour12: true
+/* ── Shared: build a nodemailer transporter ── */
+function makeTransporter(user, pass) {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass },
   });
 }
 
-/* -------------------------------------------------------------
-   1. FORWARD ENQUIRY
-      Trigger: new doc in /enquiries/{enquiryId}
-   ------------------------------------------------------------- */
-exports.forwardEnquiry = onDocumentCreated(
-  {
-    document: 'enquiries/{enquiryId}',
-    secrets: [RESEND_API_KEY, GOOGLE_SERVICE_ACCOUNT_JSON, SHEETS_ID]
-  },
-  async (event) => {
-    const snap = event.data;
-    if (!snap) return;
-    const enquiry    = snap.data();
-    const enquiryRef = snap.ref;
+const YEAR = new Date().getFullYear();
+const FOOTER = `
+  <tr>
+    <td style="background:#f0f3f7;padding:20px 40px;text-align:center;">
+      <p style="margin:0;font-size:12px;color:#888;">
+        &copy; ${YEAR} Professional Driving Instructors Network &nbsp;|&nbsp;
+        <a href="https://pdin.au" style="color:#1a3a5c;text-decoration:none;">pdin.au</a>
+      </p>
+    </td>
+  </tr>`;
 
-    const {
-      instructorId, instructorName,
-      studentName, studentEmail, studentMobile,
-      suburb, licenceStage, transmission,
-      preferredDays, preferredTime, message,
-    } = enquiry;
+const HEADER = `
+  <tr>
+    <td style="background:#1a3a5c;padding:32px 40px;text-align:center;">
+      <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:1px;">
+        Professional Driving Instructors Network
+      </h1>
+    </td>
+  </tr>`;
 
-    // ── Look up instructor's private email ──
-    let instructorEmail = null;
-    try {
-      const contactDoc = await db.collection('instructor_contacts').doc(instructorId).get();
-      instructorEmail = contactDoc.exists ? (contactDoc.data().email || null) : null;
-    } catch (err) {
-      logger.error('Failed to read instructor_contacts for', instructorId, err);
-    }
+function htmlWrapper(bodyContent) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;
+                 overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          ${HEADER}
+          <tr><td style="padding:40px 40px 32px;">${bodyContent}</td></tr>
+          ${FOOTER}
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
 
-    // ── Save to instructor-named Firestore subcollection ──
-    try {
-      const safeName = (instructorName || instructorId).replace(/[\/\\]/g, '-');
-      const now = new Date();
-      const enquiryDocId = (studentName || 'enquiry').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
-      await db
-        .collection('instructor_enquiries')
-        .doc(safeName)
-        .collection('enquiries')
-        .doc(enquiryDocId)
-        .set({
-          instructorName,
-          studentName:    studentName    || '',
-          studentEmail:   studentEmail   || '',
-          studentMobile:  studentMobile  || '',
-          suburb:         suburb         || '',
-          licenceStage:   licenceStage   || '',
-          transmission:   transmission   || '',
-          preferredDays:  preferredDays  || '',
-          preferredTime:  preferredTime  || '',
-          message:        message        || '',
-          date: now.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: '2-digit', month: 'short', year: 'numeric' }),
-          time: now.toLocaleTimeString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', hour12: true }),
-          receivedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-    } catch (err) {
-      logger.error('Failed to save to instructor_enquiries:', err);
-    }
-
-    // ── Append to Google Sheets — instructor enquiries tab ──
-    try {
-      const sheets        = getSheetsClient(GOOGLE_SERVICE_ACCOUNT_JSON.value());
-      const spreadsheetId = SHEETS_ID.value();
-      const tabName       = (instructorName || instructorId) + ' - Enquiries';
-      const headers = [
-        'Date', 'Time', 'Type', 'Instructor',
-        'Student Name', 'Student Email', 'Student Mobile',
-        'Suburb', 'Licence Stage', 'Transmission',
-        'Preferred Days', 'Preferred Time', 'Message'
-      ];
-      const now = new Date();
-      const row = [
-        now.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: '2-digit', month: 'short', year: 'numeric' }),
-        now.toLocaleTimeString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', hour12: true }),
-        'Enquiry',
-        instructorName || '',
-        studentName    || '',
-        studentEmail   || '',
-        studentMobile  || '',
-        suburb         || '',
-        licenceStage   || '',
-        transmission   || '',
-        preferredDays  || '',
-        preferredTime  || '',
-        message        || '',
-      ];
-      await appendToSheet(sheets, spreadsheetId, tabName, headers, row);
-      logger.info(`Enquiry appended to Sheets tab "${tabName}"`);
-    } catch (err) {
-      logger.error('Failed to append enquiry to Sheets:', err);
-    }
-
-    // ── Email instructor via Resend ──
-    const subject  = `PDIN Student Enquiry: ${studentName}`;
-    const htmlBody = `
-      <p style="font-size:14px;font-weight:bold;margin:0 0 16px 0">Great news — you've received a new enquiry. Please reply promptly, and contact us at <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> if you need assistance.</p>
-      <p><strong>Instructor:</strong> ${instructorName}</p>
-      <p><strong>Student:</strong> ${studentName}</p>
-      <p><strong>Email:</strong> ${studentEmail}</p>
-      <p><strong>Mobile:</strong> ${studentMobile || 'Not provided'}</p>
-      <p><strong>Suburb:</strong> ${suburb || 'Not provided'}</p>
-      <p><strong>Licence stage:</strong> ${licenceStage || 'Not provided'}</p>
-      <p><strong>Transmission:</strong> ${transmission || 'Not specified'}</p>
-      <p><strong>Preferred days:</strong> ${preferredDays || 'Not specified'}</p>
-      <p><strong>Preferred time:</strong> ${preferredTime || 'Not specified'}</p>
-      <p><strong>Message:</strong><br>${(message || '(No message)').replace(/\n/g, '<br>')}</p>
-      <hr>
-      <p style="color:#888;font-size:12px">Just hit reply — it'll go straight to ${studentName} at ${studentEmail}.</p>
-    `;
-
-    let instructorSendOk = false;
-    let instructorSendError = null;
-
-    if (instructorEmail) {
-      try {
-        const res = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${RESEND_API_KEY.value()}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: FROM_EMAIL,
-            to: [instructorEmail],
-            reply_to: studentEmail,
-            subject,
-            html: htmlBody,
-          }),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (res.ok) {
-          instructorSendOk = true;
-        } else {
-          instructorSendError = body.message || `Resend HTTP ${res.status}`;
-          logger.error('Resend send failed:', instructorSendError);
-        }
-      } catch (err) {
-        instructorSendError = err.message;
-        logger.error('Resend request threw:', err);
-      }
-    } else {
-      instructorSendError = 'No email on file for this instructor';
-      logger.warn(`No instructor_contacts email for "${instructorId}" — skipping direct send.`);
-    }
-
-    await enquiryRef.update({
-      status: instructorSendOk ? 'sent' : 'failed',
-      instructorEmailUsed: instructorEmail || null,
-      error: instructorSendOk ? null : instructorSendError,
-      forwardedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-  }
-);
-
-/* -------------------------------------------------------------
-   2. NEW APPLICATION
-      Trigger: new doc in /applications/{appId}
-   ------------------------------------------------------------- */
-exports.onNewApplication = onDocumentCreated(
+/* =============================================
+   1. sendWelcomeEmail
+   Triggers: applications/{appId} status → "approved"
+   ============================================= */
+exports.sendWelcomeEmail = onDocumentWritten(
   {
     document: 'applications/{appId}',
-    secrets: [RESEND_API_KEY, GOOGLE_SERVICE_ACCOUNT_JSON, SHEETS_ID]
+    secrets:  [GMAIL_USER, GMAIL_PASS],
+    region:   'australia-southeast2',
   },
   async (event) => {
-    const snap = event.data;
-    if (!snap) return;
-    const app   = snap.data();
-    const appId = event.params.appId;
+    const before = event.data.before?.data();
+    const after  = event.data.after?.data();
 
-    const name = app.name || app.fullName || '(Unknown)';
+    if (!after || after.status !== 'approved') return null;
+    if (before?.status === 'approved')          return null;
 
-    // ── Save copy to Instructors Profile Details ──
-    try {
-      const profileDocId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + appId.slice(-6);
-      await db.collection('instructor_profile_details').doc(profileDocId).set({
-        ...app,
-        savedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    } catch (err) {
-      logger.error('Failed to save to Instructors Profile Details:', err);
+    const firstName = (after.firstName || after.first_name || after.name || 'there').split(' ')[0];
+    const toEmail   = after.email;
+
+    if (!toEmail) {
+      console.warn('sendWelcomeEmail: no email — skipping.');
+      return null;
     }
 
-    // ── Append to Google Sheets — Application Form tab ──
-    try {
-      const sheets        = getSheetsClient(GOOGLE_SERVICE_ACCOUNT_JSON.value());
-      const spreadsheetId = SHEETS_ID.value();
-      const headers = [
-        'Date/Time', 'Full Name', 'Email', 'Mobile',
-        'Suburb', 'State', 'Experience Since', 'Transmission',
-        'Auto Vehicle', 'Manual Vehicle', 'Fee 60min', 'Fee 90min',
-        'Availability', 'Languages', 'Teaching Approach', 'Expertise',
-        'DIA', 'WWCC', 'Bio'
-      ];
-      const row = [
-        auNow(),
-        name,
-        app.email        || '',
-        app.phone        || '',
-        app.suburb       || '',
-        app.state        || '',
-        app.exp          || '',
-        Array.isArray(app.transmission) ? app.transmission.join(', ') : (app.transmission || ''),
-        app.vAuto        || '',
-        app.vManual      || '',
-        app.fee60        || '',
-        app.fee90        || '',
-        Array.isArray(app.availDays) ? app.availDays.join(', ') : (app.availability || ''),
-        Array.isArray(app.languages) ? app.languages.join(', ') : (app.languages || ''),
-        Array.isArray(app.teachingApproach) ? app.teachingApproach.join(', ') : '',
-        Array.isArray(app.expertise) ? app.expertise.join(', ') : '',
-        app.dia          || '',
-        app.wwcc         || '',
-        app.bio          || app.tagline || '',
-      ];
-      await appendToSheet(sheets, spreadsheetId, 'Application Form', headers, row);
-    } catch (err) {
-      logger.error('Failed to append application to Sheets:', err);
-    }
+    const text = `Hi ${firstName},
 
-    // ── Email support@pdin.au ──
-    const subject  = `PDIN New Applicant: ${name}`;
-    const htmlBody = `
-      <h2 style="color:#1d3557;margin:0 0 20px 0">A new instructor joined PDIN.AU</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${app.email || '(not provided)'}</p>
-      <p><strong>Mobile:</strong> ${app.phone || '(not provided)'}</p>
-      <p><strong>Suburb:</strong> ${app.suburb || '(not provided)'}</p>
-      <p><strong>State:</strong> ${app.state || '(not provided)'}</p>
-      <p><strong>Experience since:</strong> ${app.exp || '(not provided)'}</p>
-      <p><strong>Transmission:</strong> ${Array.isArray(app.transmission) ? app.transmission.join(', ') : (app.transmission || '(not provided)')}</p>
-      <hr>
-      <p style="color:#888;font-size:12px">Log in to the admin page to review and approve this application.</p>
-    `;
+Congratulations and thank you for joining PDIN!
+
+Your profile has been reviewed, approved, and is now live on the website.
+
+We're excited to have you on the platform and appreciate you being part of the growing PDIN network.
+
+If there's anything you'd like changed or updated on your profile, please don't hesitate to let us know — we're more than happy to help.
+
+If you experience any issues or need support at any time, you can contact us at:
+
+  support@pdin.au
+
+Kind regards,
+PDIN Admin / Support Team`;
+
+    const html = htmlWrapper(`
+      <p style="margin:0 0 16px;font-size:16px;color:#222;">Hi ${firstName},</p>
+      <p style="margin:0 0 16px;font-size:16px;color:#222;">
+        <strong>Congratulations and thank you for joining PDIN!</strong>
+      </p>
+      <p style="margin:0 0 16px;font-size:16px;color:#444;">
+        Your profile has been reviewed, approved, and is now <strong>live on the website</strong>.
+      </p>
+      <p style="margin:0 0 24px;font-size:16px;color:#444;">
+        We're excited to have you on the platform and appreciate you being part of the growing PDIN network.
+      </p>
+      <hr style="border:none;border-top:1px solid #e8edf2;margin:0 0 24px;">
+      <p style="margin:0 0 16px;font-size:15px;color:#444;">
+        If there's anything you'd like changed or updated on your profile, please don't hesitate to let us know — we're more than happy to help.
+      </p>
+      <p style="margin:0 0 8px;font-size:15px;color:#444;">If you experience any issues or need support at any time, you can contact us at:</p>
+      <p style="margin:0 0 24px;font-size:15px;">
+        <a href="mailto:support@pdin.au" style="color:#1a3a5c;font-weight:600;">support@pdin.au</a>
+      </p>
+      <p style="margin:0;font-size:15px;color:#444;">Kind regards,<br><strong>PDIN Admin / Support Team</strong></p>
+    `);
 
     try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${RESEND_API_KEY.value()}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: [SUPPORT_EMAIL],
-          subject,
-          html: htmlBody,
-        }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        logger.error('Failed to send new application email:', body.message || res.status);
-      }
+      const info = await makeTransporter(GMAIL_USER.value(), GMAIL_PASS.value())
+        .sendMail({ from: `"PDIN Admin" <${GMAIL_USER.value()}>`, to: toEmail,
+                    subject: 'Welcome to PDIN – Your Profile is Now Live', text, html });
+      console.log(`sendWelcomeEmail: sent to ${toEmail} — ${info.messageId}`);
     } catch (err) {
-      logger.error('New application email threw:', err);
+      console.error('sendWelcomeEmail error:', err);
+      throw err;
     }
+    return null;
   }
 );
 
-/* -------------------------------------------------------------
-   3. CONTACT FORM
-      Trigger: new doc in /contact_form/{docId}
-   ------------------------------------------------------------- */
-exports.onContactForm = onDocumentCreated(
+/* =============================================
+   2. sendProfileUpdatedEmail
+   Triggers: live_profiles/{profileId} updated
+   Looks up email from instructor_contacts/{profileId}
+   ============================================= */
+exports.sendProfileUpdatedEmail = onDocumentWritten(
   {
-    document: 'contact_form/{docId}',
-    secrets: [RESEND_API_KEY, GOOGLE_SERVICE_ACCOUNT_JSON, SHEETS_ID]
+    document: 'live_profiles/{profileId}',
+    secrets:  [GMAIL_USER, GMAIL_PASS],
+    region:   'australia-southeast2',
   },
   async (event) => {
-    const snap = event.data;
-    if (!snap) return;
-    const msg = snap.data();
+    const before = event.data.before?.data();
+    const after  = event.data.after?.data();
 
-    const name    = msg.name    || '(Unknown)';
-    const email   = msg.email   || '(not provided)';
-    const subject = msg.subject || '(none)';
-    const message = msg.message || '(No message)';
+    // Only updates — not creates or deletes
+    if (!before || !after)            return null;
+    if (!event.data.after?.exists)    return null;
 
-    // ── Append to Google Sheets — Contact Form tab ──
-    try {
-      const sheets        = getSheetsClient(GOOGLE_SERVICE_ACCOUNT_JSON.value());
-      const spreadsheetId = SHEETS_ID.value();
-      const headers = ['Date/Time', 'Name', 'Email', 'Subject', 'Message'];
-      const row     = [auNow(), name, email, subject, message];
-      await appendToSheet(sheets, spreadsheetId, 'Contact Form', headers, row);
-    } catch (err) {
-      logger.error('Failed to append contact form to Sheets:', err);
+    // Only send if the frontend explicitly set this flag (Save Changes button).
+    // Admin Update writes to live_profiles WITHOUT this flag, so no email fires.
+    if (!after.notifyInstructor)      return null;
+
+    const profileId = event.params.profileId;
+
+    // Clear the flag immediately so a retry/re-trigger never double-sends
+    await getFirestore()
+      .collection('live_profiles')
+      .doc(profileId)
+      .update({ notifyInstructor: false })
+      .catch(() => {});
+
+    // Look up email from instructor_contacts using the same doc ID
+    const contactSnap = await getFirestore()
+      .collection('instructor_contacts')
+      .doc(profileId)
+      .get();
+
+    if (!contactSnap.exists) {
+      console.warn(`sendProfileUpdatedEmail: no contact doc for "${profileId}" — skipping.`);
+      return null;
     }
 
-    // ── Email support@pdin.au ──
-    const emailSubject = `PDIN Message: ${name}`;
-    const htmlBody = `
-      <h2 style="color:#1d3557;margin:0 0 20px 0">New Message</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-      <p><strong>Subject:</strong> ${subject}</p>
-      <p><strong>Message:</strong><br>${message.replace(/\n/g, '<br>')}</p>
-      <hr>
-      <p style="color:#888;font-size:12px">Reply directly to ${name} at ${email}.</p>
-    `;
+    const toEmail = contactSnap.data().email;
+    if (!toEmail) {
+      console.warn(`sendProfileUpdatedEmail: empty email for "${profileId}" — skipping.`);
+      return null;
+    }
+
+    // Derive first name: check profile fields first, then parse the doc ID
+    const rawFirst = after.firstName || after.first_name ||
+      (after.name ? after.name.split(' ')[0] : null) ||
+      profileId.split('-')[0];
+    const firstName = rawFirst.charAt(0).toUpperCase() + rawFirst.slice(1);
+
+    const text = `Hi ${firstName},
+
+Just letting you know that your PDIN profile has now been updated successfully.
+
+The changes you requested are now live on the website.
+
+If you notice anything that doesn't look quite right, or if there's anything else you'd like adjusted, please don't hesitate to get in touch — we're more than happy to help.
+
+  support@pdin.au
+
+Kind regards,
+PDIN Admin / Support Team`;
+
+    const html = htmlWrapper(`
+      <p style="margin:0 0 16px;font-size:16px;color:#222;">Hi ${firstName},</p>
+      <p style="margin:0 0 16px;font-size:16px;color:#444;">
+        Just letting you know that your PDIN profile has now been <strong>updated successfully</strong>.
+      </p>
+      <p style="margin:0 0 24px;font-size:16px;color:#444;">
+        The changes you requested are now <strong>live on the website</strong>.
+      </p>
+      <hr style="border:none;border-top:1px solid #e8edf2;margin:0 0 24px;">
+      <p style="margin:0 0 16px;font-size:15px;color:#444;">
+        If you notice anything that doesn't look quite right, or if there's anything else you'd like adjusted,
+        please don't hesitate to get in touch — we're more than happy to help.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;">
+        <a href="mailto:support@pdin.au" style="color:#1a3a5c;font-weight:600;">support@pdin.au</a>
+      </p>
+      <p style="margin:0;font-size:15px;color:#444;">Kind regards,<br><strong>PDIN Admin / Support Team</strong></p>
+    `);
 
     try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${RESEND_API_KEY.value()}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: [SUPPORT_EMAIL],
-          reply_to: email,
-          subject: emailSubject,
-          html: htmlBody,
-        }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        logger.error('Failed to send contact form email:', body.message || res.status);
-      }
+      const info = await makeTransporter(GMAIL_USER.value(), GMAIL_PASS.value())
+        .sendMail({ from: `"PDIN Admin" <${GMAIL_USER.value()}>`, to: toEmail,
+                    subject: 'Your PDIN profile has been updated', text, html });
+      console.log(`sendProfileUpdatedEmail: sent to ${toEmail} — ${info.messageId}`);
     } catch (err) {
-      logger.error('Contact form email threw:', err);
+      console.error('sendProfileUpdatedEmail error:', err);
+      throw err;
     }
-  }
-);
-
-/* -------------------------------------------------------------
-   4. CALL LOG
-      Trigger: new doc in /call_logs/{instructorName}/logs/{logId}
-      Appends a call row to the instructor's tab in Google Sheets
-   ------------------------------------------------------------- */
-exports.onCallLog = onDocumentCreated(
-  {
-    document: 'call_logs/{instructorName}/logs/{logId}',
-    secrets: [GOOGLE_SERVICE_ACCOUNT_JSON, SHEETS_ID]
-  },
-  async (event) => {
-    const snap = event.data;
-    if (!snap) return;
-    const log            = snap.data();
-    const instructorName = event.params.instructorName;
-
-    try {
-      const sheets        = getSheetsClient(GOOGLE_SERVICE_ACCOUNT_JSON.value());
-      const spreadsheetId = SHEETS_ID.value();
-      const headers = [
-        'Date', 'Time', 'Type', 'Instructor',
-        'Suburb', 'Licence Stage'
-      ];
-      const dateTime = log.date && log.time
-        ? { date: log.date, time: log.time }
-        : { date: auNow(), time: '' };
-      const row = [
-        dateTime.date,
-        dateTime.time,
-        'Call',
-        instructorName,
-        log.suburb       || '',
-        log.licenceStage || '',
-      ];
-      await appendToSheet(sheets, spreadsheetId, instructorName + ' - Calls', headers, row);
-      logger.info(`Call log appended to Sheets tab "${instructorName}"`);
-    } catch (err) {
-      logger.error('Failed to append call log to Sheets:', err);
-    }
+    return null;
   }
 );
