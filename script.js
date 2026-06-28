@@ -489,14 +489,25 @@ function renderFind(searchLat, searchLng, searchLabel) {
     </div>`;
 }
 
-function renderFindSydney() {
-  const sydInst = getAllInstructors().filter(i => (i.state || '').toUpperCase() === 'NSW');
-  const cardsHTML = sydInst.length
-    ? sydInst.map(i => instructorCardHTML(i)).join('')
+function renderFindSydney(searchLat, searchLng, searchLabel) {
+  const allNSW = getAllInstructors().filter(i => (i.state || '').toUpperCase() === 'NSW');
+  const sorted = (searchLat !== undefined)
+    ? sortInstructorsByDistance(searchLat, searchLng, allNSW)
+    : allNSW.map(i => ({ inst: i, km: undefined }));
+  const cardsHTML = sorted.length
+    ? sorted.map(({ inst, km }) => instructorCardHTML(inst, km)).join('')
     : `<div class="no-results-msg" style="grid-column:1/-1;text-align:center;padding:48px 0">
         <p style="font-size:18px;font-weight:600;color:var(--navy);margin-bottom:8px">Instructors Coming Soon</p>
         <p style="color:var(--text-light)">We're building our Sydney network. Check back soon, or <a href="#" data-action="nav" data-page="join">join the network</a> if you're an instructor.</p>
        </div>`;
+  const searchInfo = searchLabel
+    ? `<div class="find-search-info">
+        <div class="find-search-info-pill">
+          <span class="find-search-info-icon">${ICONS.mapPin}</span>
+          <span class="find-search-info-text">Results near <strong>${searchLabel}</strong> <span class="find-search-info-sub">— sorted by distance</span></span>
+        </div>
+        <a href="#" id="clear-search-link" class="find-search-clear">Clear</a>
+      </div>` : '';
   return `
     <div class="navy-banner">
       <h1>Driving Instructors in Sydney</h1>
@@ -504,7 +515,7 @@ function renderFindSydney() {
       <div class="find-search-bar">
         <div class="find-search-inner">
           ${ICONS.search}
-          <input type="text" id="find-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" />
+          <input type="text" id="find-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" value="${searchLabel || ''}" />
           <button class="btn btn-gold" id="find-search-btn">Find Instructors</button>
         </div>
         <div class="find-location-btn-wrap">
@@ -523,18 +534,30 @@ function renderFindSydney() {
         <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
         <button class="location-tab coming-soon">Perth (Coming Soon)</button>
       </div>
+      ${searchInfo}
       <div class="find-grid" id="find-results">${cardsHTML}</div>
     </div>`;
 }
 
-function renderFindBrisbane() {
-  const brisInst = getAllInstructors().filter(i => (i.state || '').toUpperCase() === 'QLD');
-  const cardsHTML = brisInst.length
-    ? brisInst.map(i => instructorCardHTML(i)).join('')
+function renderFindBrisbane(searchLat, searchLng, searchLabel) {
+  const allQLD = getAllInstructors().filter(i => (i.state || '').toUpperCase() === 'QLD');
+  const sorted = (searchLat !== undefined)
+    ? sortInstructorsByDistance(searchLat, searchLng, allQLD)
+    : allQLD.map(i => ({ inst: i, km: undefined }));
+  const cardsHTML = sorted.length
+    ? sorted.map(({ inst, km }) => instructorCardHTML(inst, km)).join('')
     : `<div class="no-results-msg" style="grid-column:1/-1;text-align:center;padding:48px 0">
         <p style="font-size:18px;font-weight:600;color:var(--navy);margin-bottom:8px">Instructors Coming Soon</p>
         <p style="color:var(--text-light)">We're building our Brisbane network. Check back soon, or <a href="#" data-action="nav" data-page="join">join the network</a> if you're an instructor.</p>
        </div>`;
+  const searchInfo = searchLabel
+    ? `<div class="find-search-info">
+        <div class="find-search-info-pill">
+          <span class="find-search-info-icon">${ICONS.mapPin}</span>
+          <span class="find-search-info-text">Results near <strong>${searchLabel}</strong> <span class="find-search-info-sub">— sorted by distance</span></span>
+        </div>
+        <a href="#" id="clear-search-link" class="find-search-clear">Clear</a>
+      </div>` : '';
   return `
     <div class="navy-banner">
       <h1>Driving Instructors in Brisbane</h1>
@@ -542,7 +565,7 @@ function renderFindBrisbane() {
       <div class="find-search-bar">
         <div class="find-search-inner">
           ${ICONS.search}
-          <input type="text" id="find-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" />
+          <input type="text" id="find-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" value="${searchLabel || ''}" />
           <button class="btn btn-gold" id="find-search-btn">Find Instructors</button>
         </div>
         <div class="find-location-btn-wrap">
@@ -561,6 +584,7 @@ function renderFindBrisbane() {
         <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
         <button class="location-tab coming-soon">Perth (Coming Soon)</button>
       </div>
+      ${searchInfo}
       <div class="find-grid" id="find-results">${cardsHTML}</div>
     </div>`;
 }
@@ -1329,13 +1353,15 @@ function dismissToast(toast) {
 /* =============================================
    ROUTER
    ============================================= */
-let _searchLat, _searchLng, _searchLabel;
+let _searchLat, _searchLng, _searchLabel, _cityPage = 'find';
 
 function getPageContent(page, extra) {
+  // Track which city Find page we're on so search stays on that city
+  if (page === 'find' || page === 'find-sydney' || page === 'find-brisbane') _cityPage = page;
   switch (page) {
     case 'find':         return renderFind(_searchLat, _searchLng, _searchLabel);
-    case 'find-sydney':  return renderFindSydney();
-    case 'find-brisbane':return renderFindBrisbane();
+    case 'find-sydney':  return renderFindSydney(_searchLat, _searchLng, _searchLabel);
+    case 'find-brisbane':return renderFindBrisbane(_searchLat, _searchLng, _searchLabel);
     case 'profile': return renderProfile(extra);
     case 'join':    return renderJoin();
     case 'about':   return renderAbout();
@@ -2617,13 +2643,13 @@ function bindPageEvents() {
       findSearchBtn.disabled = true; findSearchBtn.innerHTML = '<span class="btn-spinner"></span>';
       const result = await geocodeSuburb(q).catch(() => null);
       findSearchBtn.disabled = false; findSearchBtn.innerHTML = 'Find Instructors';
-      if (result) { _searchLat = result.lat; _searchLng = result.lng; _searchLabel = result.display; navigate('find'); }
+      if (result) { _searchLat = result.lat; _searchLng = result.lng; _searchLabel = result.display; navigate(_cityPage); }
       else { findInput.classList.add('input-error'); setTimeout(() => findInput.classList.remove('input-error'), 2000); }
     }
     findSearchBtn.addEventListener('click', doFindSearch);
     findInput.addEventListener('keydown', e => { if (e.key === 'Enter') doFindSearch(); });
     const clearLink = document.getElementById('clear-search-link');
-    if (clearLink) clearLink.addEventListener('click', e => { e.preventDefault(); _searchLat = undefined; _searchLng = undefined; _searchLabel = ''; navigate('find'); });
+    if (clearLink) clearLink.addEventListener('click', e => { e.preventDefault(); _searchLat = undefined; _searchLng = undefined; _searchLabel = ''; navigate(_cityPage); });
   }
 
   /* Use my current location button */
@@ -2649,7 +2675,7 @@ function bindPageEvents() {
           } catch {
             _searchLat = lat; _searchLng = lng; _searchLabel = 'Your Location';
           }
-          navigate('find');
+          navigate(_cityPage);
         },
         (err) => {
           locationBtn.disabled = false;
