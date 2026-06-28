@@ -433,7 +433,8 @@ function renderHome() {
 }
 
 function renderFind(searchLat, searchLng, searchLabel) {
-  const allInst = getAllInstructors();
+  // Only show VIC instructors (or legacy profiles with no state set) on the Melbourne page
+  const allInst = getAllInstructors().filter(i => !i.state || i.state.toUpperCase() === 'VIC');
   const sorted = (searchLat !== undefined)
     ? sortInstructorsByDistance(searchLat, searchLng, allInst)
     : allInst.map(i => ({ inst: i, km: undefined }));
