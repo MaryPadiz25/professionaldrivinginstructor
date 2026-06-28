@@ -272,6 +272,125 @@ async function geocodeSuburb(query) {
   return { lat: parseFloat(r.lat), lng: parseFloat(r.lon), display: r.display_name.split(',')[0], postcode: pc };
 }
 
+/* =============================================
+   SUBURB AUTOCOMPLETE
+   Fetches matching AU suburbs from Nominatim and
+   shows a dropdown in "Vermont, VIC 3133" format.
+   ============================================= */
+let _acTimer = null;
+let _acCache = {};
+
+async function fetchSuburbSuggestions(query) {
+  const key = query.toLowerCase();
+  if (_acCache[key]) return _acCache[key];
+  // Use structured search: suburb field only, all of Australia
+  const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=au&limit=20&addressdetails=1&q=${encodeURIComponent(query)}`;
+  try {
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const data = await res.json();
+    const STATE_MAP = { 'Victoria':'VIC','New South Wales':'NSW','Queensland':'QLD','Western Australia':'WA','South Australia':'SA','Tasmania':'TAS','Australian Capital Territory':'ACT','Northern Territory':'NT' };
+    const results = [];
+    const seen = new Set();
+    for (const r of data) {
+      const addr  = r.address || {};
+      const name  = addr.suburb || addr.town || addr.village || addr.city_district || addr.municipality || addr.city || '';
+      if (!name) continue;
+      // Only include if the suburb name actually starts with or contains the query
+      if (!name.toLowerCase().startsWith(key) && !name.toLowerCase().includes(key)) continue;
+      const state = STATE_MAP[addr.state] || addr.state || '';
+      const pc    = addr.postcode ? addr.postcode.split(';')[0].trim() : '';
+      // Format: "Vermont, VIC 3133" (postcode no comma)
+      const label = name + (state ? ', ' + state : '') + (pc ? ' ' + pc : '');
+      if (!seen.has(label)) {
+        seen.add(label);
+        results.push({ label, lat: parseFloat(r.lat), lng: parseFloat(r.lon), name, postcode: pc });
+      }
+      if (results.length >= 8) break;
+    }
+    // Sort: exact starts-with matches first
+    results.sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(key) ? 0 : 1;
+      const bStarts = b.name.toLowerCase().startsWith(key) ? 0 : 1;
+      return aStarts - bStarts || a.name.localeCompare(b.name);
+    });
+    _acCache[key] = results;
+    return results;
+  } catch { return []; }
+}
+
+function attachSuburbAutocomplete(inputId, onSelect) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  // Create dropdown
+  let dropdown = document.getElementById(inputId + '-ac-dropdown');
+  if (!dropdown) {
+    dropdown = document.createElement('div');
+    dropdown.id = inputId + '-ac-dropdown';
+    dropdown.className = 'suburb-ac-dropdown';
+    input.parentNode.style.position = 'relative';
+    input.parentNode.appendChild(dropdown);
+  }
+
+  function closeDropdown() { dropdown.innerHTML = ''; dropdown.style.display = 'none'; }
+
+  function showSuggestions(results) {
+    dropdown.innerHTML = '';
+    if (!results.length) { closeDropdown(); return; }
+    results.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'suburb-ac-item';
+      // Bold the matching part
+      const q   = input.value.trim();
+      const idx = r.label.toLowerCase().indexOf(q.toLowerCase());
+      if (idx >= 0) {
+        item.innerHTML = r.label.slice(0, idx) + '<strong>' + r.label.slice(idx, idx + q.length) + '</strong>' + r.label.slice(idx + q.length);
+      } else {
+        item.textContent = r.label;
+      }
+      item.addEventListener('mousedown', e => {
+        e.preventDefault();
+        input.value = r.label;
+        closeDropdown();
+        if (onSelect) onSelect(r);
+      });
+      dropdown.appendChild(item);
+    });
+    dropdown.style.display = 'block';
+  }
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    if (q.length < 2) { closeDropdown(); return; }
+    clearTimeout(_acTimer);
+    _acTimer = setTimeout(async () => {
+      const results = await fetchSuburbSuggestions(q);
+      showSuggestions(results);
+    }, 220);
+  });
+
+  input.addEventListener('keydown', e => {
+    const items = dropdown.querySelectorAll('.suburb-ac-item');
+    const active = dropdown.querySelector('.suburb-ac-item.ac-active');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!active) { items[0]?.classList.add('ac-active'); }
+      else { active.classList.remove('ac-active'); (active.nextElementSibling || items[0])?.classList.add('ac-active'); }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!active) { items[items.length-1]?.classList.add('ac-active'); }
+      else { active.classList.remove('ac-active'); (active.previousElementSibling || items[items.length-1])?.classList.add('ac-active'); }
+    } else if (e.key === 'Enter' && active) {
+      e.preventDefault();
+      active.dispatchEvent(new MouseEvent('mousedown'));
+    } else if (e.key === 'Escape') {
+      closeDropdown();
+    }
+  });
+
+  document.addEventListener('click', e => { if (!input.parentNode.contains(e.target)) closeDropdown(); });
+}
+
 function sortInstructorsByDistance(lat, lng, instructorList) {
   const list = instructorList || getAllInstructors();
   return list
@@ -2598,6 +2717,11 @@ function bindPageEvents() {
     }
     heroSearchBtn.addEventListener('click', doHeroSearch);
     heroInput.addEventListener('keydown', e => { if (e.key === 'Enter') doHeroSearch(); });
+    // Autocomplete: selecting a suggestion immediately searches
+    attachSuburbAutocomplete('hero-suburb-input', async (r) => {
+      _searchLat = r.lat; _searchLng = r.lng; _searchLabel = r.name + (r.postcode ? ' ' + r.postcode : '');
+      navigate(_cityPage);
+    });
   }
 
   /* Hero — Use my current location */
@@ -2648,6 +2772,11 @@ function bindPageEvents() {
     }
     findSearchBtn.addEventListener('click', doFindSearch);
     findInput.addEventListener('keydown', e => { if (e.key === 'Enter') doFindSearch(); });
+    // Autocomplete: selecting a suggestion immediately searches
+    attachSuburbAutocomplete('find-suburb-input', async (r) => {
+      _searchLat = r.lat; _searchLng = r.lng; _searchLabel = r.name + (r.postcode ? ' ' + r.postcode : '');
+      navigate(_cityPage);
+    });
     const clearLink = document.getElementById('clear-search-link');
     if (clearLink) clearLink.addEventListener('click', e => { e.preventDefault(); _searchLat = undefined; _searchLng = undefined; _searchLabel = ''; navigate(_cityPage); });
   }
