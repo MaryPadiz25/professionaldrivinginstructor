@@ -32,7 +32,7 @@ const EXPERTISE_CATEGORIES = [
   {
     group: 'Test Preparation',
     items: [
-      { id: 'vicroads-test',        label: 'VicRoads Drive Test Preparation' },
+      { id: 'vicroads-test',        label: 'Drive Test Preparation' },
       { id: 'logbook-hours',        label: 'Building Logbook Hours' },
       { id: 'refresher-lessons',    label: 'Refresher Lessons (Returning Drivers)' },
     ]
@@ -420,7 +420,7 @@ function renderHome() {
         <div class="location-tabs">
           <button class="location-tab active" data-action="nav" data-page="find">Melbourne</button>
           <button class="location-tab coming-soon">Sydney (Coming Soon)</button>
-          <button class="location-tab coming-soon">Brisbane (Coming Soon)</button>
+          <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
         </div>
       </div>
     </section>
@@ -468,9 +468,37 @@ function renderFind(searchLat, searchLng, searchLabel) {
       </div>
     </div>
     <div class="container">
+      <div class="location-tabs" style="margin-bottom:20px">
+        <button class="location-tab active" data-action="nav" data-page="find">Melbourne</button>
+        <button class="location-tab coming-soon">Sydney (Coming Soon)</button>
+        <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
+      </div>
       ${searchInfo}
       <div class="find-grid" id="find-results">${cardsHTML}</div>
     </div>`;
+}
+
+function renderFindBrisbane() {
+  // Filter to Brisbane/QLD instructors from live profiles
+  const brisInst = getAllInstructors().filter(i => (i.state || '').toUpperCase() === 'QLD');
+  const cardsHTML = brisInst.length
+    ? brisInst.map(i => instructorCardHTML(i)).join('')
+    : `<div class="no-results-msg" style="grid-column:1/-1;text-align:center;padding:48px 0">
+        <p style="font-size:18px;font-weight:600;color:var(--navy);margin-bottom:8px">Instructors Coming Soon</p>
+        <p style="color:var(--text-light)">We're building our Brisbane network. Check back soon, or <a href="#" data-action="nav" data-page="join">join the network</a> if you're an instructor.</p>
+       </div>`;
+  return `
+    <section class="section-sm" style="padding-top:40px">
+      <div class="container">
+        <h2 class="section-title" style="margin-bottom:20px">Find Instructors in Brisbane</h2>
+        <div class="location-tabs" style="margin-bottom:28px">
+          <button class="location-tab" data-action="nav" data-page="find">Melbourne</button>
+          <button class="location-tab coming-soon">Sydney (Coming Soon)</button>
+          <button class="location-tab active" data-action="nav" data-page="find-brisbane">Brisbane</button>
+        </div>
+        <div class="find-grid" id="find-results">${cardsHTML}</div>
+      </div>
+    </section>`;
 }
 
 function renderProfile(id) {
@@ -504,8 +532,8 @@ function renderProfile(id) {
     const credentialsBlock = `
       <div class="qs-block">
         <div class="qs-item-label">Credentials</div>
-        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTagHTML(creds.dia)}</div>
-        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTagHTML(creds.wwcc)}</div>
+        <div class="cred-row"><span class="cred-label">State Driving Instructor Authority</span>${credTagHTML(creds.dia)}</div>
+        <div class="cred-row"><span class="cred-label">Child Safety Clearance</span>${credTagHTML(creds.wwcc)}</div>
       </div>`;
     const languagesBlock = (inst.languages && inst.languages.length)
       ? `<div class="qs-block"><div class="qs-item-label">Languages Spoken</div><div class="qs-item-value">${inst.languages.join(', ')}</div></div>`
@@ -530,8 +558,8 @@ function renderProfile(id) {
       <div><div class="qs-item-label">Experience</div><div class="qs-item-value">${inst.experience}</div></div>
       <div>
         <div class="qs-item-label">Credentials</div>
-        <div class="cred-row"><span class="cred-label">Driving Instructor Authority (DIA)</span>${credTagHTML(creds.dia)}</div>
-        <div class="cred-row"><span class="cred-label">Working With Children Check (WWCC)</span>${credTagHTML(creds.wwcc)}</div>
+        <div class="cred-row"><span class="cred-label">State Driving Instructor Authority</span>${credTagHTML(creds.dia)}</div>
+        <div class="cred-row"><span class="cred-label">Child Safety Clearance</span>${credTagHTML(creds.wwcc)}</div>
       </div>
       <div><div class="qs-item-label">Lesson Fee</div><div class="qs-item-value">${inst.fee}</div></div>
       <div><div class="qs-item-label">Transmission</div><div class="qs-item-value">${inst.transmission}</div></div>
@@ -649,8 +677,34 @@ function renderJoin() {
               ${yearOptions}
             </select>
           </div>
-          <div class="form-group"><label class="form-label">Driving Instructor Authority (DIA) Number <span>*</span></label><input type="text" class="form-input" placeholder="Your Driving Instructor Authority number" id="join-dia" /><small class="form-hint">This information is used to check instructor eligibility and is not shown publicly.</small></div>
-          <div class="form-group"><label class="form-label">Working With Children Check (WWCC) Number</label><input type="text" class="form-input" placeholder="Enter your WWCC number" id="join-wwcc" /><small class="form-hint">This information is used to check instructor eligibility and is not shown publicly.</small></div>
+          <div class="form-group">
+            <label class="form-label">State Driving Instructor Authority <span>*</span></label>
+            <select class="form-input" id="join-dia-type">
+              <option value="" disabled selected>Select your authority type…</option>
+              <option value="VIC – Driving Instructor Authority (DIA)">VIC – Driving Instructor Authority (DIA)</option>
+              <option value="NSW – Driving Instructor Licence">NSW – Driving Instructor Licence</option>
+              <option value="QLD – Driver Trainer Accreditation / Industry Authority">QLD – Driver Trainer Accreditation / Industry Authority</option>
+              <option value="WA – Driving Instructor Licence">WA – Driving Instructor Licence</option>
+              <option value="SA – Motor Driving Instructor Licence">SA – Motor Driving Instructor Licence</option>
+              <option value="TAS – Driving Instructor Accreditation">TAS – Driving Instructor Accreditation</option>
+              <option value="ACT – Driving Instructor Accreditation">ACT – Driving Instructor Accreditation</option>
+              <option value="NT – Driving Instructor Accreditation">NT – Driving Instructor Accreditation</option>
+            </select>
+            <input type="text" class="form-input" placeholder="Your authority / licence number" id="join-dia" style="margin-top:8px" />
+            <small class="form-hint">This information is used to check instructor eligibility and is not shown publicly.</small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Child Safety Clearance</label>
+            <select class="form-input" id="join-wwcc-type">
+              <option value="" selected>Select your clearance type… (if applicable)</option>
+              <option value="Working With Children Check (WWCC)">VIC / NSW / WA / SA – Working With Children Check (WWCC)</option>
+              <option value="Blue Card">QLD – Blue Card</option>
+              <option value="Working With Vulnerable People Check">ACT / TAS – Working With Vulnerable People Check</option>
+              <option value="Ochre Card">NT – Ochre Card</option>
+            </select>
+            <input type="text" class="form-input" placeholder="Your card / clearance number" id="join-wwcc" style="margin-top:8px" />
+            <small class="form-hint">This information is used to check instructor eligibility and is not shown publicly.</small>
+          </div>
           <div class="form-group">
             <label class="form-label">Automatic Vehicle</label>
             <input type="text" class="form-input" placeholder="Vehicle make &amp; model (if applicable)" id="join-vehicle-auto" />
@@ -834,8 +888,8 @@ function renderJoin() {
             <div class="join-req-box">
               <div class="join-req-section-head">Licensing &amp; Compliance</div>
               <ul class="join-req-list">
-                <li>Current Driving Instructor Authority (DIA)</li>
-                <li>Valid Working With Children Check (WWCC)</li>
+                <li>Current State Driving Instructor Authority (or equivalent) for your state or territory</li>
+                <li>Valid Child Safety Clearance (WWCC, Blue Card, Working With Vulnerable People Check, or Ochre Card — as required in your state or territory)</li>
               </ul>
               <div class="join-req-section-head">Vehicle Standards</div>
               <ul class="join-req-list">
@@ -1213,7 +1267,8 @@ let _searchLat, _searchLng, _searchLabel;
 
 function getPageContent(page, extra) {
   switch (page) {
-    case 'find':    return renderFind(_searchLat, _searchLng, _searchLabel);
+    case 'find':         return renderFind(_searchLat, _searchLng, _searchLabel);
+    case 'find-brisbane':return renderFindBrisbane();
     case 'profile': return renderProfile(extra);
     case 'join':    return renderJoin();
     case 'about':   return renderAbout();
@@ -1286,7 +1341,7 @@ function buildLiveProfileFromApp(app, appId) {
     availabilityNote: app.availSpecific || '',
     teachingApproachIds: app.teachingApproachIds || [],
     expertiseIds: app.expertiseIds || [],
-    credentials:  { dia: credStatus(false, app.dia), wwcc: credStatus(false, app.wwcc) },
+    credentials:  { dia: credStatus(false, app.dia), diaType: app.diaType || '', wwcc: credStatus(false, app.wwcc), wwccType: app.wwccType || '' },
     seniorBadge:  expYears >= 10,
     photo:        null,
     photoDataUrl: app.photoDataUrl || null,
@@ -1413,7 +1468,7 @@ ${expertiseIdStr}
             <div class="admin-app-name">${app.name} ${statusBadge}</div>
             <div class="admin-app-sub">${app.email}</div>
             <div class="admin-app-sub">${app.phone}</div>
-            <div class="admin-app-sub">DIA: ${app.dia}</div>
+            <div class="admin-app-sub">DIA: ${app.diaType ? app.diaType + ' — ' : ''}${app.dia}</div>
             <div class="admin-app-sub">Submitted: ${submitted}</div>
           </div>
         </div>
@@ -1517,11 +1572,33 @@ ${expertiseIdStr}
             </div>
             <div class="admin-edit-section">
               <div class="admin-edit-section-head">Credentials</div>
-              <div class="admin-edit-row"><label>DIA Number</label><input class="form-input" id="ep-dia-${app.id}" value="${escHtml(app.dia||'')}" /></div>
-              <div class="admin-edit-row"><label>WWCC Number <span style="font-weight:400;color:var(--text-light)">(optional)</span></label><input class="form-input" id="ep-wwcc-${app.id}" value="${escHtml(app.wwcc||'')}" /></div>
+              <div class="admin-edit-row"><label>State Driving Instructor Authority Type</label>
+                <select class="form-input" id="ep-dia-type-${app.id}">
+                  <option value="">— select —</option>
+                  <option value="VIC – Driving Instructor Authority (DIA)" ${app.diaType==='VIC – Driving Instructor Authority (DIA)'?'selected':''}>VIC – Driving Instructor Authority (DIA)</option>
+                  <option value="NSW – Driving Instructor Licence" ${app.diaType==='NSW – Driving Instructor Licence'?'selected':''}>NSW – Driving Instructor Licence</option>
+                  <option value="QLD – Driver Trainer Accreditation / Industry Authority" ${app.diaType==='QLD – Driver Trainer Accreditation / Industry Authority'?'selected':''}>QLD – Driver Trainer Accreditation / Industry Authority</option>
+                  <option value="WA – Driving Instructor Licence" ${app.diaType==='WA – Driving Instructor Licence'?'selected':''}>WA – Driving Instructor Licence</option>
+                  <option value="SA – Motor Driving Instructor Licence" ${app.diaType==='SA – Motor Driving Instructor Licence'?'selected':''}>SA – Motor Driving Instructor Licence</option>
+                  <option value="TAS – Driving Instructor Accreditation" ${app.diaType==='TAS – Driving Instructor Accreditation'?'selected':''}>TAS – Driving Instructor Accreditation</option>
+                  <option value="ACT – Driving Instructor Accreditation" ${app.diaType==='ACT – Driving Instructor Accreditation'?'selected':''}>ACT – Driving Instructor Accreditation</option>
+                  <option value="NT – Driving Instructor Accreditation" ${app.diaType==='NT – Driving Instructor Accreditation'?'selected':''}>NT – Driving Instructor Accreditation</option>
+                </select>
+              </div>
+              <div class="admin-edit-row"><label>Authority / Licence Number</label><input class="form-input" id="ep-dia-${app.id}" value="${escHtml(app.dia||'')}" /></div>
+              <div class="admin-edit-row"><label>Child Safety Clearance Type <span style="font-weight:400;color:var(--text-light)">(optional)</span></label>
+                <select class="form-input" id="ep-wwcc-type-${app.id}">
+                  <option value="">— select —</option>
+                  <option value="Working With Children Check (WWCC)" ${app.wwccType==='Working With Children Check (WWCC)'?'selected':''}>VIC / NSW / WA / SA – Working With Children Check (WWCC)</option>
+                  <option value="Blue Card" ${app.wwccType==='Blue Card'?'selected':''}>QLD – Blue Card</option>
+                  <option value="Working With Vulnerable People Check" ${app.wwccType==='Working With Vulnerable People Check'?'selected':''}>ACT / TAS – Working With Vulnerable People Check</option>
+                  <option value="Ochre Card" ${app.wwccType==='Ochre Card'?'selected':''}>NT – Ochre Card</option>
+                </select>
+              </div>
+              <div class="admin-edit-row"><label>Clearance Number <span style="font-weight:400;color:var(--text-light)">(optional)</span></label><input class="form-input" id="ep-wwcc-${app.id}" value="${escHtml(app.wwcc||'')}" /></div>
               <div class="admin-edit-row admin-edit-row-check">
-                <label><input type="checkbox" id="ep-cred-dia-${app.id}" ${app.credentials?.dia==='provided'||app.credentials?.dia==='verified'?'checked':''} /> Mark DIA as Provided</label>
-                <label><input type="checkbox" id="ep-cred-wwcc-${app.id}" ${app.credentials?.wwcc==='provided'||app.credentials?.wwcc==='verified'?'checked':''} /> Mark WWCC as Provided</label>
+                <label><input type="checkbox" id="ep-cred-dia-${app.id}" ${app.credentials?.dia==='provided'||app.credentials?.dia==='verified'?'checked':''} /> Mark State Driving Instructor Authority as Provided</label>
+                <label><input type="checkbox" id="ep-cred-wwcc-${app.id}" ${app.credentials?.wwcc==='provided'||app.credentials?.wwcc==='verified'?'checked':''} /> Mark Child Safety Clearance as Provided</label>
                 <small class="form-hint">Ticked = shows "Provided" on live profile. Unticked = shows "Not Provided".</small>
               </div>
             </div>
@@ -1687,8 +1764,8 @@ function renderPendingProfile(app) {
           <div class="qs-item"><div class="qs-item-label">Availability</div><div class="qs-item-value">${avail}</div>${(app.availTimes||[]).length ? `<div class="qs-avail-times">${app.availTimes.map(t=>`<div class="qs-avail-time">${t}</div>`).join('')}</div>` : ''}${app.availSpecific ? `<div class="qs-item-value qs-travel-note">${app.availSpecific}</div>` : ''}</div>
           <div class="qs-item">
             <div class="qs-item-label">Credentials</div>
-            <div class="cred-row"><span class="cred-label">DIA</span>${credTagHTML(app.credentials?.dia || credStatus(false, app.dia))}</div>
-            <div class="cred-row"><span class="cred-label">WWCC</span>${credTagHTML(app.credentials?.wwcc || credStatus(false, app.wwcc))}</div>
+            <div class="cred-row"><span class="cred-label">State Driving Instructor Authority</span>${credTagHTML(app.credentials?.dia || credStatus(false, app.dia))}</div>
+            <div class="cred-row"><span class="cred-label">Child Safety Clearance</span>${credTagHTML(app.credentials?.wwcc || credStatus(false, app.wwcc))}</div>
           </div>
           ${feesHTML}
           ${vehiclesHTML}
@@ -1910,7 +1987,9 @@ function bindAdminEvents() {
       const vAuto    = v(`ep-vauto-${appId}`);
       const vManual  = v(`ep-vmanual-${appId}`);
       const dia      = v(`ep-dia-${appId}`);
+      const diaType  = v(`ep-dia-type-${appId}`);
       const wwcc     = v(`ep-wwcc-${appId}`);
+      const wwccType = v(`ep-wwcc-type-${appId}`);
       const credDia  = cb(`ep-cred-dia-${appId}`);
       const credWwcc = cb(`ep-cred-wwcc-${appId}`);
       const unavail  = cb(`ep-unavailable-${appId}`);
@@ -1927,14 +2006,13 @@ function bindAdminEvents() {
       // Build the updates object for the application doc
       const updates = {
         name, email, phone, suburb, state, radius,
-        fee60, fee90, vAuto, vManual, dia, wwcc,
-        credentials: { dia: credStatus(credDia, dia), wwcc: credStatus(credWwcc, wwcc) },
+        fee60, fee90, vAuto, vManual, dia, diaType, wwcc, wwccType,
+        credentials: { dia: credStatus(credDia, dia), diaType, wwcc: credStatus(credWwcc, wwcc), wwccType },
         contactUnavailable: unavail,
         bio, availDays, availTimes, availSpecific: availNote,
         teachingApproachIds, expertiseIds, languages,
       };
 
-      // Recalculate derived fields
       const expYears   = updates.exp ? (new Date().getFullYear() - parseInt(updates.exp)) : 0;
       const idSlug     = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
       const initials   = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -1975,7 +2053,7 @@ function bindAdminEvents() {
             vehicles: vehiclesArr,
             transmission,
             bio, teachingApproachIds, expertiseIds, languages,
-            credentials: { dia: credStatus(credDia, dia), wwcc: credStatus(credWwcc, wwcc) },
+            credentials: { dia: credStatus(credDia, dia), diaType, wwcc: credStatus(credWwcc, wwcc), wwccType },
             contactUnavailable: unavail,
           };
           if (photoDataUrl !== undefined) liveUpdates.photoDataUrl = photoDataUrl;
@@ -2669,8 +2747,10 @@ function bindPageEvents() {
         if (!phone) { showToast('Mobile number is required — instructors are on the road all day, and this ensures quick contact.'); return; }
       }
       if (curStep === 2) {
+        const diaType = document.getElementById('join-dia-type')?.value;
         const dia = document.getElementById('join-dia')?.value.trim();
-        if (!dia) { showToast('Your Driving Instructor Authority (DIA) number is required to continue.'); return; }
+        if (!diaType) { showToast('Please select your State Driving Instructor Authority type before continuing.'); return; }
+        if (!dia) { showToast('Please enter your authority / licence number before continuing.'); return; }
       }
       if (curStep === 3) {
         const teaching = [...document.querySelectorAll('#join-teaching-grid input:checked')];
@@ -2796,7 +2876,7 @@ function bindPageEvents() {
       const decl1  = document.getElementById('join-decl-1')?.checked || false;
 
       if (!name || !email)             { showFormError('join-form-box', 'Your name and email address are required. Please go back and fill them in.'); return; }
-      if (!dia)                        { showFormError('join-form-box', 'Your Driving Instructor Authority (DIA) number is missing. Please go back to Step 2 and enter it.'); return; }
+      if (!dia)                        { showFormError('join-form-box', 'Your State Driving Instructor Authority number is missing. Please go back to Step 2 and enter it.'); return; }
       if (!suburb)                     { showFormError('join-form-box', 'Your primary suburb is missing. Please go back to Step 5 and enter it.'); return; }
       if (!state)                      { showFormError('join-form-box', 'Your state is missing. Please go back to Step 5 and select it.'); return; }
       if (!decl1) {
@@ -2812,7 +2892,9 @@ function bindPageEvents() {
 
       const phone   = document.getElementById('join-phone')?.value || '';
       const exp     = document.getElementById('join-exp')?.value || '';
+      const diaType = document.getElementById('join-dia-type')?.value || '';
       const wwcc    = document.getElementById('join-wwcc')?.value?.trim() || '';
+      const wwccType= document.getElementById('join-wwcc-type')?.value || '';
       const bio     = document.getElementById('join-bio')?.value || '';
       const radius  = document.getElementById('join-radius')?.value || '10';
       const vAuto   = document.getElementById('join-vehicle-auto')?.value || '';
@@ -2874,7 +2956,7 @@ function bindPageEvents() {
       const application = {
         submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
         status:      'pending',
-        name, email, phone, dia, wwcc,
+        name, email, phone, dia, diaType, wwcc, wwccType,
         exp, suburb, state,
         radius:      parseInt(radius, 10),
         vAuto:       vAuto  || '',
@@ -3033,7 +3115,7 @@ function bindNavEvents() {
 }
 function updateActiveLinks(page) {
   document.querySelectorAll('#nav-links-desktop .nav-link, #nav-dropdown .nav-link').forEach(link => {
-    link.classList.toggle('active', link.dataset.page === page || (page === 'profile' && link.dataset.page === 'find'));
+    link.classList.toggle('active', link.dataset.page === page || (page === 'profile' && link.dataset.page === 'find') || (page === 'find-brisbane' && link.dataset.page === 'find'));
   });
 }
 function initReveal() {
