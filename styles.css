@@ -393,7 +393,7 @@ main { flex: 1; }
 }
 .card-meta-location svg {
   position: relative;
-  top: 2px;
+  top: 3px;
 }
 .card-loc-suburbs {
   display: block;
