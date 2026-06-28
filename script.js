@@ -1886,11 +1886,8 @@ ${expertiseIdStr}
           </div>
 
           <div class="admin-edit-actions">
-            <div class="admin-edit-email-opt" style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
-              <input type="checkbox" id="ep-send-email-${app.id}" style="width:16px;height:16px;cursor:pointer" />
-              <label for="ep-send-email-${app.id}" style="font-size:13px;color:var(--text-dark);cursor:pointer">Send instructor a "Your profile has been updated" email notification</label>
-            </div>
-            <button class="btn btn-navy admin-edit-save-btn" data-appid="${app.id}" data-status="${app.status}">💾 Save Changes</button>
+            <button class="btn btn-navy admin-edit-save-btn" data-appid="${app.id}" data-status="${app.status}" data-notify="1">💾 Save Changes</button>
+            <button class="btn btn-outline admin-edit-silent-btn" data-appid="${app.id}" data-status="${app.status}">🔕 Admin Update</button>
             <button class="btn btn-outline admin-edit-cancel-btn" data-appid="${app.id}">Cancel</button>
             <span class="admin-edit-saved-msg" id="edit-saved-${app.id}" style="display:none;color:#38a169;font-size:13px;font-weight:600">✓ Saved!</span>
           </div>
@@ -2190,15 +2187,12 @@ function bindAdminEvents() {
     });
   });
 
-  // ── Edit Profile: save ──
-  document.querySelectorAll('.admin-edit-save-btn').forEach(btn => {
-    const appId = btn.dataset.appid;
-    if (_adminBoundIds.has(appId)) return;   // listener already attached for this profile
-    _adminBoundIds.add(appId);
-    btn.addEventListener('click', () => {
+  // ── Edit Profile: save (shared handler for both Save Changes and Admin Update) ──
+  function handleAdminSave(btn, sendEmail) {
       const appId  = btn.dataset.appid;
       const status = btn.dataset.status;
-      btn.disabled = true; btn.textContent = '💾 Saving…';
+      btn.disabled = true;
+      btn.textContent = '💾 Saving…';
 
       const v  = id => (document.getElementById(id)?.value || '').trim();
       const cb = id => document.getElementById(id)?.checked || false;
@@ -2231,13 +2225,6 @@ function bindAdminEvents() {
       const langOther = v(`ep-lang-other-${appId}`);
       if (langOther) languages.push(langOther);
 
-      // Snapshot the checkbox state and immediately uncheck it.
-      // This also acts as a one-time guard — if duplicate listeners somehow
-      // fire for the same click, only the first one will see it as true.
-      const emailCbEl = document.getElementById(`ep-send-email-${appId}`);
-      const sendUpdateEmail = emailCbEl?.checked || false;
-      if (emailCbEl) emailCbEl.checked = false;
-
       // Build the updates object for the application doc
       const updates = {
         name, email, phone, suburb, state, radius,
@@ -2248,7 +2235,6 @@ function bindAdminEvents() {
         teachingApproachIds, expertiseIds, languages,
       };
 
-      const expYears   = updates.exp ? (new Date().getFullYear() - parseInt(updates.exp)) : 0;
       const idSlug     = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
       const initials   = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       const availLabel = availDays.join(' / ') || 'Contact instructor';
@@ -2268,13 +2254,8 @@ function bindAdminEvents() {
 
         const writes = [db.collection('applications').doc(appId).update(updates)];
 
-        // Keep the private instructor_contacts record in sync whenever the
-        // email/phone is edited — this is what the Cloud Function reads
-        // to forward enquiries, regardless of approval status, so it's
-        // ready the moment the profile goes live.
         writes.push(db.collection('instructor_contacts').doc(idSlug).set({ email, phone }, { merge: true }));
 
-        // If approved, also update the live_profiles document in Firestore
         if (status === 'approved') {
           const liveUpdates = {
             name, initials,
@@ -2293,7 +2274,6 @@ function bindAdminEvents() {
           };
           if (photoDataUrl !== undefined) liveUpdates.photoDataUrl = photoDataUrl;
 
-          // Geocode the (possibly updated) suburb so distance search stays accurate
           try {
             const geo = await geocodeSuburb(suburb || '');
             if (geo) {
@@ -2315,23 +2295,24 @@ function bindAdminEvents() {
 
         Promise.all(writes)
           .then(() => {
-            btn.disabled = false; btn.textContent = '💾 Save Changes';
+            btn.disabled = false;
+            btn.textContent = sendEmail ? '💾 Save Changes' : '🔕 Admin Update';
             const msg = document.getElementById('edit-saved-' + appId);
             if (msg) { msg.style.display = 'inline'; setTimeout(() => msg.style.display = 'none', 3000); }
 
-            // Send update notification email if checkbox is ticked
-            if (sendUpdateEmail && email && typeof emailjs !== 'undefined') {
+            if (sendEmail && email && typeof emailjs !== 'undefined') {
               emailjs.send('service_pdin', 'template_profile_updated', {
                 to_email: email,
                 to_name:  name,
               }).catch(e => console.warn('Update email failed:', e));
             }
 
-            showToast('✅ Profile updated successfully.' + (sendUpdateEmail ? ' Notification email sent.' : ''));
+            showToast('✅ Profile updated successfully.' + (sendEmail ? ' Notification email sent.' : ''));
           })
           .catch(err => {
             console.error('Edit save failed:', err);
-            btn.disabled = false; btn.textContent = '💾 Save Changes';
+            btn.disabled = false;
+            btn.textContent = sendEmail ? '💾 Save Changes' : '🔕 Admin Update';
             showToast('Could not save changes. Please try again.');
           });
       }
@@ -2339,7 +2320,8 @@ function bindAdminEvents() {
       if (photoFile) {
         if (photoFile.size > 5 * 1024 * 1024) {
           showToast('Photo exceeds 5 MB. Please choose a smaller image.');
-          btn.disabled = false; btn.textContent = '💾 Save Changes';
+          btn.disabled = false;
+          btn.textContent = sendEmail ? '💾 Save Changes' : '🔕 Admin Update';
           return;
         }
         const reader = new FileReader();
@@ -2365,7 +2347,17 @@ function bindAdminEvents() {
       } else {
         doSave(undefined);
       }
-    });
+  }
+
+  document.querySelectorAll('.admin-edit-save-btn').forEach(btn => {
+    const appId = btn.dataset.appid;
+    if (_adminBoundIds.has(appId)) return;
+    _adminBoundIds.add(appId);
+    btn.addEventListener('click', () => handleAdminSave(btn, true));
+  });
+
+  document.querySelectorAll('.admin-edit-silent-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleAdminSave(btn, false));
   });
   document.querySelectorAll('.admin-delete-btn').forEach(btn => {
     btn.addEventListener('click', () => {
