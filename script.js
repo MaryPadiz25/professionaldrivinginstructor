@@ -361,12 +361,12 @@ function attachSuburbAutocomplete(inputId, onSelect) {
 
   input.addEventListener('input', () => {
     const q = input.value.trim();
-    if (q.length < 2) { closeDropdown(); return; }
+    if (q.length < 1) { closeDropdown(); return; }
     clearTimeout(_acTimer);
     _acTimer = setTimeout(async () => {
       const results = await fetchSuburbSuggestions(q);
       showSuggestions(results);
-    }, 220);
+    }, 120);
   });
 
   input.addEventListener('keydown', e => {
@@ -2037,10 +2037,6 @@ function locationLabel(inst) {
   return label;
 }
 
-/* Tracks which admin save buttons have already had a listener attached.
-   A module-level Set survives innerHTML re-renders; a data- attribute does not. */
-const _adminBoundIds = new Set();
-
 /* Admin page event bindings */
 function bindAdminEvents() {
   // Firebase Auth sign-in
@@ -2188,6 +2184,8 @@ function bindAdminEvents() {
   });
 
   // ── Edit Profile: save (shared handler for both Save Changes and Admin Update) ──
+  // Using btn.onclick instead of addEventListener so re-running bindAdminEvents
+  // never stacks duplicate listeners — onclick simply overwrites the previous one.
   function handleAdminSave(btn, sendEmail) {
       const appId  = btn.dataset.appid;
       const status = btn.dataset.status;
@@ -2350,14 +2348,11 @@ function bindAdminEvents() {
   }
 
   document.querySelectorAll('.admin-edit-save-btn').forEach(btn => {
-    const appId = btn.dataset.appid;
-    if (_adminBoundIds.has(appId)) return;
-    _adminBoundIds.add(appId);
-    btn.addEventListener('click', () => handleAdminSave(btn, true));
+    btn.onclick = () => handleAdminSave(btn, true);
   });
 
   document.querySelectorAll('.admin-edit-silent-btn').forEach(btn => {
-    btn.addEventListener('click', () => handleAdminSave(btn, false));
+    btn.onclick = () => handleAdminSave(btn, false);
   });
   document.querySelectorAll('.admin-delete-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2683,7 +2678,6 @@ function navigate(page, extra, pushState = true) {
       .then(apps => {
         const appEl = document.getElementById('app');
         if (appEl) {
-          _adminBoundIds.clear();   // DOM is being replaced — reset so new buttons get bound
           appEl.innerHTML = renderAdminPage(extra, apps);
         }
         bindPageEvents();
