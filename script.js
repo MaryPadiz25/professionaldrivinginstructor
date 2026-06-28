@@ -1887,7 +1887,7 @@ ${expertiseIdStr}
 
           <div class="admin-edit-actions">
             <div class="admin-edit-email-opt" style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
-              <input type="checkbox" id="ep-send-email-${app.id}" ${app.status === 'approved' ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer" />
+              <input type="checkbox" id="ep-send-email-${app.id}" style="width:16px;height:16px;cursor:pointer" />
               <label for="ep-send-email-${app.id}" style="font-size:13px;color:var(--text-dark);cursor:pointer">Send instructor a "Your profile has been updated" email notification</label>
             </div>
             <button class="btn btn-navy admin-edit-save-btn" data-appid="${app.id}" data-status="${app.status}">💾 Save Changes</button>
