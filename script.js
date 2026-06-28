@@ -419,7 +419,7 @@ function renderHome() {
         <h2 class="section-title">Find Instructors by Location</h2>
         <div class="location-tabs">
           <button class="location-tab active" data-action="nav" data-page="find">Melbourne</button>
-          <button class="location-tab coming-soon">Sydney (Coming Soon)</button>
+          <button class="location-tab" data-action="nav" data-page="find-sydney">Sydney</button>
           <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
         </div>
       </div>
@@ -477,12 +477,34 @@ function renderFind(searchLat, searchLng, searchLabel) {
     <div class="container">
       <div class="location-tabs" style="margin-bottom:20px">
         <button class="location-tab active" data-action="nav" data-page="find">Melbourne</button>
-        <button class="location-tab coming-soon">Sydney (Coming Soon)</button>
+        <button class="location-tab" data-action="nav" data-page="find-sydney">Sydney</button>
         <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
       </div>
       ${searchInfo}
       <div class="find-grid" id="find-results">${cardsHTML}</div>
     </div>`;
+}
+
+function renderFindSydney() {
+  const sydInst = getAllInstructors().filter(i => (i.state || '').toUpperCase() === 'NSW');
+  const cardsHTML = sydInst.length
+    ? sydInst.map(i => instructorCardHTML(i)).join('')
+    : `<div class="no-results-msg" style="grid-column:1/-1;text-align:center;padding:48px 0">
+        <p style="font-size:18px;font-weight:600;color:var(--navy);margin-bottom:8px">Instructors Coming Soon</p>
+        <p style="color:var(--text-light)">We're building our Sydney network. Check back soon, or <a href="#" data-action="nav" data-page="join">join the network</a> if you're an instructor.</p>
+       </div>`;
+  return `
+    <section class="section-sm" style="padding-top:40px">
+      <div class="container">
+        <h2 class="section-title" style="margin-bottom:20px">Find Instructors in Sydney</h2>
+        <div class="location-tabs" style="margin-bottom:28px">
+          <button class="location-tab" data-action="nav" data-page="find">Melbourne</button>
+          <button class="location-tab active" data-action="nav" data-page="find-sydney">Sydney</button>
+          <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
+        </div>
+        <div class="find-grid" id="find-results">${cardsHTML}</div>
+      </div>
+    </section>`;
 }
 
 function renderFindBrisbane() {
@@ -500,7 +522,7 @@ function renderFindBrisbane() {
         <h2 class="section-title" style="margin-bottom:20px">Find Instructors in Brisbane</h2>
         <div class="location-tabs" style="margin-bottom:28px">
           <button class="location-tab" data-action="nav" data-page="find">Melbourne</button>
-          <button class="location-tab coming-soon">Sydney (Coming Soon)</button>
+          <button class="location-tab" data-action="nav" data-page="find-sydney">Sydney</button>
           <button class="location-tab active" data-action="nav" data-page="find-brisbane">Brisbane</button>
         </div>
         <div class="find-grid" id="find-results">${cardsHTML}</div>
@@ -1275,6 +1297,7 @@ let _searchLat, _searchLng, _searchLabel;
 function getPageContent(page, extra) {
   switch (page) {
     case 'find':         return renderFind(_searchLat, _searchLng, _searchLabel);
+    case 'find-sydney':  return renderFindSydney();
     case 'find-brisbane':return renderFindBrisbane();
     case 'profile': return renderProfile(extra);
     case 'join':    return renderJoin();
@@ -3127,7 +3150,7 @@ function bindNavEvents() {
 }
 function updateActiveLinks(page) {
   document.querySelectorAll('#nav-links-desktop .nav-link, #nav-dropdown .nav-link').forEach(link => {
-    link.classList.toggle('active', link.dataset.page === page || (page === 'profile' && link.dataset.page === 'find') || (page === 'find-brisbane' && link.dataset.page === 'find'));
+    link.classList.toggle('active', link.dataset.page === page || (page === 'profile' && link.dataset.page === 'find') || (page === 'find-brisbane' && link.dataset.page === 'find') || (page === 'find-sydney' && link.dataset.page === 'find'));
   });
 }
 function initReveal() {
