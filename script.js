@@ -433,8 +433,14 @@ function renderHome() {
 }
 
 function renderFind(searchLat, searchLng, searchLabel) {
-  // Only show VIC instructors (or legacy profiles with no state set) on the Melbourne page
-  const allInst = getAllInstructors().filter(i => !i.state || i.state.toUpperCase() === 'VIC');
+  // Only show VIC instructors on the Melbourne page.
+  // Exclude any profile with a non-VIC state set. Profiles with no state
+  // default to VIC (all pre-national instructors were VIC-based).
+  const NON_VIC_STATES = ['NSW','QLD','SA','WA','TAS','ACT','NT'];
+  const allInst = getAllInstructors().filter(i => {
+    const s = (i.state || '').toUpperCase().trim();
+    return !NON_VIC_STATES.includes(s);
+  });
   const sorted = (searchLat !== undefined)
     ? sortInstructorsByDistance(searchLat, searchLng, allInst)
     : allInst.map(i => ({ inst: i, km: undefined }));
