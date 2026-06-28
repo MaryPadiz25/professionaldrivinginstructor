@@ -130,7 +130,6 @@ main { flex: 1; }
   letter-spacing: -0.2px;
   line-height: 1;
 }
-/* Keep old classes safe in case referenced elsewhere */
 .logo-main  { font-size: 13px; font-weight: 400; color: var(--text-dark); }
 .logo-bold  { font-weight: 700; }
 .logo-light { font-size: 13px; font-weight: 400; color: var(--mid-gray); }
@@ -1129,24 +1128,21 @@ body.modal-open { overflow: hidden; }
 /* =============================================
    RESPONSIVE — TABLET (≤ 1024px)
    ============================================= */
+/* =============================================
+   RESPONSIVE — TABLET NAV (≤ 1024px)
+   Keeps desktop nav but shrinks so Contact
+   button doesn't clip on iPad
+   ============================================= */
 @media (max-width: 1024px) {
   .why-grid         { grid-template-columns: repeat(2, 1fr); }
   .instructor-grid  { grid-template-columns: repeat(2, 1fr); }
   .find-grid        { grid-template-columns: repeat(2, 1fr); }
   .join-benefits    { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* =============================================
-   RESPONSIVE — TABLET NAV (≤ 960px)
-   Keeps desktop nav but shrinks text so Contact
-   button doesn't clip on iPad landscape/portrait
-   ============================================= */
-@media (max-width: 960px) {
-  .nav-inner { gap: 8px; }
-  .nav-links  { gap: 0; }
-  .nav-link   { font-size: 13px; padding: 7px 9px; }
-  .nav-contact-btn { padding: 8px 14px !important; font-size: 13px !important; margin-left: 4px; }
-  .logo-single { font-size: 14px; }
+  .nav-inner        { gap: 6px; padding: 0 16px; }
+  .nav-links        { gap: 0; }
+  .nav-link         { font-size: 12.5px; padding: 6px 8px; }
+  .nav-contact-btn  { padding: 7px 12px !important; font-size: 12.5px !important; margin-left: 4px; }
+  .logo-single      { font-size: 13.5px; white-space: normal; max-width: 160px; line-height: 1.2; }
 }
 
 /* =============================================
