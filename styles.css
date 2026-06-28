@@ -388,6 +388,13 @@ main { flex: 1; }
   min-width: 16px;
   display: block;
 }
+.card-meta-location {
+  align-items: baseline;
+}
+.card-meta-location svg {
+  position: relative;
+  top: 2px;
+}
 .card-loc-suburbs {
   display: block;
   font-size: 12.5px;
@@ -681,13 +688,15 @@ main { flex: 1; }
 .profile-title  { font-size: 15px; color: var(--text-light); margin-bottom: 6px; }
 .profile-location {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 5px;
   font-size: 14.5px;
   color: var(--text-body);
 }
 .profile-location svg {
   flex-shrink: 0;
+  position: relative;
+  top: 2px;
 }
 .profile-loc-suburbs {
   display: block;
@@ -2543,7 +2552,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   justify-content: space-between;
   gap: 10px;
   padding: 5px 0;
-  border-bottom: 1px solid var(--border);
 }
 .cred-row:last-child { border-bottom: none; }
 .cred-label {
