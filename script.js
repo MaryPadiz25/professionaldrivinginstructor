@@ -2230,7 +2230,12 @@ function bindAdminEvents() {
       const langOther = v(`ep-lang-other-${appId}`);
       if (langOther) languages.push(langOther);
 
-      const sendUpdateEmail = cb(`ep-send-email-${appId}`);
+      // Snapshot the checkbox state and immediately uncheck it.
+      // This also acts as a one-time guard — if duplicate listeners somehow
+      // fire for the same click, only the first one will see it as true.
+      const emailCbEl = document.getElementById(`ep-send-email-${appId}`);
+      const sendUpdateEmail = emailCbEl?.checked || false;
+      if (emailCbEl) emailCbEl.checked = false;
 
       // Build the updates object for the application doc
       const updates = {
@@ -2320,11 +2325,6 @@ function bindAdminEvents() {
                 to_name:  name,
               }).catch(e => console.warn('Update email failed:', e));
             }
-
-            // Always reset the checkbox to unticked after every save,
-            // so the next save never accidentally re-sends the email.
-            const emailCb = document.getElementById(`ep-send-email-${appId}`);
-            if (emailCb) emailCb.checked = false;
 
             showToast('✅ Profile updated successfully.' + (sendUpdateEmail ? ' Notification email sent.' : ''));
           })
