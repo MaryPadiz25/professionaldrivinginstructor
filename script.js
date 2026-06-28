@@ -1348,7 +1348,12 @@ function buildLiveProfileFromApp(app, appId) {
     availabilityNote: app.availSpecific || '',
     teachingApproachIds: app.teachingApproachIds || [],
     expertiseIds: app.expertiseIds || [],
-    credentials:  { dia: credStatus(false, app.dia), diaType: app.diaType || '', wwcc: credStatus(false, app.wwcc), wwccType: app.wwccType || '' },
+    credentials:  {
+      dia:     app.credentials?.dia     || credStatus(false, app.dia),
+      diaType: app.credentials?.diaType || app.diaType || '',
+      wwcc:    app.credentials?.wwcc    || credStatus(false, app.wwcc),
+      wwccType:app.credentials?.wwccType|| app.wwccType || '',
+    },
     seniorBadge:  expYears >= 10,
     photo:        null,
     photoDataUrl: app.photoDataUrl || null,
