@@ -1203,7 +1203,7 @@ body.modal-open { overflow: hidden; }
 
   /* Location tabs */
   .location-tabs { gap: 8px; }
-  .location-tab { padding: 10px 20px; font-size: 14px; }
+  .location-tab { padding: 9px 16px; font-size: 13.5px; }
 
   /* CTA */
   .cta-section { padding: 72px 20px; }
@@ -1337,7 +1337,7 @@ textarea:focus-visible {
 @media (max-width: 600px) {
   .qs-grid-custom { grid-template-columns: 1fr; }
   .qs-col-left { padding: 0; }
-  .qs-col-right { padding: 0; border-left: none; border-top: 1px solid var(--border); padding-top: 18px; }
+  .qs-col-right { padding: 0; border-left: none; border-top: none; padding-top: 18px; }
 }
 /* =============================================
    JOIN FORM — REQUIREMENTS SECTION
@@ -1823,7 +1823,8 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .card-tagline svg { color: var(--mid-gray) !important; }
 @media (max-width: 600px) {
   .qs-grid-custom { grid-template-columns: 1fr; }
-  .qs-col-right { padding: 0; border-left: none; border-top: 1px solid var(--border); padding-top: 18px; }
+  .qs-col-left { padding: 0; }
+  .qs-col-right { padding: 0; border-left: none; border-top: none; padding-top: 18px; }
 }
 /* =============================================
    SENIOR BADGE (10+ years premium indicator)
