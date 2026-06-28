@@ -1,6 +1,8 @@
-# _redirects — for Netlify hosting
-# Redirects HTTP → HTTPS (handled automatically by Netlify)
-# and ensures SPA hash routing works when deep-linking
+# _redirects — Netlify hosting
+# Force HTTP → HTTPS
+http://pdin.au/*     https://pdin.au/:splat   301!
+http://www.pdin.au/* https://pdin.au/:splat   301!
+https://www.pdin.au/* https://pdin.au/:splat  301!
 
 # SPA fallback: serve index.html for all routes
 /*    /index.html   200
