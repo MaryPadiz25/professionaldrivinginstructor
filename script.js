@@ -421,6 +421,8 @@ function renderHome() {
           <button class="location-tab active" data-action="nav" data-page="find">Melbourne</button>
           <button class="location-tab" data-action="nav" data-page="find-sydney">Sydney</button>
           <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
+          <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
+          <button class="location-tab coming-soon">Perth (Coming Soon)</button>
         </div>
       </div>
     </section>
@@ -479,6 +481,8 @@ function renderFind(searchLat, searchLng, searchLabel) {
         <button class="location-tab active" data-action="nav" data-page="find">Melbourne</button>
         <button class="location-tab" data-action="nav" data-page="find-sydney">Sydney</button>
         <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
+        <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
+        <button class="location-tab coming-soon">Perth (Coming Soon)</button>
       </div>
       ${searchInfo}
       <div class="find-grid" id="find-results">${cardsHTML}</div>
@@ -501,6 +505,8 @@ function renderFindSydney() {
           <button class="location-tab" data-action="nav" data-page="find">Melbourne</button>
           <button class="location-tab active" data-action="nav" data-page="find-sydney">Sydney</button>
           <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
+          <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
+          <button class="location-tab coming-soon">Perth (Coming Soon)</button>
         </div>
         <div class="find-grid" id="find-results">${cardsHTML}</div>
       </div>
@@ -524,6 +530,8 @@ function renderFindBrisbane() {
           <button class="location-tab" data-action="nav" data-page="find">Melbourne</button>
           <button class="location-tab" data-action="nav" data-page="find-sydney">Sydney</button>
           <button class="location-tab active" data-action="nav" data-page="find-brisbane">Brisbane</button>
+          <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
+          <button class="location-tab coming-soon">Perth (Coming Soon)</button>
         </div>
         <div class="find-grid" id="find-results">${cardsHTML}</div>
       </div>
