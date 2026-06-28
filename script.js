@@ -2398,6 +2398,7 @@ function bindAdminEvents() {
             bio, teachingApproachIds, expertiseIds, languages,
             credentials: { dia: credStatus(credDia, dia), diaType, wwcc: credStatus(credWwcc, wwcc), wwccType },
             contactUnavailable: unavail,
+            notifyInstructor: sendEmail,   // true = Save Changes fires email via Cloud Function; false = Admin Update, silent
           };
           if (photoDataUrl !== undefined) liveUpdates.photoDataUrl = photoDataUrl;
 
@@ -2426,14 +2427,6 @@ function bindAdminEvents() {
             btn.textContent = sendEmail ? '💾 Save Changes' : '🔕 Admin Update';
             const msg = document.getElementById('edit-saved-' + appId);
             if (msg) { msg.style.display = 'inline'; setTimeout(() => msg.style.display = 'none', 3000); }
-
-            if (sendEmail && email && typeof emailjs !== 'undefined') {
-              emailjs.send('service_pdin', 'template_profile_updated', {
-                to_email: email,
-                to_name:  name,
-              }).catch(e => console.warn('Update email failed:', e));
-            }
-
             showToast('✅ Profile updated successfully.' + (sendEmail ? ' Notification email sent.' : ''));
           })
           .catch(err => {
