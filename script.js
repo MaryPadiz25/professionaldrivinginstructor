@@ -245,7 +245,7 @@ const PROFILE_DISCLAIMER = `
   <div class="profile-disclaimer">
     <div class="profile-disclaimer-inner">
       <span class="disclaimer-icon">${ICONS.info}</span>
-      <p>All instructor information is provided by individual instructors. The Professional Driving Instructors Network does not independently verify or guarantee qualifications, insurance, or compliance. Information is subject to change and should be confirmed directly with the instructor.</p>
+      <p>All instructor information is provided by individual instructors. This includes, but is not limited to, State Driving Instructor Authority, Child Safety Clearance, insurance, qualifications, and other compliance-related documentation. The Professional Driving Instructors Network does not independently verify or guarantee the accuracy, validity, or currency of any information provided unless explicitly marked as "Verified". Information is subject to change and should be confirmed directly with the instructor prior to engagement.</p>
     </div>
   </div>`;
 
@@ -328,7 +328,7 @@ function instructorCardHTML(inst, distKm) {
     <div class="card" data-action="profile" data-id="${inst.id}">
       <div class="card-photo-wrap">${photoEl}${badge}</div>
       <div class="card-body">
-        <div class="card-name">${inst.name}${inst.seniorBadge ? '<span class="senior-badge" title="10+ Years Experience">⭐</span>' : ''}</div>
+        <div class="card-name">${inst.name}</div>
         ${metaRows}
         <button class="btn btn-navy btn-full" data-action="profile" data-id="${inst.id}">View Profile</button>
       </div>
@@ -476,7 +476,7 @@ function renderFind(searchLat, searchLng, searchLabel) {
         </div>
       </div>
     </div>
-    <div class="container">
+    <div class="container" style="padding-top:32px">
       <div class="location-tabs" style="margin-bottom:20px">
         <button class="location-tab active" data-action="nav" data-page="find">Melbourne</button>
         <button class="location-tab" data-action="nav" data-page="find-sydney">Sydney</button>
@@ -498,23 +498,36 @@ function renderFindSydney() {
         <p style="color:var(--text-light)">We're building our Sydney network. Check back soon, or <a href="#" data-action="nav" data-page="join">join the network</a> if you're an instructor.</p>
        </div>`;
   return `
-    <section class="section-sm" style="padding-top:40px">
-      <div class="container">
-        <h2 class="section-title" style="margin-bottom:20px">Find Instructors in Sydney</h2>
-        <div class="location-tabs" style="margin-bottom:28px">
-          <button class="location-tab" data-action="nav" data-page="find">Melbourne</button>
-          <button class="location-tab active" data-action="nav" data-page="find-sydney">Sydney</button>
-          <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
-          <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
-          <button class="location-tab coming-soon">Perth (Coming Soon)</button>
+    <div class="navy-banner">
+      <h1>Driving Instructors in Sydney</h1>
+      <p>Find an experienced, independent driving instructor near you.</p>
+      <div class="find-search-bar">
+        <div class="find-search-inner">
+          ${ICONS.search}
+          <input type="text" id="find-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" />
+          <button class="btn btn-gold" id="find-search-btn">Find Instructors</button>
         </div>
-        <div class="find-grid" id="find-results">${cardsHTML}</div>
+        <div class="find-location-btn-wrap">
+          <button class="btn btn-find-location" id="find-location-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/></svg>
+            Use my current location
+          </button>
+        </div>
       </div>
-    </section>`;
+    </div>
+    <div class="container" style="padding-top:32px">
+      <div class="location-tabs" style="margin-bottom:20px">
+        <button class="location-tab" data-action="nav" data-page="find">Melbourne</button>
+        <button class="location-tab active" data-action="nav" data-page="find-sydney">Sydney</button>
+        <button class="location-tab" data-action="nav" data-page="find-brisbane">Brisbane</button>
+        <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
+        <button class="location-tab coming-soon">Perth (Coming Soon)</button>
+      </div>
+      <div class="find-grid" id="find-results">${cardsHTML}</div>
+    </div>`;
 }
 
 function renderFindBrisbane() {
-  // Filter to Brisbane/QLD instructors from live profiles
   const brisInst = getAllInstructors().filter(i => (i.state || '').toUpperCase() === 'QLD');
   const cardsHTML = brisInst.length
     ? brisInst.map(i => instructorCardHTML(i)).join('')
@@ -523,19 +536,33 @@ function renderFindBrisbane() {
         <p style="color:var(--text-light)">We're building our Brisbane network. Check back soon, or <a href="#" data-action="nav" data-page="join">join the network</a> if you're an instructor.</p>
        </div>`;
   return `
-    <section class="section-sm" style="padding-top:40px">
-      <div class="container">
-        <h2 class="section-title" style="margin-bottom:20px">Find Instructors in Brisbane</h2>
-        <div class="location-tabs" style="margin-bottom:28px">
-          <button class="location-tab" data-action="nav" data-page="find">Melbourne</button>
-          <button class="location-tab" data-action="nav" data-page="find-sydney">Sydney</button>
-          <button class="location-tab active" data-action="nav" data-page="find-brisbane">Brisbane</button>
-          <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
-          <button class="location-tab coming-soon">Perth (Coming Soon)</button>
+    <div class="navy-banner">
+      <h1>Driving Instructors in Brisbane</h1>
+      <p>Find an experienced, independent driving instructor near you.</p>
+      <div class="find-search-bar">
+        <div class="find-search-inner">
+          ${ICONS.search}
+          <input type="text" id="find-suburb-input" placeholder="Enter a suburb or postcode" autocomplete="off" />
+          <button class="btn btn-gold" id="find-search-btn">Find Instructors</button>
         </div>
-        <div class="find-grid" id="find-results">${cardsHTML}</div>
+        <div class="find-location-btn-wrap">
+          <button class="btn btn-find-location" id="find-location-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/></svg>
+            Use my current location
+          </button>
+        </div>
       </div>
-    </section>`;
+    </div>
+    <div class="container" style="padding-top:32px">
+      <div class="location-tabs" style="margin-bottom:20px">
+        <button class="location-tab" data-action="nav" data-page="find">Melbourne</button>
+        <button class="location-tab" data-action="nav" data-page="find-sydney">Sydney</button>
+        <button class="location-tab active" data-action="nav" data-page="find-brisbane">Brisbane</button>
+        <button class="location-tab coming-soon">Adelaide (Coming Soon)</button>
+        <button class="location-tab coming-soon">Perth (Coming Soon)</button>
+      </div>
+      <div class="find-grid" id="find-results">${cardsHTML}</div>
+    </div>`;
 }
 
 function renderProfile(id) {
@@ -613,7 +640,7 @@ function renderProfile(id) {
         <div class="profile-avatar-wrap">
           ${avatarEl}
           <div>
-            <div class="profile-name">${inst.name}${inst.seniorBadge ? '<span class="senior-badge" title="10+ Years Experience — Premium Badge">⭐</span>' : ''}</div>
+            <div class="profile-name">${inst.name}</div>
             <div class="profile-title">${inst.title}</div>
             <div class="profile-location">${ICONS.pin} <span class="profile-loc-stack">${locationLabel(inst)}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span></div>
           </div>
@@ -1007,10 +1034,12 @@ function renderPricing() {
         <p>Instead, we focus on <strong>quality instruction, better outcomes, and safer drivers</strong>.</p>
         <hr class="pricing-divider" />
         <h2>Independent Instructor Pricing</h2>
-        <p>All instructors on this platform are independent professionals. They set their own pricing, reflecting their experience and expertise.</p>
-        <p>Typical lesson pricing across the network generally falls within:</p>
+        <p>All instructors on this platform are independent professionals and set their own pricing based on experience, vehicle type, lesson structure, and location.</p>
+        <p>Pricing displayed on PDIN is provided by individual instructors and is not independently verified.</p>
+        <p>As a general guide only, lesson pricing submitted by instructors on the platform is commonly listed within the range of:</p>
         <h2>$85 – $135 per hour <span style="font-size:15px;font-weight:400;color:var(--text-light)">(guide only)</span></h2>
-        <p>Some instructors may charge more or less depending on experience level, vehicle type, lesson type, and location.</p>
+        <p>Actual pricing may vary significantly and may be higher or lower depending on the instructor and circumstances.</p>
+        <p>Users should confirm current pricing directly with the instructor prior to booking.</p>
         <hr class="pricing-divider" />
         <h2>No Commission Model</h2>
         <p>Unlike many booking platforms, we do not take a percentage of lesson fees. This means instructors keep 100% of their earnings, pricing is not inflated to cover platform fees, and no hidden charges are passed onto learners.</p>
@@ -1712,6 +1741,10 @@ ${expertiseIdStr}
           </div>
 
           <div class="admin-edit-actions">
+            <div class="admin-edit-email-opt" style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="ep-send-email-${app.id}" ${app.status === 'approved' ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer" />
+              <label for="ep-send-email-${app.id}" style="font-size:13px;color:var(--text-dark);cursor:pointer">Send instructor a "Your profile has been updated" email notification</label>
+            </div>
             <button class="btn btn-navy admin-edit-save-btn" data-appid="${app.id}" data-status="${app.status}">💾 Save Changes</button>
             <button class="btn btn-outline admin-edit-cancel-btn" data-appid="${app.id}">Cancel</button>
             <span class="admin-edit-saved-msg" id="edit-saved-${app.id}" style="display:none;color:#38a169;font-size:13px;font-weight:600">✓ Saved!</span>
@@ -1792,7 +1825,7 @@ function renderPendingProfile(app) {
           : `<div class="profile-avatar-circle" style="width:80px;height:80px;font-size:28px">${initials}</div>`
         }
         <div>
-          <div class="profile-name" style="font-size:22px">${app.name}${expYears >= 10 ? '<span class="senior-badge" title="10+ Years Experience">⭐</span>' : ''}</div>
+          <div class="profile-name" style="font-size:22px">${app.name}</div>
           <div class="profile-title">Professional Driving Instructor</div>
           <div class="profile-location">${ICONS.pin} <span class="profile-loc-stack">${cleanSuburb(app.suburb)}${app.state ? ', ' + app.state : ''}<br><span class="profile-loc-suburbs">Surrounding Suburbs</span></span></div>
         </div>
@@ -2046,6 +2079,8 @@ function bindAdminEvents() {
       const langOther = v(`ep-lang-other-${appId}`);
       if (langOther) languages.push(langOther);
 
+      const sendUpdateEmail = cb(`ep-send-email-${appId}`);
+
       // Build the updates object for the application doc
       const updates = {
         name, email, phone, suburb, state, radius,
@@ -2126,7 +2161,16 @@ function bindAdminEvents() {
             btn.disabled = false; btn.textContent = '💾 Save Changes';
             const msg = document.getElementById('edit-saved-' + appId);
             if (msg) { msg.style.display = 'inline'; setTimeout(() => msg.style.display = 'none', 3000); }
-            showToast('✅ Profile updated successfully.');
+
+            // Send update notification email if checkbox is ticked
+            if (sendUpdateEmail && email && typeof emailjs !== 'undefined') {
+              emailjs.send('service_pdin', 'template_profile_updated', {
+                to_email: email,
+                to_name:  name,
+              }).catch(e => console.warn('Update email failed:', e));
+            }
+
+            showToast('✅ Profile updated successfully.' + (sendUpdateEmail ? ' Notification email sent.' : ''));
           })
           .catch(err => {
             console.error('Edit save failed:', err);
