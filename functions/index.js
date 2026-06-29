@@ -1,9 +1,3 @@
-/* =============================================
-   PDIN — Cloud Functions
-   1. sendWelcomeEmail      — fires when application status → "approved"
-   2. sendProfileUpdatedEmail — fires when a live_profile is updated
-   ============================================= */
-
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { defineSecret }      = require('firebase-functions/params');
 const { initializeApp }     = require('firebase-admin/app');
@@ -12,11 +6,9 @@ const nodemailer            = require('nodemailer');
 
 initializeApp();
 
-/* ── Secrets ── */
 const GMAIL_USER = defineSecret('GMAIL_USER');
 const GMAIL_PASS = defineSecret('GMAIL_PASS');
 
-/* ── Shared: build a nodemailer transporter ── */
 function makeTransporter(user, pass) {
   return nodemailer.createTransport({
     service: 'gmail',
@@ -69,10 +61,6 @@ function htmlWrapper(bodyContent) {
 </html>`;
 }
 
-/* =============================================
-   1. sendWelcomeEmail
-   Triggers: applications/{appId} status → "approved"
-   ============================================= */
 exports.sendWelcomeEmail = onDocumentWritten(
   {
     document: 'applications/{appId}',
@@ -146,11 +134,6 @@ PDIN Admin / Support Team`;
   }
 );
 
-/* =============================================
-   2. sendProfileUpdatedEmail
-   Triggers: live_profiles/{profileId} updated
-   Looks up email from instructor_contacts/{profileId}
-   ============================================= */
 exports.sendProfileUpdatedEmail = onDocumentWritten(
   {
     document: 'live_profiles/{profileId}',
@@ -161,24 +144,19 @@ exports.sendProfileUpdatedEmail = onDocumentWritten(
     const before = event.data.before?.data();
     const after  = event.data.after?.data();
 
-    // Only updates — not creates or deletes
     if (!before || !after)            return null;
     if (!event.data.after?.exists)    return null;
 
-    // Only send if the frontend explicitly set this flag (Save Changes button).
-    // Admin Update writes to live_profiles WITHOUT this flag, so no email fires.
     if (!after.notifyInstructor)      return null;
 
     const profileId = event.params.profileId;
 
-    // Clear the flag immediately so a retry/re-trigger never double-sends
     await getFirestore()
       .collection('live_profiles')
       .doc(profileId)
       .update({ notifyInstructor: false })
       .catch(() => {});
 
-    // Look up email from instructor_contacts using the same doc ID
     const contactSnap = await getFirestore()
       .collection('instructor_contacts')
       .doc(profileId)
@@ -195,7 +173,6 @@ exports.sendProfileUpdatedEmail = onDocumentWritten(
       return null;
     }
 
-    // Derive first name: check profile fields first, then parse the doc ID
     const rawFirst = after.firstName || after.first_name ||
       (after.name ? after.name.split(' ')[0] : null) ||
       profileId.split('-')[0];
