@@ -1,23 +1,8 @@
-/* =============================================
-   CONTACT DETAILS — OBFUSCATED
-   Phone/email stored as char-code arrays so they
-   are NOT readable as plain text in page source.
-   Decoded only at the moment of use (click/send).
-   ============================================= */
 function dec(arr) { return arr.map(c => String.fromCharCode(c)).join(''); }
 
 const CONTACT = {
 };
 
-/* =============================================
-   EXPERTISE CATEGORIES — SINGLE SOURCE OF TRUTH
-   To rename a category: change `label` here only.
-   It automatically updates profiles, join form,
-   search filters, and directory listings everywhere.
-   To add a category: add an entry to the relevant
-   group below, then reference its `id` in any
-   instructor's expertiseIds array.
-   ============================================= */
 const LANGUAGE_OPTIONS = ['English','Mandarin','Cantonese','Hindi','Punjabi','Vietnamese','Arabic','Greek','Tagalog / Filipino','Korean','Japanese','Thai'];
 
 const EXPERTISE_CATEGORIES = [
@@ -58,27 +43,18 @@ const EXPERTISE_CATEGORIES = [
   },
 ];
 
-/* Helper: resolve an array of expertise IDs → display labels.
-   Unknown IDs are passed through as-is (graceful fallback). */
 function resolveExpertise(ids = []) {
   const lookup = {};
   EXPERTISE_CATEGORIES.forEach(g => g.items.forEach(item => { lookup[item.id] = item.label; }));
   return ids.map(id => lookup[id] || id);
 }
 
-/* Helper: render a credential (DIA/WWCC) status tag.
-   "Verified" is never shown to the public for legal reasons — admin
-   marking something as verified internally still just displays as
-   "Provided" here. Only two visible states: Provided / Not Provided. */
 function credTagHTML(status) {
   return (status === 'verified' || status === 'provided')
     ? `<span class="cred-tag cred-provided">Provided</span>`
     : `<span class="cred-tag cred-not-provided">Not Provided</span>`;
 }
 
-/* =============================================
-   TEACHING APPROACH TAGS — SINGLE SOURCE OF TRUTH
-   ============================================= */
 const TEACHING_APPROACH_CATEGORIES = [
   {
     group: 'Personality & Approach',
@@ -97,14 +73,12 @@ const TEACHING_APPROACH_CATEGORIES = [
   },
 ];
 
-/* Helper: resolve an array of teaching-approach IDs → display labels. */
 function resolveTeachingApproach(ids = []) {
   const lookup = {};
   TEACHING_APPROACH_CATEGORIES.forEach(g => g.items.forEach(item => { lookup[item.id] = item.label; }));
   return ids.map(id => lookup[id] || id);
 }
 
-/* Helper: build the join-form teaching-approach checkboxes from the master list */
 function buildTeachingApproachCheckboxes() {
   return TEACHING_APPROACH_CATEGORIES.map(group => `
     <p class="expertise-group-head">${group.group}</p>
@@ -117,7 +91,6 @@ function buildTeachingApproachCheckboxes() {
     </div>`).join('');
 }
 
-/* Helper: build the join-form expertise checkboxes from the master list */
 function buildExpertiseCheckboxes() {
   return EXPERTISE_CATEGORIES.map(group => `
     <p class="expertise-group-head">${group.group}</p>
@@ -130,27 +103,13 @@ function buildExpertiseCheckboxes() {
     </div>`).join('');
 }
 
-/* =============================================
-   INSTRUCTOR DATA
-   No phone/email stored here — use CONTACT map
-   expertiseIds: reference IDs from EXPERTISE_CATEGORIES above.
-   Labels are resolved automatically — never store raw text here.
-   ============================================= */
 const INSTRUCTORS = [];
 
-/* =============================================
-   SHARED TRACKER CONSTANTS
-   ============================================= */
 const CALL_TRACKER_KEY = 'pdin_calls';
 
-/* =============================================
-   ENQUIRY TRACKER (localStorage)
-   ============================================= */
 const TRACKER_KEY = 'pdin_enquiries';
 function trackEnquiry(instructorId, instructorName, leadData) {
-  // Write to localStorage for instant local stats
-  // Full enquiry details are saved to Firestore and Google Sheets
-  // by the Cloud Function — no need to POST from the browser.
+
   try {
     const raw  = localStorage.getItem(TRACKER_KEY);
     const data = raw ? JSON.parse(raw) : {};
@@ -159,14 +118,11 @@ function trackEnquiry(instructorId, instructorName, leadData) {
     data[instructorId].lastDate = new Date().toISOString();
     data[instructorId].history.push(new Date().toISOString());
     localStorage.setItem(TRACKER_KEY, JSON.stringify(data));
-  } catch(e) { /* storage unavailable */ }
+  } catch(e) {  }
 }
 
-/* =============================================
-   CALL TRACKER (localStorage)
-   ============================================= */
 function trackCall(instructorId, instructorName, suburb, licenceStage) {
-  // Always write to localStorage for instant local stats
+
   try {
     const raw  = localStorage.getItem(CALL_TRACKER_KEY);
     const data = raw ? JSON.parse(raw) : {};
@@ -175,9 +131,8 @@ function trackCall(instructorId, instructorName, suburb, licenceStage) {
     data[instructorId].lastDate = new Date().toISOString();
     data[instructorId].history.push(new Date().toISOString());
     localStorage.setItem(CALL_TRACKER_KEY, JSON.stringify(data));
-  } catch(e) { /* storage unavailable */ }
+  } catch(e) {  }
 
-  // Save to Firestore — Cloud Function picks this up and logs to Sheets
   try {
     const safeName = instructorName.replace(/[\/\\]/g, '-');
     const now = new Date();
@@ -193,8 +148,8 @@ function trackCall(instructorId, instructorName, suburb, licenceStage) {
         date: now.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: '2-digit', month: 'short', year: 'numeric' }),
         time: now.toLocaleTimeString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', hour12: true }),
         calledAt: firebase.firestore.FieldValue.serverTimestamp(),
-      }).catch(() => { /* silent — localStorage already saved */ });
-  } catch(e) { /* silent */ }
+      }).catch(() => {  });
+  } catch(e) {  }
 }
 
 function getCallStats() {
@@ -204,18 +159,12 @@ function getCallStats() {
   } catch(e) { return {}; }
 }
 
-/* =============================================
-   DISTANCE UTILITY (Haversine)
-   ============================================= */
 function haversineKm(lat1, lng1, lat2, lng2) {
   const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-/* =============================================
-   SVG ICONS
-   ============================================= */
 const ICONS = {
   shield:     `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`,
   document:   `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
@@ -238,9 +187,6 @@ const ICONS = {
   upload:     `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>`,
 };
 
-/* =============================================
-   DISCLAIMER
-   ============================================= */
 const PROFILE_DISCLAIMER = `
   <div class="profile-disclaimer">
     <div class="profile-disclaimer-inner">
@@ -249,9 +195,6 @@ const PROFILE_DISCLAIMER = `
     </div>
   </div>`;
 
-/* =============================================
-   EMAILJS INIT
-   ============================================= */
 const EMAILJS_PUBLIC_KEY = '6h-VvWML9Chj5QA2a';
 (function initEJS() {
   function tryInit() { if (typeof emailjs !== 'undefined') emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }); }
@@ -259,9 +202,6 @@ const EMAILJS_PUBLIC_KEY = '6h-VvWML9Chj5QA2a';
   else tryInit();
 })();
 
-/* =============================================
-   SUBURB GEOCODING (OpenStreetMap Nominatim)
-   ============================================= */
 async function geocodeSuburb(query) {
   const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=au&limit=1&addressdetails=1&q=${encodeURIComponent(query + ', Australia')}`;
   const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
@@ -272,19 +212,11 @@ async function geocodeSuburb(query) {
   return { lat: parseFloat(r.lat), lng: parseFloat(r.lon), display: r.display_name.split(',')[0], postcode: pc };
 }
 
-/* =============================================
-   SUBURB AUTOCOMPLETE
-   Fetches matching AU suburbs from Nominatim and
-   shows a dropdown in "Vermont, VIC 3133" format.
-   ============================================= */
 let _acTimer = null;
 let _acCache = {};
 
-/* ── Local AU suburb list for instant prefix matching ──
-   Covers the major suburbs across all states. Nominatim is still used
-   to resolve lat/lng when the user selects a suggestion. */
 const AU_SUBURBS = [
-  // VIC
+
   'Abbotsford, VIC 3067','Albert Park, VIC 3206','Alphington, VIC 3078','Altona, VIC 3018','Armadale, VIC 3143',
   'Ascot Vale, VIC 3032','Ashburton, VIC 3147','Ashwood, VIC 3147','Aspendale, VIC 3195','Avondale Heights, VIC 3034',
   'Balaclava, VIC 3183','Balwyn, VIC 3103','Balwyn North, VIC 3104','Berwick, VIC 3806','BlackBurn, VIC 3130',
@@ -323,7 +255,7 @@ const AU_SUBURBS = [
   'Viewbank, VIC 3084','Wantirna, VIC 3152','Wantirna South, VIC 3152','Warrandyte, VIC 3113',
   'Werribee, VIC 3030','West Footscray, VIC 3012','West Melbourne, VIC 3003','Wheelers Hill, VIC 3150',
   'Williamstown, VIC 3016','Woodleigh, VIC 3945','Wyndham Vale, VIC 3024','Yarraville, VIC 3013',
-  // NSW
+
   'Ashfield, NSW 2131','Auburn, NSW 2144','Balmain, NSW 2041','Bankstown, NSW 2200','Bondi, NSW 2026',
   'Bondi Beach, NSW 2026','Bondi Junction, NSW 2022','Botany, NSW 2019','Burwood, NSW 2134',
   'Cabramatta, NSW 2166','Campsie, NSW 2194','Canterbury, NSW 2193','Castle Hill, NSW 2154',
@@ -337,7 +269,7 @@ const AU_SUBURBS = [
   'Rockdale, NSW 2216','Ryde, NSW 2112','Strathfield, NSW 2135','Summer Hill, NSW 2130',
   'Surry Hills, NSW 2010','Sydney, NSW 2000','Sydney CBD, NSW 2000','Ultimo, NSW 2007',
   'Waterloo, NSW 2017','Westmead, NSW 2145','Woollahra, NSW 2025','Woolloomooloo, NSW 2011',
-  // QLD
+
   'Ascot, QLD 4007','Aspley, QLD 4034','Bowen Hills, QLD 4006','Brisbane, QLD 4000','Brisbane CBD, QLD 4000',
   'Bulimba, QLD 4171','Buranda, QLD 4102','Caboolture, QLD 4510','Carindale, QLD 4152',
   'Chermside, QLD 4032','Eight Mile Plains, QLD 4113','Fortitude Valley, QLD 4006',
@@ -349,24 +281,24 @@ const AU_SUBURBS = [
   'Southport, QLD 4215','Spring Hill, QLD 4000','Sunnybank, QLD 4109','Sunshine Coast, QLD 4557',
   'Surfers Paradise, QLD 4217','Taringa, QLD 4068','Toowong, QLD 4066','Toowoomba, QLD 4350',
   'Townsville, QLD 4810','West End, QLD 4101','Woolloongabba, QLD 4102',
-  // SA
+
   'Adelaide, SA 5000','Adelaide CBD, SA 5000','Blackwood, SA 5051','Campbelltown, SA 5074',
   'Christies Beach, SA 5165','Elizabeth, SA 5112','Glenelg, SA 5045','Hackney, SA 5069',
   'Henley Beach, SA 5022','Marden, SA 5070','Marion, SA 5043','Norwood, SA 5067',
   'Salisbury, SA 5108','Tea Tree Gully, SA 5091','Unley, SA 5061','Victor Harbor, SA 5211',
-  // WA
+
   'Balga, WA 6061','Belmont, WA 6104','Bentley, WA 6102','Canning Vale, WA 6155',
   'Cottesloe, WA 6011','Fremantle, WA 6160','Gosnells, WA 6110','Innaloo, WA 6018',
   'Joondalup, WA 6027','Karrinyup, WA 6018','Leederville, WA 6007','Mandurah, WA 6210',
   'Midland, WA 6056','Morley, WA 6062','Mount Lawley, WA 6050','Nedlands, WA 6009',
   'Perth, WA 6000','Perth CBD, WA 6000','Rockingham, WA 6168','Scarborough, WA 6019',
   'Stirling, WA 6021','Subiaco, WA 6008','Wanneroo, WA 6065',
-  // ACT
+
   'Belconnen, ACT 2617','Bruce, ACT 2617','Canberra, ACT 2600','Canberra CBD, ACT 2601',
   'Civic, ACT 2601','Gungahlin, ACT 2912','Tuggeranong, ACT 2900','Woden, ACT 2606',
-  // TAS
+
   'Hobart, TAS 7000','Launceston, TAS 7250','Sandy Bay, TAS 7005',
-  // NT
+
   'Darwin, NT 0800','Palmerston, NT 0830',
 ];
 
@@ -381,7 +313,7 @@ function searchLocalSuburbs(query) {
       if (results.length >= 8) break;
     }
   }
-  // starts-with first, then contains
+
   results.sort((a, b) => {
     const an = a.split(',')[0].toLowerCase();
     const bn = b.split(',')[0].toLowerCase();
@@ -428,7 +360,6 @@ function attachSuburbAutocomplete(inputId, onSelect) {
   const input = document.getElementById(inputId);
   if (!input) return;
 
-  // Create dropdown
   let dropdown = document.getElementById(inputId + '-ac-dropdown');
   if (!dropdown) {
     dropdown = document.createElement('div');
@@ -446,7 +377,7 @@ function attachSuburbAutocomplete(inputId, onSelect) {
     results.forEach(r => {
       const item = document.createElement('div');
       item.className = 'suburb-ac-item';
-      // Bold the matching part
+
       const q   = input.value.trim();
       const idx = r.label.toLowerCase().indexOf(q.toLowerCase());
       if (idx >= 0) {
@@ -462,7 +393,7 @@ function attachSuburbAutocomplete(inputId, onSelect) {
           if (r.lat) {
             onSelect(r);
           } else {
-            // Local-only result — resolve coords via Nominatim then call onSelect
+
             geocodeSuburb(r.name || r.label).then(geo => {
               if (geo) onSelect({ ...r, lat: geo.lat, lng: geo.lng, postcode: geo.postcode || r.postcode });
               else onSelect(r);
@@ -479,7 +410,6 @@ function attachSuburbAutocomplete(inputId, onSelect) {
     const q = input.value.trim();
     if (q.length < 1) { closeDropdown(); return; }
 
-    // Show local suburb list instantly on every keystroke
     const localResults = searchLocalSuburbs(q);
     if (localResults.length) {
       showSuggestions(localResults.map(label => {
@@ -490,7 +420,6 @@ function attachSuburbAutocomplete(inputId, onSelect) {
       }));
     }
 
-    // Fetch real coords from Nominatim in the background (debounced)
     clearTimeout(_acTimer);
     _acTimer = setTimeout(async () => {
       const results = await fetchSuburbSuggestions(q);
@@ -532,16 +461,12 @@ function sortInstructorsByDistance(lat, lng, instructorList) {
     .sort((a, b) => a.km - b.km);
 }
 
-/* =============================================
-   INSTRUCTOR CARD HTML
-   ============================================= */
 function instructorCardHTML(inst, distKm) {
   const photoSrc = inst.photoDataUrl || inst.photo || null;
   const photoEl = photoSrc
     ? `<img src="${photoSrc}" alt="${inst.name}" class="card-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="avatar-initials" style="display:none">${inst.initials}</div>`
     : `<div class="avatar-initials">${inst.initials}</div>`;
 
-  // Smart badge
   let badge = '';
   if (distKm !== undefined) {
     if (distKm <= inst.serviceRadius * 0.5)       badge = `<span class="card-badge badge-best">Best Match</span>`;
@@ -557,13 +482,11 @@ function instructorCardHTML(inst, distKm) {
     ? `<div class="card-dist-row">${ICONS.mapPin} ${cleanSuburb(inst.baseSuburb)} &bull; <strong>${distKm.toFixed(1)} km away</strong></div>`
     : `<div class="card-meta-row card-meta-location">${ICONS.pin} ${cardLocHTML}</div>`;
 
-  // Tagline: prefer Teaching Approach tags submitted via the join form; fall back to a sensible default
   const teachingLabels = (inst.teachingApproachIds && inst.teachingApproachIds.length)
     ? resolveTeachingApproach(inst.teachingApproachIds)
     : null;
   const tagline = teachingLabels ? teachingLabels.join(', ') : 'Patient, calm and supportive';
 
-  // Vehicle types actually entered — never assume both Manual & Auto
   const vehicleTypesLabel = (inst.vehicles && inst.vehicles.length)
     ? inst.vehicles.map(v => v.type).join(' & ')
     : (inst.transmission || 'Contact instructor');
@@ -583,21 +506,12 @@ function instructorCardHTML(inst, distKm) {
     </div>`;
 }
 
-/* =============================================
-   LIVE PROFILE HELPERS
-   Approved applications are stored in Firestore ("live_profiles"
-   collection) so they appear on the site for every visitor, on any
-   device. A real-time listener keeps _liveProfilesCache up to date;
-   getLiveProfiles() just reads that cache so existing render code
-   (which is synchronous) doesn't need to change.
-   ============================================= */
 let _liveProfilesCache = [];
 
 function startLiveProfilesListener() {
   db.collection('live_profiles').onSnapshot(snap => {
     _liveProfilesCache = snap.docs.map(d => d.data());
-    // Re-render the current page if it shows instructor listings, so
-    // newly approved profiles appear without a manual refresh.
+
     const page = (location.hash || '#home').replace('#','').split('/')[0];
     if (['home','find','profile'].includes(page)) {
       navigate(page, history.state?.extra, false);
@@ -614,9 +528,6 @@ function getAllInstructors() {
   return [...INSTRUCTORS, ...liveOnly];
 }
 
-/* =============================================
-   PAGES
-   ============================================= */
 function renderHome() {
   return `
     <section class="hero">
@@ -683,9 +594,7 @@ function renderHome() {
 }
 
 function renderFind(searchLat, searchLng, searchLabel) {
-  // Only show VIC instructors on the Melbourne page.
-  // Exclude any profile with a non-VIC state set. Profiles with no state
-  // default to VIC (all pre-national instructors were VIC-based).
+
   const NON_VIC_STATES = ['NSW','QLD','SA','WA','TAS','ACT','NT'];
   const allInst = getAllInstructors().filter(i => {
     const s = (i.state || '').toUpperCase().trim();
@@ -857,7 +766,7 @@ function renderProfile(id) {
 
   let qsRows = '';
   if (inst.customQS) {
-    // Resolve expertise IDs → labels from the centralized EXPERTISE_CATEGORIES master list
+
     const expertiseLabels = resolveExpertise(inst.expertiseIds || inst.areasOfExpertise || []);
     const expertiseHTML = expertiseLabels.map(a => `<li>${a}</li>`).join('');
     const teachingLabels = resolveTeachingApproach(inst.teachingApproachIds || []);
@@ -1349,9 +1258,6 @@ function renderContact() {
     </section>`;
 }
 
-/* =============================================
-   ENQUIRY MODAL
-   ============================================= */
 function enquiryModalHTML(inst) {
   return `
   <div class="enquiry-overlay" id="enquiry-overlay" role="dialog" aria-modal="true">
@@ -1466,11 +1372,6 @@ function openEnquiryModal(inst) {
     clearEnquiryError();
     setEnquiryButtonLoading(true);
 
-    // Enquiries are written to Firestore; a Cloud Function picks each one
-    // up, looks up the instructor's real email (kept private, never sent
-    // to the browser), and forwards it via Resend — with Reply-To set to
-    // the student's email so the instructor can just hit "reply".
-    // Details are also logged to Google Sheets under the instructor's tab.
     const isUnavailable = inst.contactUnavailable || false;
 
     if (isUnavailable) {
@@ -1525,9 +1426,6 @@ function setEnquiryButtonLoading(loading) {
   else { btn.disabled = false; btn.innerHTML = `${ICONS.mail} Send Enquiry`; }
 }
 
-/* =============================================
-   FORM HELPERS
-   ============================================= */
 function setButtonLoading(btnId, loading, originalText) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
@@ -1537,10 +1435,7 @@ function setButtonLoading(btnId, loading, originalText) {
 function showFormError(containerId, message) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  // Insert the error inside the currently VISIBLE step only — join-form-box
-  // contains buttons from every step (most hidden), so anchoring to "the
-  // first button in the form box" can place the message off-screen or next
-  // to a hidden step's button instead of next to what the visitor can see.
+
   const visibleStep = [...container.querySelectorAll('.join-step')]
     .find(step => step.style.display !== 'none') || container;
   const existing = visibleStep.querySelector('.form-error-msg');
@@ -1553,11 +1448,8 @@ function showFormError(containerId, message) {
   err.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-/* =============================================
-   TOAST NOTIFICATION
-   ============================================= */
 function showToast(message) {
-  // Remove any existing toast first
+
   const existing = document.getElementById('pdin-toast');
   if (existing) { existing.remove(); }
 
@@ -1577,15 +1469,12 @@ function showToast(message) {
 
   document.body.appendChild(toast);
 
-  // Trigger entrance animation
   requestAnimationFrame(() => {
     requestAnimationFrame(() => toast.classList.add('pdin-toast--visible'));
   });
 
-  // Close button
   toast.querySelector('.pdin-toast-close').addEventListener('click', () => dismissToast(toast));
 
-  // Auto-dismiss after 4 seconds
   const timer = setTimeout(() => dismissToast(toast), 4000);
   toast._dismissTimer = timer;
 }
@@ -1598,13 +1487,10 @@ function dismissToast(toast) {
   setTimeout(() => { if (toast.isConnected) toast.remove(); }, 340);
 }
 
-/* =============================================
-   ROUTER
-   ============================================= */
 let _searchLat, _searchLng, _searchLabel, _cityPage = 'find';
 
 function getPageContent(page, extra) {
-  // Track which city Find page we're on so search stays on that city
+
   if (page === 'find' || page === 'find-sydney' || page === 'find-brisbane') _cityPage = page;
   switch (page) {
     case 'find':         return renderFind(_searchLat, _searchLng, _searchLabel);
@@ -1616,35 +1502,16 @@ function getPageContent(page, extra) {
     case 'pricing': return renderPricing();
     case 'contact': return renderContact();
     case 'stats':   return renderStatsPage();
-    case 'admin':   return renderAdminPage(extra); // initial sync render (login gate or loading state); real data loads async in navigate()
+    case 'admin':   return renderAdminPage(extra);
     default:        return renderHome();
   }
 }
 
-
-/* =============================================
-   ADMIN PAGE — pending applications (#admin?key=…)
-   ============================================= */
-// Admin access is now controlled by Firebase Authentication (real sign-in)
-// plus Firestore Security Rules — see firestore.rules.txt. There is no
-// password stored in this file anymore.
-
-/* Build a live_profiles document from an application record.
-   Shared by the "Approve & Publish Live" action and by "Restore from
-   Trash" (when restoring a record that was approved before it was
-   trashed), so both produce an identical live profile. */
-/* Experience label rule (trust-ladder display):
-   0–19 years  -> exact number, e.g. "14 years experience"
-   20–29 years -> "20+ years experience"
-   30–39 years -> "30+ years experience"
-   40–49 years -> "40+ years experience"
-   50+  years -> "50+ years experience"
-   (the " experience" suffix is added by the calling templates, not here) */
 function formatExperienceLabel(expYears) {
   if (expYears < 1)  return 'Under 1 year';
   if (expYears === 1) return '1 year';
   if (expYears < 20) return expYears + ' years';
-  const tierFloor = Math.floor(expYears / 10) * 10; // 20,30,40,50...
+  const tierFloor = Math.floor(expYears / 10) * 10;
   return tierFloor + '+ years';
 }
 
@@ -1699,14 +1566,12 @@ function buildLiveProfileFromApp(app, appId) {
   return { idSlug, liveProfile };
 }
 
-/* Trash keeps records indefinitely — nothing is auto-purged.
-   Records stay in Trash until manually deleted from the Trash tab. */
 function purgeExpiredTrash(apps) {
   return Promise.resolve(apps);
 }
 
 function renderAdminPage(extra, apps) {
-  // Not signed in → show login form instead of a password box
+
   if (!auth.currentUser) {
     return `
       <div class="admin-gate">
@@ -1724,8 +1589,6 @@ function renderAdminPage(extra, apps) {
       </div>`;
   }
 
-  // apps is fetched asynchronously from Firestore by navigate() before this
-  // function is called with real data; until then it may be undefined.
   apps = apps || [];
 
   const pending  = apps.filter(a => a.status === 'pending');
@@ -1751,10 +1614,8 @@ function renderAdminPage(extra, apps) {
       ? `<span class="admin-status-badge admin-badge-trashed">🗑 Trashed</span>`
       : `<span class="admin-status-badge admin-badge-pending">Pending Review</span>`;
 
-    // Trashed records stay until manually deleted
     let trashNote = 'This record has been moved to Trash. Restore it or delete it permanently.';
 
-    // Build the code block that gets copied on approve
     const idSlug     = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
     const transmission = [app.vAuto ? 'Automatic' : '', app.vManual ? 'Manual' : ''].filter(Boolean).join(' & ') || 'Automatic';
     const feesArr    = [`{ duration: '60 min', price: '$${app.fee60}' }`, ...(app.fee90 ? [`{ duration: '90 min', price: '$${app.fee90}' }`] : [])];
@@ -1771,7 +1632,7 @@ function renderAdminPage(extra, apps) {
     title: 'Professional Driving Instructor',
     baseSuburb: '${cleanSuburb(app.suburb)}',
     state: '${app.state || ''}',
-    baseLat: -37.8136, baseLng: 144.9631,  // TODO: update with real coords for ${cleanSuburb(app.suburb)}
+    baseLat: -37.8136, baseLng: 144.9631,
     serviceRadius: ${app.radius || 10},
     travelBonus: false,
     travelFee: false,
@@ -1794,13 +1655,13 @@ ${teachingIdStr}
 ${expertiseIdStr}
     ],
     seniorBadge: ${expYears >= 10},
-    photo: '${idSlug}.jpg',  // TODO: upload photo as ${idSlug}.jpg
+    photo: '${idSlug}.jpg',
     bio: "${(app.bio||'').replace(/"/g, '\\"')}",
   },`;
 
     const contactBlock = `  '${idSlug}': {
-    email: '',  // TODO: instructor's email — enquiries auto-forward here via Cloud Function
-    phone: [],  // TODO: phone as char-code array, e.g. using dec() helper
+    email: '',
+    phone: [],
   },`;
 
     return `
@@ -2068,7 +1929,6 @@ ${expertiseIdStr}
     </div>`;
 }
 
-/* Render a pending application as a live profile preview (no contact buttons) */
 function renderPendingProfile(app) {
   const initials   = app.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const expYears   = app.exp ? (new Date().getFullYear() - parseInt(app.exp)) : 0;
@@ -2133,29 +1993,22 @@ function renderPendingProfile(app) {
     </div>`;
 }
 
-/* Credential status: admin-verified takes priority, then instructor-provided, else not provided */
 function credStatus(adminProvided, value) {
   if (adminProvided) return 'provided';
   return 'not_provided';
 }
 
-/* HTML-escape helper for code blocks */
 function escHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-/* Strip a trailing postcode from a suburb string so only the suburb name is ever
-   shown publicly (e.g. "Horsham-3400", "Horsham 3400", "Horsham, 3400" → "Horsham").
-   Some instructors type their postcode into the suburb field; this normalises
-   display everywhere without requiring a data fix in Firestore. */
 function cleanSuburb(str) {
   if (!str) return str;
   return String(str)
-    .replace(/[\s,-]*\b\d{4}\b\s*$/, '')   // trailing 4-digit AU postcode, with optional separator
+    .replace(/[\s,-]*\b\d{4}\b\s*$/, '')
     .trim();
 }
 
-/* Build a full location label: "Suburb, VIC 3400" */
 function locationLabel(inst) {
   const suburb = cleanSuburb(inst.baseSuburb || inst.suburb || '');
   const state  = inst.state || '';
@@ -2166,9 +2019,8 @@ function locationLabel(inst) {
   return label;
 }
 
-/* Admin page event bindings */
 function bindAdminEvents() {
-  // Firebase Auth sign-in
+
   const keyBtn = document.getElementById('admin-key-btn');
   if (keyBtn) {
     const doUnlock = () => {
@@ -2187,11 +2039,9 @@ function bindAdminEvents() {
     return;
   }
 
-  // Sign out
   const signOutBtn = document.getElementById('admin-signout-btn');
   if (signOutBtn) signOutBtn.addEventListener('click', () => auth.signOut().then(() => navigate('admin')));
 
-  // Tabs
   document.querySelectorAll('.admin-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -2201,7 +2051,6 @@ function bindAdminEvents() {
     });
   });
 
-  // Copy buttons
   document.querySelectorAll('.admin-copy-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const pre = document.getElementById(btn.dataset.copy);
@@ -2213,12 +2062,10 @@ function bindAdminEvents() {
     });
   });
 
-  // View live profile
   document.querySelectorAll('.admin-view-live-btn').forEach(btn => {
     btn.addEventListener('click', () => navigate('profile', btn.dataset.slug));
   });
 
-  // Approve — instantly publishes profile live including photo and credentials
   document.querySelectorAll('.admin-approve-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
@@ -2229,7 +2076,6 @@ function bindAdminEvents() {
         const app = doc.data();
         const { idSlug, liveProfile } = buildLiveProfileFromApp(app, appId);
 
-        // Geocode the instructor's suburb so distance search works correctly
         try {
           const geo = await geocodeSuburb(app.suburb || '');
           if (geo) {
@@ -2237,13 +2083,12 @@ function bindAdminEvents() {
             liveProfile.baseLng = geo.lng;
             if (geo.postcode) liveProfile.basePostcode = geo.postcode;
           }
-        } catch(e) { /* proceed without coords — better than blocking the publish */ }
+        } catch(e) {  }
 
         return Promise.all([
           db.collection('applications').doc(appId).update({ status: 'approved' }),
           db.collection('live_profiles').doc(idSlug).set(liveProfile),
-          // Private — never publicly readable. This is what the Cloud
-          // Function reads to forward enquiries to the right inbox.
+
           db.collection('instructor_contacts').doc(idSlug).set({
             email: app.email || '',
             phone: app.phone || '',
@@ -2260,7 +2105,6 @@ function bindAdminEvents() {
     });
   });
 
-  // Reject / Remove from site
   document.querySelectorAll('.admin-reject-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (!confirm('Reject this application? If already approved, the profile will be removed from the site.')) return;
@@ -2268,7 +2112,7 @@ function bindAdminEvents() {
       btn.disabled = true;
       db.collection('applications').doc(appId).update({ status: 'rejected' })
         .then(() => {
-          // Find any live profile published from this application and remove it
+
           return db.collection('live_profiles').where('_fromApp', '==', appId).get();
         })
         .then(snap => Promise.all(snap.docs.map(d => d.ref.delete())))
@@ -2277,7 +2121,6 @@ function bindAdminEvents() {
     });
   });
 
-  // Restore to pending
   document.querySelectorAll('.admin-restore-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
@@ -2288,7 +2131,6 @@ function bindAdminEvents() {
     });
   });
 
-  // ── Edit Profile: toggle panel open/closed ──
   document.querySelectorAll('.admin-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
@@ -2301,7 +2143,6 @@ function bindAdminEvents() {
     });
   });
 
-  // ── Edit Profile: cancel ──
   document.querySelectorAll('.admin-edit-cancel-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
@@ -2312,9 +2153,6 @@ function bindAdminEvents() {
     });
   });
 
-  // ── Edit Profile: save (shared handler for both Save Changes and Admin Update) ──
-  // Using btn.onclick instead of addEventListener so re-running bindAdminEvents
-  // never stacks duplicate listeners — onclick simply overwrites the previous one.
   function handleAdminSave(btn, sendEmail) {
       const appId  = btn.dataset.appid;
       const status = btn.dataset.status;
@@ -2352,7 +2190,6 @@ function bindAdminEvents() {
       const langOther = v(`ep-lang-other-${appId}`);
       if (langOther) languages.push(langOther);
 
-      // Build the updates object for the application doc
       const updates = {
         name, email, phone, suburb, state, radius,
         fee60, fee90, vAuto, vManual, dia, diaType, wwcc, wwccType,
@@ -2372,7 +2209,6 @@ function bindAdminEvents() {
       if (vManual) vehiclesArr.push({ type: 'Manual', car: vManual });
       const transmission = [vAuto ? 'Automatic' : '', vManual ? 'Manual' : ''].filter(Boolean).join(' & ') || 'Automatic';
 
-      // Handle photo replacement
       const photoInput = document.getElementById(`ep-photo-${appId}`);
       const photoFile  = photoInput?.files?.[0] || null;
 
@@ -2398,7 +2234,7 @@ function bindAdminEvents() {
             bio, teachingApproachIds, expertiseIds, languages,
             credentials: { dia: credStatus(credDia, dia), diaType, wwcc: credStatus(credWwcc, wwcc), wwccType },
             contactUnavailable: unavail,
-            notifyInstructor: sendEmail,   // true = Save Changes fires email via Cloud Function; false = Admin Update, silent
+            notifyInstructor: sendEmail,
           };
           if (photoDataUrl !== undefined) liveUpdates.photoDataUrl = photoDataUrl;
 
@@ -2409,7 +2245,7 @@ function bindAdminEvents() {
               liveUpdates.baseLng = geo.lng;
               if (geo.postcode) liveUpdates.basePostcode = geo.postcode;
             }
-          } catch(e) { /* proceed without coords */ }
+          } catch(e) {  }
 
           writes.push(
             db.collection('live_profiles').where('_fromApp', '==', appId).get()
@@ -2489,7 +2325,7 @@ function bindAdminEvents() {
           prevStatus: prevStatus,
           trashedAt: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
-          // Take any associated live profile off the site while trashed
+
           return db.collection('live_profiles').where('_fromApp', '==', appId).get();
         }).then(snap => Promise.all(snap.docs.map(d => d.ref.delete())));
       })
@@ -2498,8 +2334,6 @@ function bindAdminEvents() {
     });
   });
 
-  // Restore from Trash — back to its previous status, re-publishing the
-  // live profile too if it was approved before being trashed
   document.querySelectorAll('.admin-trash-restore-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const appId = btn.dataset.appid;
@@ -2515,7 +2349,7 @@ function bindAdminEvents() {
         });
         if (restoredStatus === 'approved') {
           const { idSlug, liveProfile } = buildLiveProfileFromApp(app, appId);
-          // Geocode so restored profile works in distance search
+
           try {
             const geo = await geocodeSuburb(app.suburb || '');
             if (geo) {
@@ -2523,7 +2357,7 @@ function bindAdminEvents() {
               liveProfile.baseLng = geo.lng;
               if (geo.postcode) liveProfile.basePostcode = geo.postcode;
             }
-          } catch(e) { /* proceed without coords */ }
+          } catch(e) {  }
           return Promise.all([updatePromise, db.collection('live_profiles').doc(idSlug).set(liveProfile)]);
         }
         return updatePromise;
@@ -2533,7 +2367,6 @@ function bindAdminEvents() {
     });
   });
 
-  // Permanently delete from Trash
   document.querySelectorAll('.admin-trash-purge-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (!confirm('Permanently delete this record? This cannot be undone.')) return;
@@ -2549,7 +2382,6 @@ function bindAdminEvents() {
     });
   });
 
-  // Fix Search Coordinates — geocodes every live profile that has null/missing coords
   const geocodeAllBtn = document.getElementById('admin-geocode-all-btn');
   if (geocodeAllBtn) {
     geocodeAllBtn.addEventListener('click', async () => {
@@ -2571,7 +2403,7 @@ function bindAdminEvents() {
           const data = docSnap.data();
           const suburb = data.baseSuburb || '';
           try {
-            // Nominatim rate-limit: 1 request/second
+
             await new Promise(r => setTimeout(r, 1100));
             const geo = await geocodeSuburb(suburb);
             if (geo) {
@@ -2597,9 +2429,6 @@ function bindAdminEvents() {
   }
 }
 
-/* =============================================
-   CALL STATS PAGE (admin — via #stats)
-   ============================================= */
 function renderStatsPage() {
   const callData    = getCallStats();
   const enquiryData = (function(){ try { const r=localStorage.getItem('pdin_enquiries'); return r?JSON.parse(r):{};} catch(e){return {};} })();
@@ -2618,7 +2447,6 @@ function renderStatsPage() {
     const lastCall  = callData[id]?.lastDate    ? new Date(callData[id].lastDate).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
     const lastEnq   = enquiryData[id]?.lastDate ? new Date(enquiryData[id].lastDate).toLocaleString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
 
-    // Call sparkline: last 7 days
     const callHistory = callData[id]?.history || [];
     const now         = Date.now();
     const callDays    = Array.from({length:7}, (_,i) => {
@@ -2632,7 +2460,6 @@ function renderStatsPage() {
       return `<div class="spark-bar" style="height:${Math.max(h,2)}px" title="${v} call${v!==1?'s':''}"></div>`;
     }).join('');
 
-    // Enquiry sparkline: last 7 days
     const enqHistory = enquiryData[id]?.history || [];
     const enqDays    = Array.from({length:7}, (_,i) => {
       const dayStart = now - (6-i)*86400000;
@@ -2707,12 +2534,6 @@ function renderStatsPage() {
     </section>`;
 }
 
-/* =============================================
-   DYNAMIC SEO META UPDATER
-   Updates <title> and <meta description> on every
-   page navigation so Googlebot's JS renderer sees
-   unique, keyword-rich meta for each "page".
-   ============================================= */
 const SEO_META = {
   home: {
     title: 'Professional Driving Instructors Network | Find a Driving Instructor in Melbourne',
@@ -2742,7 +2563,7 @@ const SEO_META = {
 
 function updatePageMeta(page, extra) {
   let meta = SEO_META[page];
-  // For profile pages, generate instructor-specific meta
+
   if (page === 'profile' && extra) {
     const inst = getAllInstructors().find(i => i.id === extra);
     if (inst) {
@@ -2754,14 +2575,11 @@ function updatePageMeta(page, extra) {
   }
   if (!meta) meta = SEO_META.home;
 
-  // Update <title>
   document.title = meta.title;
 
-  // Update <meta name="description">
   let descEl = document.querySelector('meta[name="description"]');
   if (descEl) descEl.setAttribute('content', meta.desc);
 
-  // Update Open Graph title + description
   const ogTitle = document.querySelector('meta[property="og:title"]');
   const ogDesc  = document.querySelector('meta[property="og:description"]');
   const ogUrl   = document.querySelector('meta[property="og:url"]');
@@ -2769,7 +2587,6 @@ function updatePageMeta(page, extra) {
   if (ogDesc)  ogDesc.setAttribute('content', meta.desc);
   if (ogUrl)   ogUrl.setAttribute('content', `https://pdin.au/${extra ? '#' + page + '/' + extra : '#' + page}`);
 
-  // Update canonical
   let canonEl = document.querySelector('link[rel="canonical"]');
   if (canonEl) canonEl.setAttribute('href', `https://pdin.au/${extra ? '#' + page + '/' + extra : '#' + page}`);
 }
@@ -2779,7 +2596,7 @@ function navigate(page, extra, pushState = true) {
   app.innerHTML = getPageContent(page, extra);
   requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   updateActiveLinks(page);
-  updatePageMeta(page, extra);   // ← SEO: update title + meta per page
+  updatePageMeta(page, extra);
   closeMenu();
   if (pushState) {
     const state = { page, extra: extra||null, searchLat: _searchLat||null, searchLng: _searchLng||null, searchLabel: _searchLabel||'' };
@@ -2789,8 +2606,6 @@ function navigate(page, extra, pushState = true) {
   bindPageEvents();
   setTimeout(initReveal, 50);
 
-  // Admin page needs an async Firestore fetch once signed in. Re-render
-  // with real data after the synchronous login-gate/loading render above.
   if (page === 'admin' && auth.currentUser) {
     db.collection('applications').orderBy('submittedAt', 'desc').get()
       .then(snap => {
@@ -2820,7 +2635,6 @@ function bindPageEvents() {
   });
   bindAdminEvents();
 
-  /* Hero suburb search */
   const heroSearchBtn = document.getElementById('hero-search-btn');
   const heroInput     = document.getElementById('hero-suburb-input');
   if (heroSearchBtn && heroInput) {
@@ -2840,14 +2654,13 @@ function bindPageEvents() {
     }
     heroSearchBtn.addEventListener('click', doHeroSearch);
     heroInput.addEventListener('keydown', e => { if (e.key === 'Enter') doHeroSearch(); });
-    // Autocomplete: selecting a suggestion immediately searches
+
     attachSuburbAutocomplete('hero-suburb-input', async (r) => {
       _searchLat = r.lat; _searchLng = r.lng; _searchLabel = r.name + (r.postcode ? ' ' + r.postcode : '');
       navigate(_cityPage);
     });
   }
 
-  /* Hero — Use my current location */
   const heroLocationBtn = document.getElementById('hero-location-btn');
   if (heroLocationBtn) {
     heroLocationBtn.addEventListener('click', () => {
@@ -2875,7 +2688,6 @@ function bindPageEvents() {
     });
   }
 
-  /* Find page search */
   const findSearchBtn = document.getElementById('find-search-btn');
   const findInput     = document.getElementById('find-suburb-input');
   if (findSearchBtn && findInput) {
@@ -2895,7 +2707,7 @@ function bindPageEvents() {
     }
     findSearchBtn.addEventListener('click', doFindSearch);
     findInput.addEventListener('keydown', e => { if (e.key === 'Enter') doFindSearch(); });
-    // Autocomplete: selecting a suggestion immediately searches
+
     attachSuburbAutocomplete('find-suburb-input', async (r) => {
       _searchLat = r.lat; _searchLng = r.lng; _searchLabel = r.name + (r.postcode ? ' ' + r.postcode : '');
       navigate(_cityPage);
@@ -2904,7 +2716,6 @@ function bindPageEvents() {
     if (clearLink) clearLink.addEventListener('click', e => { e.preventDefault(); _searchLat = undefined; _searchLng = undefined; _searchLabel = ''; navigate(_cityPage); });
   }
 
-  /* Use my current location button */
   const locationBtn = document.getElementById('find-location-btn');
   if (locationBtn) {
     locationBtn.addEventListener('click', () => {
@@ -2918,7 +2729,7 @@ function bindPageEvents() {
         async (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          // Reverse geocode to get a suburb name
+
           try {
             const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`, { headers: { 'Accept-Language': 'en' } });
             const data = await res.json();
@@ -2943,17 +2754,12 @@ function bindPageEvents() {
     });
   }
 
-  /* Call instructor (obfuscated — decoded only on click) */
   const callBtn = document.getElementById('call-instructor-btn');
   if (callBtn) {
     callBtn.addEventListener('click', () => {
       const ct   = CONTACT[callBtn.dataset.id];
       const inst = getAllInstructors().find(i => i.id === callBtn.dataset.id);
 
-      // Hardcoded instructors store their number (already +61, char-code
-      // obfuscated) in CONTACT. Live/approved profiles (from Firestore)
-      // don't have a CONTACT entry — their number lives on the profile
-      // itself instead, in local 04xx xxx xxx format from the join form.
       let rawNumber = null;
       if (ct && ct.p) {
         rawNumber = dec(ct.p);
@@ -2962,7 +2768,7 @@ function bindPageEvents() {
       }
 
       if (rawNumber) {
-        // Normalize to +61 international format for the tel: link.
+
         let digits = rawNumber.replace(/[^\d+]/g, '');
         if (digits.startsWith('0')) digits = '+61' + digits.slice(1);
         else if (digits.startsWith('61')) digits = '+' + digits;
@@ -2981,9 +2787,6 @@ function bindPageEvents() {
     });
   }
 
-  /* ── Join form: step management with browser-history support ── */
-
-  /* Phone number auto-formatting — formats as 0412 345 678 */
   const phoneInput = document.getElementById('join-phone');
   if (phoneInput) {
     phoneInput.addEventListener('input', () => {
@@ -2995,7 +2798,6 @@ function bindPageEvents() {
     });
   }
 
-  // Collect all serialisable form values into a plain object
   function collectJoinFormData() {
     const get  = id => document.getElementById(id)?.value ?? '';
     const chks = sel => [...document.querySelectorAll(sel)].filter(c => c.checked).map(c => c.value);
@@ -3025,7 +2827,6 @@ function bindPageEvents() {
     };
   }
 
-  // Restore form values from a saved data object (no file inputs — can't serialise those)
   function restoreJoinFormData(d) {
     if (!d) return;
     const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
@@ -3044,7 +2845,7 @@ function bindPageEvents() {
     restoreChecks('#join-expertise-grid input', d.expertise);
     restoreChecks('#join-step-6 input[type="checkbox"]', [...(d.availDays||[]), ...(d.availTimes||[])]);
     restoreChecks('#join-step-8 input[type="checkbox"]', d.decl);
-    // Refresh Teaching Approach counter after restore
+
     const teachingHint = document.getElementById('teaching-count-hint');
     if (teachingHint) {
       const tCount = (d.teaching || []).length;
@@ -3053,7 +2854,7 @@ function bindPageEvents() {
       else teachingHint.textContent = `${tCount} selected ✓`;
       teachingHint.style.color = (tCount < 2 || tCount > 3) ? '#e53e3e' : '#38a169';
     }
-    // Refresh expertise counter after restore
+
     const hint = document.getElementById('expertise-count-hint');
     if (hint) {
       const count = (d.expertise || []).length;
@@ -3071,13 +2872,12 @@ function bindPageEvents() {
     if (label) label.textContent = `Step ${step} of 8`;
   }
 
-  // Central function: show a step, update progress, optionally push a history entry
   function goToJoinStep(step, pushToHistory) {
     for (let i = 1; i <= 8; i++) {
       const el = document.getElementById(`join-step-${i}`);
       if (el) el.style.display = (i === step) ? 'block' : 'none';
     }
-    // Clear any lingering validation error when moving between steps
+
     const existingErr = document.querySelector('#join-form-box .form-error-msg');
     if (existingErr) existingErr.remove();
     updateJoinProgress(step);
@@ -3093,7 +2893,6 @@ function bindPageEvents() {
     }
   }
 
-  // Expose so popstate can call it when the join page is already rendered
   window._goToJoinStep = goToJoinStep;
   window._restoreJoinFormData = restoreJoinFormData;
 
@@ -3102,7 +2901,6 @@ function bindPageEvents() {
       const nextStep = parseInt(btn.dataset.next);
       const curStep  = nextStep - 1;
 
-      // Validate current step before advancing
       if (curStep === 1) {
         const name  = document.getElementById('join-name')?.value.trim();
         const email = document.getElementById('join-email')?.value.trim();
@@ -3149,10 +2947,8 @@ function bindPageEvents() {
     });
   });
 
-  // Set initial progress on first render (step 1, no history push — navigate() already pushed)
   updateJoinProgress(1);
 
-  /* Teaching Approach counter */
   const teachingGrid = document.getElementById('join-teaching-grid');
   const teachingHint = document.getElementById('teaching-count-hint');
   const teachingHintDefault = 'Most instructors choose 2–3 tags that reflect both their personality and how they run lessons.';
@@ -3166,7 +2962,6 @@ function bindPageEvents() {
     });
   }
 
-  /* Expertise counter */
   const expertiseGrid = document.getElementById('join-expertise-grid');
   const expertiseHint = document.getElementById('expertise-count-hint');
   if (expertiseGrid && expertiseHint) {
@@ -3179,7 +2974,6 @@ function bindPageEvents() {
     });
   }
 
-  /* Send enquiry modal */
   const enquiryBtn = document.getElementById('open-enquiry-btn');
   if (enquiryBtn) {
     enquiryBtn.addEventListener('click', () => {
@@ -3188,7 +2982,6 @@ function bindPageEvents() {
     });
   }
 
-  /* Photo upload zone */
   const photoZone    = document.getElementById('photo-upload-zone');
   const photoInput2  = document.getElementById('join-photo');
   const photoPrompt  = document.getElementById('photo-upload-prompt');
@@ -3200,7 +2993,7 @@ function bindPageEvents() {
     if (!file || !file.type.startsWith('image/')) return;
     if (file.size > 5 * 1024 * 1024) {
       showFormError('join-form-box', 'Photo exceeds the 5 MB limit. Please choose a smaller image.');
-      photoInput2.value = ''; // clear the input so the file cannot be submitted
+      photoInput2.value = '';
       return;
     }
     const url = URL.createObjectURL(file);
@@ -3229,7 +3022,6 @@ function bindPageEvents() {
     });
   }
 
-  /* Join form */
   const joinSubmit = document.getElementById('join-submit');
   if (joinSubmit) {
     joinSubmit.addEventListener('click', async () => {
@@ -3265,12 +3057,10 @@ function bindPageEvents() {
       const vAuto   = document.getElementById('join-vehicle-auto')?.value || '';
       const vManual = document.getElementById('join-vehicle-manual')?.value || '';
 
-      // Languages
       const languages = [...document.querySelectorAll('#join-languages-grid input:checked')].map(c => c.value);
       const langOther = document.getElementById('join-lang-other')?.value.trim() || '';
       if (langOther) languages.push(langOther);
 
-      // Photo (optional — validated, sent as real file via FormData)
       const photoInput = document.getElementById('join-photo');
       const photoFile  = photoInput?.files?.[0] || null;
       if (photoFile && photoFile.size > 5 * 1024 * 1024) {
@@ -3279,7 +3069,6 @@ function bindPageEvents() {
         return;
       }
 
-      // Collect availability
       const availDays  = ['avail-weekdays','avail-saturday','avail-sunday']
         .filter(id => document.getElementById(id)?.checked)
         .map(id => document.getElementById(id).value);
@@ -3289,12 +3078,10 @@ function bindPageEvents() {
       const availSpecific = document.getElementById('avail-specific')?.value.trim() || '';
       const avail = [...availDays, ...availTimes, ...(availSpecific ? ['Note: ' + availSpecific] : [])];
 
-      // Lesson fees
       const fee60 = document.getElementById('join-fee-60')?.value.trim() || '';
       const fee90 = document.getElementById('join-fee-90')?.value.trim() || '';
       if (!fee60) { showFormError('join-form-box', 'Your 60-minute lesson fee is missing. Please go back to Step 5 and enter it.'); return; }
 
-      // Collect Teaching Approach IDs (2-3 required), then resolve to human-readable labels for the email
       const teachingApproachIds = [...document.querySelectorAll('#join-teaching-grid input:checked')].map(c => c.value);
       if (teachingApproachIds.length < 2) {
         showFormError('join-form-box', 'Please select at least 2 teaching approach tags. Go back to Step 3 to update your selections.'); return;
@@ -3304,7 +3091,6 @@ function bindPageEvents() {
       }
       const teachingApproach = resolveTeachingApproach(teachingApproachIds);
 
-      // Collect expertise IDs (3-5 required), then resolve to human-readable labels for the email
       const expertiseIds = [...document.querySelectorAll('#join-expertise-grid input:checked')].map(c => c.value);
       if (expertiseIds.length < 3) {
         showFormError('join-form-box', 'Please select at least 3 areas of expertise. Go back to Step 4 to update your selections.'); return;
@@ -3316,8 +3102,6 @@ function bindPageEvents() {
 
       setButtonLoading('join-submit', true, 'Apply to Join');
 
-      // Save to Firestore — Cloud Function handles emailing support@pdin.au
-      // and logging to Google Sheets
       const application = {
         submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
         status:      'pending',
@@ -3347,7 +3131,7 @@ function bindPageEvents() {
             </div>`;
           box.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        // Firestore record saved — Cloud Function handles emailing support@pdin.au
+
       }
 
       function saveToFirestore(photoDataUrl) {
@@ -3355,9 +3139,6 @@ function bindPageEvents() {
 
         let settled = false;
 
-        // Safety net: if the write doesn't confirm within 12s (e.g. blocked
-        // network, write stuck in local-only cache), show an error instead
-        // of leaving the visitor wondering or showing a false success.
         const timeoutId = setTimeout(() => {
           if (settled) return;
           settled = true;
@@ -3366,13 +3147,6 @@ function bindPageEvents() {
           showFormError('join-form-box', 'Your application is taking too long to send. Please check your internet connection and try again — do not refresh the page yet.');
         }, 12000);
 
-        // Note: .add() only resolves once the write is acknowledged by the
-        // server (it does not resolve early from local cache), so there is
-        // no need to re-fetch the document to "confirm" it landed. The
-        // previous re-fetch step caused this exact bug: the "applications"
-        // collection is read-protected (admin-only) by the Firestore rules,
-        // so that read-back was always rejected with a permission error —
-        // even though the write itself had already succeeded.
         const appDocId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
         db.collection('applications').doc(appDocId).set(application)
           .then(() => {
@@ -3391,7 +3165,6 @@ function bindPageEvents() {
           });
       }
 
-      // Resize & compress photo if provided, then save
       if (photoFile) {
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -3419,7 +3192,6 @@ function bindPageEvents() {
     });
   }
 
-  /* Contact form */
   const contactSubmit = document.getElementById('contact-submit');
   if (contactSubmit) {
     contactSubmit.addEventListener('click', () => {
@@ -3455,9 +3227,6 @@ function bindPageEvents() {
   }
 }
 
-/* =============================================
-   NAVBAR
-   ============================================= */
 function closeMenu() {
   const h = document.getElementById('hamburger');
   const d = document.getElementById('nav-dropdown');
@@ -3490,17 +3259,15 @@ function initReveal() {
 }
 window.addEventListener('popstate', e => {
   if (e.state) {
-    // Restore search coordinates so Find page re-renders correctly
+
     _searchLat   = e.state.searchLat   || undefined;
     _searchLng   = e.state.searchLng   || undefined;
     _searchLabel = e.state.searchLabel || '';
 
-    // If we're going back/forward within the Join form steps,
-    // and the join page is already rendered — just switch step, don't re-render
     if (e.state.page === 'join' && e.state.joinStep) {
       const joinFormBox = document.getElementById('join-form-box');
       if (joinFormBox && document.getElementById('join-step-1')) {
-        // Page is already rendered — restore form data and jump to step
+
         if (window._restoreJoinFormData) window._restoreJoinFormData(e.state.joinFormData);
         if (window._goToJoinStep) window._goToJoinStep(e.state.joinStep, false);
         return;
@@ -3509,7 +3276,6 @@ window.addEventListener('popstate', e => {
 
     navigate(e.state.page, e.state.extra||null, false);
 
-    // After rendering join page from history, restore step and form data
     if (e.state.page === 'join' && e.state.joinStep && e.state.joinStep > 1) {
       setTimeout(() => {
         if (window._restoreJoinFormData) window._restoreJoinFormData(e.state.joinFormData);
@@ -3524,12 +3290,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   bindNavEvents();
 
-  // Live instructor profiles (approved applications) — keep these in sync
-  // for every visitor, on every device, from the moment the page loads.
   startLiveProfilesListener();
 
-  // Re-render the admin page automatically when sign-in state changes,
-  // so a successful login (or a sign-out) immediately reflects in the UI.
   auth.onAuthStateChanged(() => {
     if ((location.hash || '').replace('#','').split('/')[0] === 'admin') {
       navigate('admin', null, false);
