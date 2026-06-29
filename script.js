@@ -1104,6 +1104,13 @@ function renderJoin() {
               <input type="number" class="form-input fee-input" id="join-fee-90" placeholder="e.g. 155" min="0" step="1" />
             </div>
           </div>
+          <div class="form-group">
+            <label class="form-label">120 minute lesson <span class="form-label-optional">(optional)</span></label>
+            <div class="fee-input-wrap">
+              <span class="fee-input-prefix">$</span>
+              <input type="number" class="form-input fee-input" id="join-fee-120" placeholder="e.g. 220" min="0" step="1" />
+            </div>
+          </div>
 
           <div class="join-step-nav">
             <button class="btn btn-outline join-back-btn" data-back="5">← Back</button>
@@ -1523,6 +1530,7 @@ function buildLiveProfileFromApp(app, appId) {
   const availLabel  = (app.availDays||[]).join(' / ') || 'Contact instructor';
   const feesArr     = [{ duration: '60 min', price: '$' + app.fee60 }];
   if (app.fee90)    feesArr.push({ duration: '90 min', price: '$' + app.fee90 });
+  if (app.fee120)   feesArr.push({ duration: '120 min', price: '$' + app.fee120 });
   const vehiclesArr = [];
   if (app.vAuto)    vehiclesArr.push({ type: 'Auto',   car: app.vAuto });
   if (app.vManual)  vehiclesArr.push({ type: 'Manual', car: app.vManual });
@@ -1618,7 +1626,7 @@ function renderAdminPage(extra, apps) {
 
     const idSlug     = app.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
     const transmission = [app.vAuto ? 'Automatic' : '', app.vManual ? 'Manual' : ''].filter(Boolean).join(' & ') || 'Automatic';
-    const feesArr    = [`{ duration: '60 min', price: '$${app.fee60}' }`, ...(app.fee90 ? [`{ duration: '90 min', price: '$${app.fee90}' }`] : [])];
+    const feesArr    = [`{ duration: '60 min', price: '$${app.fee60}' }`, ...(app.fee90 ? [`{ duration: '90 min', price: '$${app.fee90}' }`] : []), ...(app.fee120 ? [`{ duration: '120 min', price: '$${app.fee120}' }`] : [])];
     const vehiclesArr = [...(app.vAuto ? [`{ type: 'Auto',   car: '${app.vAuto}' }`] : []), ...(app.vManual ? [`{ type: 'Manual', car: '${app.vManual}' }`] : [])];
     const availLabel = (app.availDays||[]).join(' / ') || 'Weekdays';
     const availTimesArr = (app.availTimes||[]).map(t => `'${t.replace(/'/g,"\\'")}'`);
@@ -1686,7 +1694,7 @@ ${expertiseIdStr}
           <div class="admin-detail-row"><span class="admin-detail-label">Vehicles</span><span>${vehicles}</span></div>
           <div class="admin-detail-row"><span class="admin-detail-label">Languages</span><span>${(app.languages||[]).join(', ') || '(not specified)'}</span></div>
           <div class="admin-detail-row"><span class="admin-detail-label">Availability</span><span>${avail}${app.availSpecific ? ' — ' + app.availSpecific : ''}</span></div>
-          <div class="admin-detail-row"><span class="admin-detail-label">Fees</span><span>60 min: $${app.fee60}${app.fee90 ? ' · 90 min: $'+app.fee90 : ''}</span></div>
+          <div class="admin-detail-row"><span class="admin-detail-label">Fees</span><span>60 min: $${app.fee60}${app.fee90 ? ' · 90 min: $'+app.fee90 : ''}${app.fee120 ? ' · 120 min: $'+app.fee120 : ''}</span></div>
           <div class="admin-detail-row"><span class="admin-detail-label">Photo uploaded</span><span>${app.photoName || '(none)'}</span></div>
           <div class="admin-detail-row admin-detail-full"><span class="admin-detail-label">Teaching Approach</span>
             <div class="admin-expertise-pills">${teachingApproach.map(e => `<span class="admin-expertise-pill">${e}</span>`).join('')}</div>
@@ -1771,6 +1779,7 @@ ${expertiseIdStr}
               <div class="admin-edit-section-head">Lesson Fees</div>
               <div class="admin-edit-row"><label>60-min fee ($)</label><input class="form-input" type="number" id="ep-fee60-${app.id}" value="${app.fee60||''}" min="0" /></div>
               <div class="admin-edit-row"><label>90-min fee ($) <span style="font-weight:400;color:var(--text-light)">(optional)</span></label><input class="form-input" type="number" id="ep-fee90-${app.id}" value="${app.fee90||''}" min="0" /></div>
+              <div class="admin-edit-row"><label>120-min fee ($) <span style="font-weight:400;color:var(--text-light)">(optional)</span></label><input class="form-input" type="number" id="ep-fee120-${app.id}" value="${app.fee120||''}" min="0" /></div>
             </div>
             <div class="admin-edit-section">
               <div class="admin-edit-section-head">Vehicles</div>
@@ -1940,7 +1949,8 @@ function renderPendingProfile(app) {
 
   const feesHTML = [
     `<div class="qs-item"><div class="qs-item-label">60 min lesson</div><div class="qs-item-value">$${app.fee60}</div></div>`,
-    app.fee90 ? `<div class="qs-item"><div class="qs-item-label">90 min lesson</div><div class="qs-item-value">$${app.fee90}</div></div>` : ''
+    app.fee90 ? `<div class="qs-item"><div class="qs-item-label">90 min lesson</div><div class="qs-item-value">$${app.fee90}</div></div>` : '',
+    app.fee120 ? `<div class="qs-item"><div class="qs-item-label">120 min lesson</div><div class="qs-item-value">$${app.fee120}</div></div>` : ''
   ].join('');
 
   const vehiclesHTML = [
@@ -2171,6 +2181,7 @@ function bindAdminEvents() {
       const radius   = parseInt(v(`ep-radius-${appId}`)) || 10;
       const fee60    = v(`ep-fee60-${appId}`);
       const fee90    = v(`ep-fee90-${appId}`);
+      const fee120   = v(`ep-fee120-${appId}`);
       const vAuto    = v(`ep-vauto-${appId}`);
       const vManual  = v(`ep-vmanual-${appId}`);
       const dia      = v(`ep-dia-${appId}`);
@@ -2192,7 +2203,7 @@ function bindAdminEvents() {
 
       const updates = {
         name, email, phone, suburb, state, radius,
-        fee60, fee90, vAuto, vManual, dia, diaType, wwcc, wwccType,
+        fee60, fee90, fee120, vAuto, vManual, dia, diaType, wwcc, wwccType,
         credentials: { dia: credStatus(credDia, dia), diaType, wwcc: credStatus(credWwcc, wwcc), wwccType },
         contactUnavailable: unavail,
         bio, availDays, availTimes, availSpecific: availNote,
@@ -2204,6 +2215,7 @@ function bindAdminEvents() {
       const availLabel = availDays.join(' / ') || 'Contact instructor';
       const feesArr    = [{ duration: '60 min', price: '$' + fee60 }];
       if (fee90) feesArr.push({ duration: '90 min', price: '$' + fee90 });
+      if (fee120) feesArr.push({ duration: '120 min', price: '$' + fee120 });
       const vehiclesArr = [];
       if (vAuto)   vehiclesArr.push({ type: 'Auto',   car: vAuto });
       if (vManual) vehiclesArr.push({ type: 'Manual', car: vManual });
@@ -2817,6 +2829,7 @@ function bindPageEvents() {
       availNote:   get('avail-specific'),
       fee60:       get('join-fee-60'),
       fee90:       get('join-fee-90'),
+      fee120:      get('join-fee-120'),
       bio:         get('join-bio'),
       languages:   chks('#join-languages-grid input'),
       teaching:    chks('#join-teaching-grid input'),
@@ -2835,7 +2848,7 @@ function bindPageEvents() {
     set('join-vehicle-auto', d.vAuto); set('join-vehicle-manual', d.vManual);
     set('join-lang-other', d.langOther);
     set('join-suburb', d.suburb); set('join-state', d.state); set('join-radius', d.radius);
-    set('avail-specific', d.availNote); set('join-fee-60', d.fee60); set('join-fee-90', d.fee90); set('join-bio', d.bio);
+    set('avail-specific', d.availNote); set('join-fee-60', d.fee60); set('join-fee-90', d.fee90); set('join-fee-120', d.fee120); set('join-bio', d.bio);
     const restoreChecks = (sel, vals) => {
       if (!vals) return;
       document.querySelectorAll(sel).forEach(c => { c.checked = vals.includes(c.value); });
@@ -3080,6 +3093,7 @@ function bindPageEvents() {
 
       const fee60 = document.getElementById('join-fee-60')?.value.trim() || '';
       const fee90 = document.getElementById('join-fee-90')?.value.trim() || '';
+      const fee120 = document.getElementById('join-fee-120')?.value.trim() || '';
       if (!fee60) { showFormError('join-form-box', 'Your 60-minute lesson fee is missing. Please go back to Step 5 and enter it.'); return; }
 
       const teachingApproachIds = [...document.querySelectorAll('#join-teaching-grid input:checked')].map(c => c.value);
@@ -3112,7 +3126,7 @@ function bindPageEvents() {
         vManual:     vManual|| '',
         languages:   languages.length ? languages : [],
         availDays, availTimes, availSpecific,
-        fee60, fee90: fee90 || '',
+        fee60, fee90: fee90 || '', fee120: fee120 || '',
         teachingApproachIds,
         expertiseIds,
         bio,
