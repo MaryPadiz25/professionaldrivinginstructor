@@ -1,6 +1,3 @@
-/* =============================================
-   VARIABLES
-   ============================================= */
 :root {
   --navy:       #2c4a6e;
   --navy-dark:  #1e3550;
@@ -26,9 +23,6 @@
   --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
 }
 
-/* =============================================
-   RESET
-   ============================================= */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; font-size: 16px; }
 body {
@@ -48,9 +42,6 @@ button { cursor: pointer; font-family: var(--font-sans); }
 input, textarea, select { font-family: var(--font-sans); font-size: 15px; outline: none; }
 main { flex: 1; }
 
-/* =============================================
-   KEYFRAME ANIMATIONS
-   ============================================= */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -72,7 +63,6 @@ main { flex: 1; }
   100% { background-position: 400px 0; }
 }
 
-/* Scroll-triggered reveal */
 .reveal {
   opacity: 0;
   transform: translateY(28px);
@@ -88,9 +78,6 @@ main { flex: 1; }
 .reveal-delay-3 { transition-delay: 0.24s; }
 .reveal-delay-4 { transition-delay: 0.32s; }
 
-/* =============================================
-   NAVBAR
-   ============================================= */
 .navbar {
   position: sticky;
   top: 0;
@@ -168,7 +155,6 @@ main { flex: 1; }
   transform: translateY(-1px) !important;
 }
 
-/* Hamburger */
 .hamburger {
   display: none;
   flex-direction: column;
@@ -197,7 +183,6 @@ main { flex: 1; }
 .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
 .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-/* Mobile dropdown */
 .nav-dropdown {
   display: none;
   position: fixed;
@@ -228,9 +213,6 @@ main { flex: 1; }
   border-radius: var(--radius-sm) !important;
 }
 
-/* =============================================
-   SHARED UTILITIES
-   ============================================= */
 .container        { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
 .container-narrow { max-width: 780px;  margin: 0 auto; padding: 0 28px; }
 .section    { padding: 80px 0; }
@@ -246,7 +228,6 @@ main { flex: 1; }
   letter-spacing: -0.3px;
 }
 
-/* BUTTONS */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -285,7 +266,6 @@ main { flex: 1; }
 .btn-full   { width: 100%; }
 .btn-lg     { padding: 15px 38px; font-size: 16px; }
 
-/* ICON CIRCLE */
 .icon-circle {
   width: 64px;
   height: 64px;
@@ -304,7 +284,6 @@ main { flex: 1; }
 .why-card:hover .icon-circle svg,
 .benefit-card:hover .icon-circle svg { color: var(--white); }
 
-/* AVATAR INITIALS */
 .avatar-initials {
   width: 100%;
   height: 100%;
@@ -319,9 +298,6 @@ main { flex: 1; }
   letter-spacing: 2px;
 }
 
-/* =============================================
-   INSTRUCTOR CARD
-   ============================================= */
 .card {
   background: var(--white);
   border: 1px solid var(--border);
@@ -336,10 +312,9 @@ main { flex: 1; }
   border-color: transparent;
 }
 
-/* ── Card photo wrap — always shows full image, no cropping ── */
 .card-photo-wrap {
   width: 100%;
-  aspect-ratio: 4 / 3;      /* consistent ratio, fits whole image */
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: var(--light-gray);
   position: relative;
@@ -350,14 +325,13 @@ main { flex: 1; }
 .card-photo {
   width: 100%;
   height: 100%;
-  object-fit: contain;        /* show entire photo, no cropping */
+  object-fit: contain;
   object-position: center;
   display: block;
   transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
 }
 .card:hover .card-photo { transform: scale(1.04); }
 
-/* Fallback initials inside photo-wrap */
 .card-photo-wrap .avatar-initials {
   position: absolute;
   inset: 0;
@@ -402,7 +376,6 @@ main { flex: 1; }
 }
 .card-body .btn { margin-top: 16px; }
 
-/* NAVY BANNER */
 .navy-banner {
   background: var(--navy-hero);
   color: var(--white);
@@ -425,9 +398,6 @@ main { flex: 1; }
   animation: fadeUp 0.5s 0.1s ease both;
 }
 
-/* =============================================
-   HOME — HERO
-   ============================================= */
 .hero {
   position: relative;
   min-height: 700px;
@@ -439,7 +409,7 @@ main { flex: 1; }
   overflow: hidden;
   isolation: isolate;
 }
-/* Background image layer — sits behind everything */
+
 .hero-bg-img {
   position: absolute;
   inset: 0;
@@ -450,7 +420,7 @@ main { flex: 1; }
   z-index: -2;
   display: block;
 }
-/* Dark gradient overlay — sits between image and content */
+
 .hero::before {
   content: '';
   position: absolute;
@@ -492,9 +462,6 @@ main { flex: 1; }
   animation: fadeUp 0.65s 0.24s cubic-bezier(0.4,0,0.2,1) both;
 }
 
-/* =============================================
-   HOME — WHY CHOOSE
-   ============================================= */
 .why-section { background: var(--white); }
 .why-grid {
   display: grid;
@@ -525,9 +492,6 @@ main { flex: 1; }
   line-height: 1.65;
 }
 
-/* =============================================
-   HOME — FEATURED INSTRUCTORS
-   ============================================= */
 .featured-section {
   background: var(--off-white);
   border-top: 1px solid var(--border);
@@ -539,9 +503,6 @@ main { flex: 1; }
   gap: 24px;
 }
 
-/* =============================================
-   HOME — LOCATION TABS
-   ============================================= */
 .location-section { background: var(--white); }
 .location-tabs {
   display: flex;
@@ -573,9 +534,6 @@ main { flex: 1; }
   pointer-events: none;
 }
 
-/* =============================================
-   HOME — CTA SECTION  (with generated background)
-   ============================================= */
 .cta-section {
   position: relative;
   overflow: hidden;
@@ -583,7 +541,7 @@ main { flex: 1; }
   text-align: center;
   background: var(--navy-hero);
 }
-/* Layered radial gradient "bokeh" background */
+
 .cta-section::before {
   content: '';
   position: absolute;
@@ -595,7 +553,7 @@ main { flex: 1; }
     linear-gradient(135deg, #1e3550 0%, #2d4f72 45%, #3a5f85 100%);
   pointer-events: none;
 }
-/* Decorative circles */
+
 .cta-section::after {
   content: '';
   position: absolute;
@@ -620,9 +578,6 @@ main { flex: 1; }
   text-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
-/* =============================================
-   FIND INSTRUCTORS PAGE
-   ============================================= */
 .find-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -630,9 +585,6 @@ main { flex: 1; }
   padding: 60px 0;
 }
 
-/* =============================================
-   PROFILE PAGE
-   ============================================= */
 .profile-hero {
   padding: 20px 0 16px;
   animation: fadeIn 0.4s ease both;
@@ -705,7 +657,6 @@ main { flex: 1; }
   margin-top: 2px;
 }
 
-/* Quick Summary */
 .quick-summary {
   background: var(--off-white);
   border: 1px solid var(--border);
@@ -742,7 +693,6 @@ main { flex: 1; }
   letter-spacing: 0.01em;
 }
 
-/* Profile About */
 .profile-about { padding: 16px 0 0; }
 .profile-about-inner {
   max-width: 1200px;
@@ -761,7 +711,6 @@ main { flex: 1; }
   line-height: 1.8;
 }
 
-/* Disclaimer */
 .profile-disclaimer {
   background: #f0f4f8;
   border-top: 1px solid var(--border);
@@ -782,9 +731,6 @@ main { flex: 1; }
   margin: 0;
 }
 
-/* =============================================
-   JOIN PAGE
-   ============================================= */
 .join-hero { background: var(--navy-hero); padding: 60px 28px; text-align: center; }
 .join-hero h1 {
   font-family: var(--font-serif);
@@ -822,7 +768,6 @@ main { flex: 1; }
 .benefit-card h3 { font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
 .benefit-card p  { font-size: 13.5px; color: var(--text-light); line-height: 1.65; }
 
-/* Apply Form */
 .apply-form-wrap { max-width: 540px; margin: 0 auto; padding: 0 28px 80px; }
 .apply-form-box {
   border: 1px solid var(--border);
@@ -834,7 +779,6 @@ main { flex: 1; }
 }
 .apply-form-title { font-size: 22px; font-weight: 700; text-align: center; color: var(--text-dark); margin-bottom: 28px; }
 
-/* Forms */
 .form-group  { margin-bottom: 20px; }
 .form-label  { display: block; font-size: 13.5px; font-weight: 600; color: var(--text-dark); margin-bottom: 7px; }
 .form-label span { color: #e53e3e; }
@@ -855,9 +799,6 @@ main { flex: 1; }
 .form-input::placeholder { color: var(--mid-gray); }
 textarea.form-input { resize: vertical; min-height: 120px; }
 
-/* =============================================
-   ABOUT PAGE
-   ============================================= */
 .about-hero { background: var(--navy-hero); padding: 60px 28px; text-align: center; }
 .about-hero h1 {
   font-family: var(--font-serif);
@@ -900,9 +841,6 @@ textarea.form-input { resize: vertical; min-height: 120px; }
   .about-cta-grid { grid-template-columns: 1fr; }
 }
 
-/* =============================================
-   PRICING PAGE
-   ============================================= */
 .pricing-hero { background: var(--navy-hero); padding: 60px 28px; text-align: center; }
 .pricing-hero h1 {
   font-family: var(--font-serif);
@@ -922,9 +860,6 @@ textarea.form-input { resize: vertical; min-height: 120px; }
 .price-highlight span { font-size: 15px; font-weight: 400; color: var(--text-light); }
 .pricing-divider { border: none; border-top: 1px solid var(--border); margin: 44px 0; }
 
-/* =============================================
-   CONTACT PAGE
-   ============================================= */
 .contact-hero { background: var(--navy-hero); padding: 60px 28px; text-align: center; }
 .contact-hero h1 {
   font-family: var(--font-serif);
@@ -954,9 +889,6 @@ textarea.form-input { resize: vertical; min-height: 120px; }
 }
 .contact-detail svg { color: var(--navy); flex-shrink: 0; }
 
-/* =============================================
-   ENQUIRY MODAL
-   ============================================= */
 body.modal-open { overflow: hidden; }
 
 .enquiry-overlay {
@@ -1084,9 +1016,6 @@ body.modal-open { overflow: hidden; }
   .eq-checkboxes { gap: 8px; }
 }
 
-/* =============================================
-   FOOTER
-   ============================================= */
 .footer { background: var(--navy-dark); padding: 40px 28px; }
 .footer-inner {
   max-width: 1200px;
@@ -1108,9 +1037,6 @@ body.modal-open { overflow: hidden; }
 .footer-links a:hover { color: var(--white); }
 .footer-copy { font-size: 12px; color: rgba(255,255,255,0.35); }
 
-/* =============================================
-   SUCCESS STATE
-   ============================================= */
 .success-box { text-align: center; padding: 44px 20px; animation: scaleIn 0.35s ease both; }
 .success-icon {
   width: 68px;
@@ -1125,14 +1051,6 @@ body.modal-open { overflow: hidden; }
 .success-box h3 { font-size: 20px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px; }
 .success-box p  { font-size: 15px; color: var(--text-body); }
 
-/* =============================================
-   RESPONSIVE — TABLET (≤ 1024px)
-   ============================================= */
-/* =============================================
-   RESPONSIVE — TABLET NAV (≤ 1024px)
-   Keeps desktop nav but shrinks so Contact
-   button doesn't clip on iPad
-   ============================================= */
 @media (max-width: 1024px) {
   .why-grid         { grid-template-columns: repeat(2, 1fr); }
   .instructor-grid  { grid-template-columns: repeat(2, 1fr); }
@@ -1145,44 +1063,34 @@ body.modal-open { overflow: hidden; }
   .logo-single      { font-size: 13.5px; white-space: normal; max-width: 160px; line-height: 1.2; }
 }
 
-/* =============================================
-   RESPONSIVE — SMALL TABLET (≤ 768px)
-   ============================================= */
 @media (max-width: 768px) {
   :root { --nav-h: 62px; }
 
   .hamburger { display: flex; }
-  .nav-links  { display: none; }  /* hide desktop nav on mobile */
+  .nav-links  { display: none; }
 
   .profile-hero-inner { grid-template-columns: 1fr; gap: 28px; }
   .qs-btns { grid-template-columns: 1fr; }
   .contact-grid { grid-template-columns: 1fr; gap: 40px; }
 }
 
-/* =============================================
-   RESPONSIVE — MOBILE (≤ 600px)
-   ============================================= */
 @media (max-width: 600px) {
   :root { --nav-h: 58px; }
 
   .container, .container-narrow { padding: 0 20px; }
   .nav-inner { padding: 0 20px; }
 
-  /* Sections */
   .section    { padding: 52px 0; }
   .section-sm { padding: 36px 0; }
   .section-title { margin-bottom: 36px; }
 
-  /* Hero */
   .hero { min-height: auto; padding: 72px 20px 64px; }
   .hero-btns { flex-direction: column; align-items: stretch; }
   .hero-btns .btn { width: 100%; }
 
-  /* Grids → single column */
   .why-grid, .join-benefits { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .instructor-grid, .find-grid { grid-template-columns: 1fr; }
 
-  /* Profile */
   .profile-hero { padding: 36px 0 28px; }
   .profile-hero-inner {
     padding: 0 16px;
@@ -1210,29 +1118,20 @@ body.modal-open { overflow: hidden; }
   .profile-about-inner { padding: 0 16px 40px; }
   .profile-disclaimer { padding: 20px 16px; }
 
-  /* Location tabs */
   .location-tabs { gap: 8px; }
   .location-tab { padding: 9px 16px; font-size: 13.5px; }
 
-  /* CTA */
   .cta-section { padding: 72px 20px; }
 
-  /* Forms */
   .apply-form-wrap { padding: 0 20px 60px; }
   .apply-form-box  { padding: 28px 22px; }
   .contact-content { padding: 48px 0; }
 
-  /* Footer */
   .footer-links { gap: 16px; }
 
-  /* Cards */
   .card-photo-wrap { aspect-ratio: 16 / 10; }
 }
 
-/* =============================================
-   MICRO INTERACTIONS
-   ============================================= */
-/* Smooth focus rings */
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
@@ -1241,12 +1140,10 @@ textarea:focus-visible {
   outline-offset: 3px;
 }
 
-/* Form input hover */
 .form-input:hover:not(:focus) {
   border-color: var(--mid-gray);
 }
 
-/* Card entrance animation on grid */
 .instructor-grid .card,
 .find-grid .card {
   animation: fadeUp 0.45s cubic-bezier(0.4,0,0.2,1) both;
@@ -1260,7 +1157,6 @@ textarea:focus-visible {
 .instructor-grid .card:nth-child(4),
 .find-grid .card:nth-child(4) { animation-delay: 0.26s; }
 
-/* Why/benefit card entrance */
 .why-grid .why-card,
 .join-benefits .benefit-card { animation: fadeUp 0.45s cubic-bezier(0.4,0,0.2,1) both; }
 .why-grid .why-card:nth-child(1)        { animation-delay: 0.04s; }
@@ -1271,11 +1167,7 @@ textarea:focus-visible {
 .join-benefits .benefit-card:nth-child(2) { animation-delay: 0.10s; }
 .join-benefits .benefit-card:nth-child(3) { animation-delay: 0.16s; }
 .join-benefits .benefit-card:nth-child(4) { animation-delay: 0.22s; }
-/* =============================================
-   ROB LESTER — CUSTOM INSTRUCTOR PROFILE
-   ============================================= */
 
-/* Two-column custom QS grid (Rob only) */
 .qs-grid-custom {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1307,7 +1199,6 @@ textarea:focus-visible {
   line-height: 1.5;
 }
 
-/* Areas of Expertise bullet list */
 .qs-expertise-list {
   list-style: none;
   margin: 0;
@@ -1335,22 +1226,18 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
-/* Card tagline row (Patient and calm Instructor) */
 .card-tagline {
   font-style: italic;
   color: var(--text-light) !important;
 }
 .card-tagline svg { color: var(--mid-gray) !important; }
 
-/* Mobile — stack custom QS columns */
 @media (max-width: 600px) {
   .qs-grid-custom { grid-template-columns: 1fr; }
   .qs-col-left { padding: 0; }
   .qs-col-right { padding: 0; border-left: none; border-top: none; padding-top: 18px; }
 }
-/* =============================================
-   JOIN FORM — REQUIREMENTS SECTION
-   ============================================= */
+
 .join-requirements-group {
   margin-bottom: 24px;
 }
@@ -1447,9 +1334,6 @@ textarea:focus-visible {
   font-style: italic;
 }
 
-/* =============================================
-   FORM — LOADING SPINNER & ERROR STATE
-   ============================================= */
 .btn-spinner {
   display: inline-block;
   width: 14px;
@@ -1474,9 +1358,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   line-height: 1.5;
 }
 
-/* =============================================
-   NAV LOGO — mobile wrap fix
-   ============================================= */
 @media (max-width: 600px) {
   .logo-single {
     font-size: 13px;
@@ -1485,9 +1366,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
     line-height: 1.3;
   }
 }
-/* =============================================
-   HERO SEARCH BAR
-   ============================================= */
+
 .hero-search-bar {
   margin-bottom: 24px;
 }
@@ -1515,9 +1394,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .hero-search-inner input::placeholder { color: var(--mid-gray); }
 .hero-search-inner .btn { border-radius: 100px; padding: 10px 22px; font-size: 14.5px; }
 
-/* =============================================
-   FIND PAGE SEARCH BAR
-   ============================================= */
 .find-search-bar { margin-top: 20px; }
 .find-search-inner {
   display: flex;
@@ -1545,7 +1421,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .find-search-inner input::placeholder { color: rgba(255,255,255,0.6); }
 .find-search-inner .btn { border-radius: 100px; padding: 9px 20px; font-size: 14px; }
 
-/* Suburb autocomplete dropdown */
 .suburb-ac-dropdown {
   position: absolute;
   top: calc(100% + 8px);
@@ -1651,7 +1526,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   cursor: not-allowed;
 }
 
-/* Input error flash */
 .input-error { border-color: #e53e3e !important; animation: shake 0.35s ease; }
 @keyframes shake {
   0%,100% { transform: translateX(0); }
@@ -1659,9 +1533,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   75%      { transform: translateX(6px); }
 }
 
-/* =============================================
-   SMART BADGES ON CARDS
-   ============================================= */
 .card-photo-wrap { position: relative; }
 .card-badge {
   position: absolute;
@@ -1679,7 +1550,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .badge-available { background: var(--navy); color: #fff; }
 .badge-travel    { background: #3a7d44; color: #fff; }
 
-/* Distance row on card */
 .card-dist-row {
   display: flex;
   align-items: center;
@@ -1697,9 +1567,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   display: block;
 }
 
-/* =============================================
-   PROFILE — SERVICE AREA
-   ============================================= */
 .qs-travel-note {
   font-size: 13px !important;
   color: var(--text-light) !important;
@@ -1707,9 +1574,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   font-weight: 400 !important;
 }
 
-/* =============================================
-   PHOTO UPLOAD (Join form)
-   ============================================= */
 .photo-upload-area {
   border: 2px dashed var(--border);
   border-radius: var(--radius);
@@ -1760,9 +1624,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 }
 .btn-outline-upload:hover { border-color: var(--navy); background: var(--light-gray); }
 
-/* =============================================
-   JOIN FORM — SERVICE AREA & TOGGLES
-   ============================================= */
 .form-section-head {
   font-size: 15px;
   font-weight: 700;
@@ -1794,9 +1655,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   cursor: pointer;
 }
 
-/* =============================================
-   FORM HELPERS (spinner, error)
-   ============================================= */
 .btn-spinner {
   display: inline-block;
   width: 14px; height: 14px;
@@ -1820,9 +1678,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   line-height: 1.5;
 }
 
-/* =============================================
-   JOIN FORM — REQUIREMENTS
-   ============================================= */
 .join-requirements-group { margin-bottom: 24px; }
 .join-req-title { font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
 .req-required { color: #e53e3e; }
@@ -1837,9 +1692,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .join-req-confirm input[type="checkbox"] { width: 18px; height: 18px; min-width: 18px; margin-top: 2px; accent-color: var(--navy); cursor: pointer; }
 .join-reserve-note { text-align: center; font-size: 12.5px; color: var(--text-light); margin-top: 16px; line-height: 1.5; font-style: italic; }
 
-/* =============================================
-   LOGO SINGLE LINE
-   ============================================= */
 .logo-single { font-size: 16px; font-weight: 700; color: var(--navy); white-space: nowrap; letter-spacing: -0.2px; line-height: 1; }
 @media (max-width: 600px) {
   .logo-single { font-size: 13px; white-space: normal; max-width: 200px; line-height: 1.3; }
@@ -1849,7 +1701,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .find-search-inner .btn { width: 100%; border-radius: var(--radius-sm); }
 }
 
-/* ROB LESTER CUSTOM QS GRID */
 .qs-grid-custom { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 26px; }
 .qs-col-left, .qs-col-right { display: flex; flex-direction: column; gap: 18px; padding: 0 12px 0 0; }
 .qs-col-right { padding: 0 0 0 20px; border-left: 1px solid var(--border); }
@@ -1866,9 +1717,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .qs-col-left { padding: 0; }
   .qs-col-right { padding: 0; border-left: none; border-top: none; padding-top: 18px; }
 }
-/* =============================================
-   SENIOR BADGE (10+ years premium indicator)
-   ============================================= */
+
 .senior-badge {
   display: inline-block;
   font-size: 14px;
@@ -1880,9 +1729,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .card-name .senior-badge { font-size: 13px; }
 .profile-name .senior-badge { font-size: 18px; margin-left: 8px; }
 
-/* =============================================
-   FORM HINT TEXT
-   ============================================= */
 .form-hint {
   display: block;
   font-size: 12px;
@@ -1896,9 +1742,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   margin-top: 8px;
 }
 
-/* =============================================
-   AVAILABILITY & EXPERTISE GRID
-   ============================================= */
 .join-avail-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1914,9 +1757,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .join-expertise-grid { grid-template-columns: 1fr; }
 }
 
-/* =============================================
-   FEE INPUT (join form)
-   ============================================= */
 .fee-input-wrap {
   display: flex;
   align-items: center;
@@ -1943,7 +1783,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   flex: 1;
   min-width: 0;
 }
-/* Hide the up/down spinner arrows on lesson fee inputs */
+
 .fee-input::-webkit-outer-spin-button,
 .fee-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -1953,9 +1793,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   -moz-appearance: textfield;
 }
 
-/* =============================================
-   APPROVAL NOTICE (join form)
-   ============================================= */
 .join-approval-notice {
   background: var(--off-white);
   border: 1px solid var(--border);
@@ -1971,9 +1808,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .join-approval-notice p:last-child { margin-bottom: 0; word-break: break-all; font-size:12px;}
 .join-approval-notice a { color: var(--navy); font-weight: 600; }
 
-/* =============================================
-   JOIN FORM — MULTI-STEP PROGRESS & NAVIGATION
-   ============================================= */
 .join-progress-wrap {
   display: flex;
   flex-direction: column;
@@ -2045,7 +1879,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
     width: 100%;
     justify-content: center;
   }
-  /* When there's only a Next button (no Back), keep it right-aligned */
+
   .join-step-nav > span:first-child + .join-next-btn {
     align-self: flex-end;
     width: auto;
@@ -2072,12 +1906,8 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   color: #fff;
 }
 
-
 .why-card .icon-circle svg { width: 24px; height: 24px; }
 
-/* =============================================
-   FORM SECTION HEAD (service area heading style)
-   ============================================= */
 .form-section-head {
   font-size: 15px;
   font-weight: 700;
@@ -2087,25 +1917,17 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   border-bottom: 1px solid var(--border);
 }
 
-/* =============================================
-   CAR ICON — consistent sizing on cards & profile
-   ============================================= */
 .card-meta-row svg[viewBox="0 0 110 52"] { vertical-align: middle; }
-/* =============================================
-   MOBILE FONT SIZE BOOST (≤ 600px)
-   Increases legibility without breaking layout
-   ============================================= */
+
 @media (max-width: 600px) {
-  /* Base body text */
+
   body { font-size: 15.5px; }
 
-  /* Form labels & inputs */
   .form-label     { font-size: 15px; }
   .form-input     { font-size: 15px; }
   .form-hint      { font-size: 13px; }
   .form-section-head { font-size: 16px; }
 
-  /* Join form toggle checkboxes */
   .join-toggle-label { font-size: 15px; }
   .join-req-title    { font-size: 16px; }
   .join-req-subtitle { font-size: 14px; }
@@ -2116,50 +1938,39 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .expertise-count-hint  { font-size: 13.5px; }
   .join-approval-notice  { font-size: 14px; }
 
-  /* Profile quick-summary */
   .qs-block .qs-item-label { font-size: 12.5px; }
   .qs-block .qs-item-value { font-size: 15px; }
   .qs-expertise-list li    { font-size: 14.5px; }
   .qs-travel-note          { font-size: 14px !important; }
   .qs-title                { font-size: 16px; }
 
-  /* Cards */
   .card-name       { font-size: 16px; }
   .card-meta-row   { font-size: 14px; }
   .card-meta-row svg { width: 16px; height: 16px; min-width: 16px; }
   .card-dist-row   { font-size: 13.5px; }
   .card-dist-row svg { width: 16px; height: 16px; min-width: 16px; }
 
-  /* Pricing & general content paragraphs */
   .pricing-content p,
   .about-content p,
   .profile-about-inner p { font-size: 15.5px; }
   .price-highlight { font-size: 22px; }
 
-  /* Find page search info */
   .find-search-info-pill { font-size: 14px; }
 
-  /* Contact info */
   .contact-detail { font-size: 15px; }
 
-  /* Buttons */
   .btn { font-size: 15px; }
   .btn-lg { font-size: 16px; }
 
-  /* Footer */
   .footer-links a  { font-size: 14px; }
   .footer-logo     { font-size: 14px; }
   .footer-copy     { font-size: 12.5px; }
 
-  /* Section titles */
   .section-title { font-size: 22px; }
 
-  /* Approval notice last child (contact email line) */
   .join-approval-notice p:last-child { word-break: break-all; font-size: 12px; }
 }
-/* =============================================
-   PHOTO UPLOAD ZONE
-   ============================================= */
+
 .photo-upload-zone {
   position: relative;
   border: 2px dashed var(--border);
@@ -2185,7 +1996,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   min-height: 260px;
 }
 
-/* Prompt (shown when no photo) */
 .photo-upload-prompt {
   display: flex;
   flex-direction: column;
@@ -2216,7 +2026,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   color: var(--mid-gray);
 }
 
-/* Preview (shown when photo selected) */
 .photo-upload-preview {
   position: relative;
   width: 100%;
@@ -2260,9 +2069,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .photo-upload-preview { min-height: 220px; }
   .photo-upload-preview img { height: 220px; object-fit: contain; }
 }
-/* =============================================
-   EXPERTISE GROUP HEADINGS (Join form step 3)
-   ============================================= */
+
 .expertise-group-head {
   font-size: 11px;
   font-weight: 700;
@@ -2294,9 +2101,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 @media (max-width: 600px) {
   .expertise-group-head { font-size: 11px; margin: 20px 0 9px; }
 }
-/* =============================================
-   TOAST NOTIFICATION
-   ============================================= */
+
 .pdin-toast {
   position: fixed;
   top: calc(var(--nav-h) + 16px);
@@ -2370,9 +2175,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .pdin-toast--hiding   { transform: translateY(-12px); }
   .pdin-toast-msg { font-size: 13.5px; }
 }
-/* =============================================
-   STATS PAGE
-   ============================================= */
+
 .stats-page { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
 .stats-header { margin-bottom: 32px; }
 .stats-title { font-size: 26px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
@@ -2404,11 +2207,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .stats-note { margin-top: 20px; font-size: 13px; color: var(--text-light); }
 .stats-note code { background: var(--bg-light); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
 .stats-actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
-/* =============================================
-   ADMIN PAGE
-   ============================================= */
 
-/* Password gate */
 .admin-gate {
   min-height: calc(100vh - var(--nav-h) - 120px);
   display: flex; align-items: center; justify-content: center;
@@ -2428,7 +2227,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .admin-gate-box p  { color: var(--text-light); font-size: 14px; }
 .admin-key-error   { color: #c0392b; font-size: 13px; margin-top: 8px; }
 
-/* Page layout */
 .admin-page {
   max-width: 900px; margin: 0 auto;
   padding: 40px 24px 80px;
@@ -2437,7 +2235,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .admin-page-header h1 { font-family: var(--font-serif); font-size: 28px; color: var(--text-dark); margin-bottom: 6px; }
 .admin-page-header p  { color: var(--text-light); font-size: 14px; }
 
-/* Tabs */
 .admin-tabs {
   display: flex; gap: 4px;
   border-bottom: 2px solid var(--border);
@@ -2466,7 +2263,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 }
 .admin-tab.active .admin-tab-count { background: var(--navy); color: var(--white); }
 
-/* Application card */
 .admin-app-card {
   background: var(--white);
   border: 1px solid var(--border);
@@ -2490,7 +2286,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .admin-app-name { font-size: 17px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .admin-app-sub  { font-size: 13px; color: var(--text-light); margin-top: 3px; }
 
-/* Status badges */
 .admin-status-badge {
   font-size: 11px; font-weight: 700; padding: 3px 9px;
   border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;
@@ -2500,13 +2295,11 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .admin-badge-rejected { background: #fce8e6; color: #c0392b; }
 .admin-badge-trashed  { background: #f3f0fa; color: #6b4fbb; }
 
-/* Trash countdown note */
 .admin-trash-note {
   padding: 10px 24px; border-top: 1px solid var(--border);
   background: #f9f7fd; color: #6b4fbb; font-size: 13px; font-weight: 600;
 }
 
-/* Detail rows */
 .admin-app-details { padding: 20px 24px; display: grid; gap: 10px; }
 .admin-detail-row {
   display: grid; grid-template-columns: 140px 1fr; gap: 8px;
@@ -2521,7 +2314,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 20px;
 }
 
-/* Profile preview */
 .admin-preview-toggle,
 .admin-code-toggle {
   border-top: 1px solid var(--border);
@@ -2540,7 +2332,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   padding: 20px 24px; border-top: 1px solid var(--border); background: var(--off-white);
 }
 
-/* Code blocks */
 .admin-code-wrap    { padding: 20px 24px; border-top: 1px solid var(--border); }
 .admin-code-label   { font-size: 13px; color: var(--text-body); margin-bottom: 8px; }
 .admin-code-label code { background: var(--light-gray); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
@@ -2553,7 +2344,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 }
 .admin-copy-btn { font-size: 13px; padding: 7px 16px; }
 
-/* Action buttons row */
 .admin-app-actions {
   padding: 16px 24px; border-top: 1px solid var(--border);
   display: flex; gap: 10px; flex-wrap: wrap;
@@ -2562,14 +2352,12 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 .admin-approve-btn { background: var(--navy); color: var(--white); }
 .admin-approve-btn:hover { background: var(--navy-dark); }
 
-/* Empty state */
 .admin-empty {
   text-align: center; padding: 48px 24px;
   color: var(--text-light); font-size: 15px;
   border: 1px dashed var(--border); border-radius: var(--radius);
 }
 
-/* Footer note */
 .admin-footer-note {
   margin-top: 40px; padding: 20px 24px;
   background: var(--off-white); border: 1px solid var(--border);
@@ -2586,7 +2374,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   .admin-code-block  { font-size: 11px; }
   .admin-gate-box    { padding: 32px 20px 28px; }
 }
-/* ── Credential Tags (Profile Page) ── */
+
 .cred-row {
   display: flex;
   align-items: center;
@@ -2620,7 +2408,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   background: #f5f5f5;
   color: #aaa;
 }
-/* ── Admin Edit Panel ── */
+
 .admin-edit-panel {
   margin-top: 20px;
   border: 2px solid var(--gold);
@@ -2703,13 +2491,6 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   background: #fff3cd; color: #856404; border: 1px solid #ffc107;
 }
 
-/* ══════════════════════════════════════════════
-   SEO STATIC CONTENT
-   Shown to Googlebot before JS runs.
-   Hidden from users once the JS app has mounted
-   content into #app (i.e. #app has child elements
-   other than #seo-static-content).
-   ══════════════════════════════════════════════ */
 #seo-static-content {
   position: absolute;
   width: 1px;
