@@ -1,4 +1,5 @@
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
+const { onRequest }         = require('firebase-functions/v2/https');
 const { defineSecret }      = require('firebase-functions/params');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
@@ -220,5 +221,88 @@ PDIN Admin / Support Team`;
       throw err;
     }
     return null;
+  }
+);
+
+const STATIC_URLS = [
+  { loc: 'https://pdin.au/',          changefreq: 'weekly',  priority: '1.0' },
+  { loc: 'https://pdin.au/#find',     changefreq: 'weekly',  priority: '0.9' },
+  { loc: 'https://pdin.au/#join',     changefreq: 'monthly', priority: '0.7' },
+  { loc: 'https://pdin.au/#about',    changefreq: 'monthly', priority: '0.6' },
+  { loc: 'https://pdin.au/#pricing',  changefreq: 'monthly', priority: '0.6' },
+  { loc: 'https://pdin.au/#contact',  changefreq: 'monthly', priority: '0.5' },
+];
+
+function buildSitemapXml(profileIds) {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const staticEntries = STATIC_URLS.map(u => `
+  <url>
+    <loc>${u.loc}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${u.changefreq}</changefreq>
+    <priority>${u.priority}</priority>
+  </url>`).join('');
+
+  const profileEntries = profileIds.map(id => `
+  <url>
+    <loc>https://pdin.au/#profile/${id}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`).join('');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticEntries}
+${profileEntries}
+</urlset>`;
+}
+
+async function rebuildAndStoreSitemap() {
+  const db = getFirestore();
+  const snap = await db.collection('live_profiles').get();
+  const profileIds = snap.docs.map(d => d.id).sort();
+  const xml = buildSitemapXml(profileIds);
+  await db.collection('_seo').doc('sitemap').set({ xml, updatedAt: new Date().toISOString() });
+  console.log(`Sitemap rebuilt with ${profileIds.length} profiles.`);
+}
+
+exports.regenerateSitemap = onDocumentWritten(
+  {
+    document: 'live_profiles/{profileId}',
+    region:   'australia-southeast2',
+  },
+  async () => {
+    try {
+      await rebuildAndStoreSitemap();
+    } catch (err) {
+      console.error('regenerateSitemap error:', err);
+      throw err;
+    }
+    return null;
+  }
+);
+
+exports.serveSitemap = onRequest(
+  { region: 'australia-southeast2' },
+  async (req, res) => {
+    try {
+      const db   = getFirestore();
+      const snap = await db.collection('_seo').doc('sitemap').get();
+      if (!snap.exists) {
+        await rebuildAndStoreSitemap();
+        const fresh = await db.collection('_seo').doc('sitemap').get();
+        res.set('Content-Type', 'application/xml');
+        res.set('Cache-Control', 'public, max-age=3600');
+        return res.send(fresh.data().xml);
+      }
+      res.set('Content-Type', 'application/xml');
+      res.set('Cache-Control', 'public, max-age=3600');
+      return res.send(snap.data().xml);
+    } catch (err) {
+      console.error('serveSitemap error:', err);
+      return res.status(500).send('Error generating sitemap.');
+    }
   }
 );
