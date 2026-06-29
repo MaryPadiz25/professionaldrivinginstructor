@@ -618,7 +618,7 @@ function renderFind(searchLat, searchLng, searchLabel) {
   return `
     <div class="navy-banner">
       <h1>Driving Instructors in Melbourne</h1>
-      <p>Find an experienced, independent driving instructor near you.</p>
+      <p>Founded in Melbourne, expanding across Australia.</p>
       <div class="find-search-bar">
         <div class="find-search-inner">
           ${ICONS.search}
@@ -668,7 +668,7 @@ function renderFindSydney(searchLat, searchLng, searchLabel) {
   return `
     <div class="navy-banner">
       <h1>Driving Instructors in Sydney</h1>
-      <p>Find an experienced, independent driving instructor near you.</p>
+      <p>Founded in Melbourne, expanding across Australia.</p>
       <div class="find-search-bar">
         <div class="find-search-inner">
           ${ICONS.search}
@@ -718,7 +718,7 @@ function renderFindBrisbane(searchLat, searchLng, searchLabel) {
   return `
     <div class="navy-banner">
       <h1>Driving Instructors in Brisbane</h1>
-      <p>Find an experienced, independent driving instructor near you.</p>
+      <p>Founded in Melbourne, expanding across Australia.</p>
       <div class="find-search-bar">
         <div class="find-search-inner">
           ${ICONS.search}
@@ -2537,7 +2537,7 @@ function renderStatsPage() {
 const SEO_META = {
   home: {
     title: 'Professional Driving Instructors Network | Find a Driving Instructor in Melbourne',
-    desc:  'Find experienced, independent driving instructors across Melbourne. Learner drivers, VicRoads test prep, manual & automatic lessons. Book direct — no middleman.',
+    desc:  'PDIN is a Melbourne-founded platform connecting learner drivers with qualified professional instructors across Australia, with transparent profiles and teaching styles.',
   },
   find: {
     title: 'Find a Driving Instructor in Melbourne | PDIN Directory',
@@ -2549,7 +2549,7 @@ const SEO_META = {
   },
   about: {
     title: 'About PDIN | Professional Driving Instructors Network Melbourne',
-    desc:  'Learn about the Professional Driving Instructors Network — a quality-focused directory connecting learner drivers with experienced, independent Melbourne driving instructors.',
+    desc:  'Learn about the Professional Driving Instructors Network — a quality-focused directory connecting learner drivers with experienced, independent driving instructors across Australia.',
   },
   pricing: {
     title: 'Driving Lesson Prices Melbourne | PDIN Instructor Pricing',
