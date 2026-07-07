@@ -24,7 +24,7 @@ const EXPERTISE_CATEGORIES = [
   },
   {
     group: 'Confidence & Advanced Driving Skills',
-    items: [
+    items: [ 
       { id: 'defensive-driving',    label: 'Defensive Driving Techniques' },
       { id: 'city-driving',         label: 'City Driving & Complex Traffic Environments' },
       { id: 'highway-driving',      label: 'Highway & Long-Distance Driving' },
