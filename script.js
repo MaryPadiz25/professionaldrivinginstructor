@@ -1163,9 +1163,9 @@ function renderJoin() {
           <div class="form-group">
             <div class="join-req-title" style="margin-bottom:14px">Instructor Declaration <span class="req-required">*</span></div>
             <div class="join-declaration-list">
-              <label class="join-req-confirm"><input type="checkbox" id="join-decl-1" /><span>I confirm that I meet the Instructor Requirements outlined above and that the information provided is true and accurate. I understand that submission does not guarantee approval and that my application may be reviewed before my profile is published. I agree to keep my profile information accurate and up to date.</span></label>
-              <hr class="join-decl-divider" />
-              <label class="join-req-confirm"><input type="checkbox" id="join-decl-2" /><span>I authorise Professional Driving Instructors Network (PDIN) to publish and display my submitted profile information, including my profile photo, name, business name, location/service areas, lesson types, experience, profile description and other information I provide, on the PDIN website and directory. I also grant PDIN permission to use this information, including my profile photo, business name and other submitted content, to promote my listing and PDIN through its website, social media channels, email newsletters and other marketing materials. I understand I may withdraw this permission at any time by contacting PDIN.</span></label>
+              <label class="join-req-confirm" style="display:flex;align-items:flex-start;gap:12px;word-break:normal;overflow-wrap:break-word;line-height:1.6"><input type="checkbox" id="join-decl-1" style="margin-top:4px;flex-shrink:0" /><span>I confirm that I meet the Instructor Requirements outlined above and that the information provided is true and accurate. I understand that submission does not guarantee approval and that my application may be reviewed before my profile is published. I agree to keep my profile information accurate and up to date.</span></label>
+              <hr style="border:none;border-top:1px solid #dce3ec;margin:16px 0" />
+              <label class="join-req-confirm" style="display:flex;align-items:flex-start;gap:12px;word-break:normal;overflow-wrap:break-word;line-height:1.6"><input type="checkbox" id="join-decl-2" style="margin-top:4px;flex-shrink:0" /><span>I authorise Professional Driving Instructors Network (PDIN) to publish and display my submitted profile information, including my profile photo, name, business name, location/service areas, lesson types, experience, profile description and other information I provide, on the PDIN website and directory. I also grant PDIN permission to use this information, including my profile photo, business name and other submitted content, to promote my listing and PDIN through its website, social media channels, email newsletters and other marketing materials. I understand I may withdraw this permission at any time by contacting PDIN.</span></label>
             </div>
           </div>
           <div class="join-step-nav">
@@ -3053,7 +3053,7 @@ function bindPageEvents() {
       if (!suburb)                     { showFormError('join-form-box', 'Your primary suburb is missing. Please go back to Step 5 and enter it.'); return; }
       if (!state)                      { showFormError('join-form-box', 'Your state is missing. Please go back to Step 5 and select it.'); return; }
       if (!decl1) {
-        showFormError('join-form-box', 'Please tick the box to confirm the Instructor Declaration before submitting your application.');
+        showFormError('join-form-box', 'Please tick the first declaration box to confirm the Instructor Requirements before submitting your application.');
         const declLabel = document.getElementById('join-decl-1')?.closest('.join-req-confirm');
         if (declLabel) {
           declLabel.classList.add('field-error-highlight');
@@ -3063,7 +3063,7 @@ function bindPageEvents() {
         return;
       }
       if (!decl2) {
-        showFormError('join-form-box', 'Please tick the box to authorise PDIN to publish your profile before submitting your application.');
+        showFormError('join-form-box', 'Please tick the authorisation box to grant PDIN permission to publish your profile before submitting your application.');
         const declLabel2 = document.getElementById('join-decl-2')?.closest('.join-req-confirm');
         if (declLabel2) {
           declLabel2.classList.add('field-error-highlight');
@@ -3145,8 +3145,6 @@ function bindPageEvents() {
         bio,
         photoName:   photoFile ? photoFile.name : '',
         photoDataUrl: null,
-        declarationAccepted:   decl1,
-        publishAuthAccepted:   decl2,
       };
 
       function showSuccess(applicantName) {
@@ -3321,7 +3319,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   startLiveProfilesListener();
 
+  // Only re-navigate on auth state change for admin page,
+  // and only after the initial page load has already run.
+  let _initialLoadDone = false;
   auth.onAuthStateChanged(() => {
+    if (!_initialLoadDone) return;
     if ((location.hash || '').replace('#','').split('/')[0] === 'admin') {
       navigate('admin', null, false);
     }
@@ -3338,4 +3340,5 @@ document.addEventListener('DOMContentLoaded', () => {
     navigate('home', null, false);
     history.replaceState({ page:'home', extra:null }, '', '#home');
   }
+  _initialLoadDone = true;
 });
