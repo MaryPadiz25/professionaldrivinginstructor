@@ -1164,6 +1164,8 @@ function renderJoin() {
             <div class="join-req-title" style="margin-bottom:14px">Instructor Declaration <span class="req-required">*</span></div>
             <div class="join-declaration-list">
               <label class="join-req-confirm"><input type="checkbox" id="join-decl-1" /><span>I confirm that I meet the Instructor Requirements outlined above and that the information provided is true and accurate. I understand that submission does not guarantee approval and that my application may be reviewed before my profile is published. I agree to keep my profile information accurate and up to date.</span></label>
+              <hr class="join-decl-divider" />
+              <label class="join-req-confirm"><input type="checkbox" id="join-decl-2" /><span>I authorise Professional Driving Instructors Network (PDIN) to publish and display my submitted profile information, including my profile photo, name, business name, location/service areas, lesson types, experience, profile description and other information I provide, on the PDIN website and directory. I also grant PDIN permission to use this information, including my profile photo, business name and other submitted content, to promote my listing and PDIN through its website, social media channels, email newsletters and other marketing materials. I understand I may withdraw this permission at any time by contacting PDIN.</span></label>
             </div>
           </div>
           <div class="join-step-nav">
@@ -3044,6 +3046,7 @@ function bindPageEvents() {
       const suburb = cleanSuburb((document.getElementById('join-suburb') || {}).value?.trim() || '');
       const state  = (document.getElementById('join-state')  || {}).value || '';
       const decl1  = document.getElementById('join-decl-1')?.checked || false;
+      const decl2  = document.getElementById('join-decl-2')?.checked || false;
 
       if (!name || !email)             { showFormError('join-form-box', 'Your name and email address are required. Please go back and fill them in.'); return; }
       if (!dia)                        { showFormError('join-form-box', 'Your State Driving Instructor Authority number is missing. Please go back to Step 2 and enter it.'); return; }
@@ -3056,6 +3059,16 @@ function bindPageEvents() {
           declLabel.classList.add('field-error-highlight');
           declLabel.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setTimeout(() => declLabel.classList.remove('field-error-highlight'), 3000);
+        }
+        return;
+      }
+      if (!decl2) {
+        showFormError('join-form-box', 'Please tick the box to authorise PDIN to publish your profile before submitting your application.');
+        const declLabel2 = document.getElementById('join-decl-2')?.closest('.join-req-confirm');
+        if (declLabel2) {
+          declLabel2.classList.add('field-error-highlight');
+          declLabel2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => declLabel2.classList.remove('field-error-highlight'), 3000);
         }
         return;
       }
@@ -3132,6 +3145,8 @@ function bindPageEvents() {
         bio,
         photoName:   photoFile ? photoFile.name : '',
         photoDataUrl: null,
+        declarationAccepted:   decl1,
+        publishAuthAccepted:   decl2,
       };
 
       function showSuccess(applicantName) {
