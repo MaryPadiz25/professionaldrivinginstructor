@@ -1805,8 +1805,8 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   line-height: 1.6;
 }
 .join-approval-notice p { margin-bottom: 8px; }
-.join-approval-notice p:last-child { margin-bottom: 0; word-break: break-all; font-size:12px;}
-.join-approval-notice a { color: var(--navy); font-weight: 600; }
+.join-approval-notice p:last-child { margin-bottom: 0; font-size:12px;}
+.join-approval-notice a { color: var(--navy); font-weight: 600; word-break: break-word; }
 
 .join-progress-wrap {
   display: flex;
@@ -1890,6 +1890,11 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
   flex-direction: column;
   gap: 12px;
 }
+.join-decl-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}
 .btn-outline {
   background: transparent;
   border: 1.5px solid var(--navy);
@@ -1968,7 +1973,7 @@ button:disabled { opacity: 0.7; cursor: not-allowed !important; transform: none 
 
   .section-title { font-size: 22px; }
 
-  .join-approval-notice p:last-child { word-break: break-all; font-size: 12px; }
+  .join-approval-notice p:last-child { font-size: 12px; }
 }
 
 .photo-upload-zone {
